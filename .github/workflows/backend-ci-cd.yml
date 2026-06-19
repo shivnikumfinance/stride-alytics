@@ -1,0 +1,83 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci-cd.yml'
+  pull_request:
+    branches: [main, develop]
+    paths: ['backend/**']
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: uv sync --frozen --no-dev
+
+      - name: Lint
+        run: uv run ruff check app/ || echo "No lint config yet"
+
+      - name: Check imports
+        run: uv run python -c "from app.main import app; print('App loads OK')"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t stridealytics-api:${{ github.sha }} ./backend
+          docker tag stridealytics-api:${{ github.sha }} stridealytics-api:latest
+
+      - name: Push to Docker Hub
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker push stridealytics-api:${{ github.sha }}
+          docker push stridealytics-api:latest
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Deploy to Render (Staging)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+        run: curl -X POST "$RENDER_DEPLOY_HOOK"
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: Deploy to Render (Production)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_PROD_DEPLOY_HOOK }}
+        run: curl -X POST "$RENDER_DEPLOY_HOOK"

@@ -1,0 +1,42 @@
+# CODEOWNERS — every PR touching these paths requires review from the
+# listed owners. GitHub auto-assigns reviewers when a PR opens.
+
+# --- Default owners ---
+*                                   @stridealytics/maintainers
+
+# --- Backend ---
+/backend/                           @stridealytics/backend-team
+/backend/app/services/              @stridealytics/backend-team
+/backend/app/api/                   @stridealytics/backend-team
+/backend/app/database.py            @stridealytics/backend-team
+/backend/app/config.py              @stridealytics/backend-team
+/backend/pyproject.toml             @stridealytics/backend-team
+/backend/Dockerfile                 @stridealytics/backend-team
+
+# --- Frontend ---
+/frontend/                          @stridealytics/frontend-team
+/frontend/src/components/           @stridealytics/frontend-team
+/frontend/src/pages/                @stridealytics/frontend-team
+/frontend/src/store/                @stridealytics/frontend-team
+/frontend/src/api/                  @stridealytics/frontend-team
+/frontend/src/hooks/                @stridealytics/frontend-team
+/frontend/package.json              @stridealytics/frontend-team
+
+# --- Mobile ---
+/mobile/                            @stridealytics/mobile-team
+
+# --- Database ---
+/database/                          @stridealytics/backend-team
+/database/rls-policies/             @stridealytics/security-team
+/database/functions/                @stridealytics/backend-team
+
+# --- Scheduler / infra ---
+/scheduler/                         @stridealytics/platform-team
+/infra/                             @stridealytics/platform-team
+/.github/workflows/                 @stridealytics/platform-team
+
+# --- Shared types ---
+/shared/                            @stridealytics/frontend-team @stridealytics/backend-team
+
+# --- Docs ---
+/docs/                              @stridealytics/maintainers

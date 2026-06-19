@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: stridealytics-api
+    env: python
+    plan: starter
+    buildCommand: uv sync --frozen --no-dev
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    numInstances: 1
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: CORS_ORIGINS
+        value: https://stridealytics.com,https://www.stridealytics.com
+      - key: APP_NAME
+        value: StrideAlytics
+      - key: DEBUG
+        value: "false"

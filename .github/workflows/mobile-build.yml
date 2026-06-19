@@ -1,0 +1,82 @@
+name: Mobile Build (EAS)
+
+# ----------------------------------------------------------------------------
+# Build the React Native / Expo app via Expo Application Services (EAS).
+#
+# Triggers:
+#   - tag matching v* (production)
+#   - manual dispatch (preview / production)
+#
+# NOTE: this workflow is a stub for Phase 3 — the mobile/ app structure
+# (Expo Router, SecureStore, biometric hook) is built in Phase 4.
+# ----------------------------------------------------------------------------
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS Build profile"
+        type: choice
+        required: true
+        default: preview
+        options:
+          - preview
+          - production
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: EAS Build · ${{ github.event.inputs.profile || 'tag' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Determine profile
+        id: profile
+        run: |
+          if [ -n "${{ github.event.inputs.profile }}" ]; then
+            echo "value=${{ github.event.inputs.profile }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=production" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: EAS Build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::warning::EXPO_TOKEN not set — skipping live EAS build."
+            exit 0
+          fi
+          npx --yes eas-cli@latest build \
+            --platform all \
+            --non-interactive \
+            --profile "${{ steps.profile.outputs.value }}"
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-build-${{ steps.profile.outputs.value }}
+          path: |
+            mobile/dist/**
+            mobile/.eas-build/**
+          if-no-files-found: ignore

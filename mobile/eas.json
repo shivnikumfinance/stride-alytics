@@ -1,0 +1,38 @@
+{
+  "cli": {
+    "version": ">= 3.0.0"
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "ios": {
+        "buildType": "simulator"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "aab",
+        "release": true
+      },
+      "ios": {
+        "buildType": "archive",
+        "provisioning": "adhoc"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./android-key.json",
+        "track": "production"
+      },
+      "ios": {
+        "appleId": "your-email@example.com",
+        "ascAppId": "123456789"
+      }
+    }
+  }
+}

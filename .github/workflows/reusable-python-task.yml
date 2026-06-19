@@ -1,0 +1,63 @@
+name: Reusable · Python Task
+
+# ----------------------------------------------------------------------------
+# Reusable workflow invoked by the scheduler jobs. Pass `script_name`
+# (without .py) to run scheduler/scripts/<name>.py.
+#
+# Usage from a caller workflow:
+#
+#   jobs:
+#     run:
+#       uses: ./.github/workflows/reusable-python-task.yml
+#       with:
+#         script_name: fetch_market_data
+#       secrets: inherit
+# ----------------------------------------------------------------------------
+
+on:
+  workflow_call:
+    inputs:
+      script_name:
+        required: true
+        type: string
+      python_version:
+        required: false
+        type: string
+        default: "3.12"
+    secrets:
+      SUPABASE_URL:
+        required: false
+      SUPABASE_KEY:
+        required: false
+      SENDGRID_API_KEY:
+        required: false
+      SLACK_WEBHOOK:
+        required: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: Install scheduler deps
+        run: pip install -r scheduler/requirements.txt
+
+      - name: Run script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+        run: python scheduler/scripts/${{ inputs.script_name }}.py
+
+      - name: Notify Slack on failure
+        if: failure() && secrets.SLACK_WEBHOOK != ''
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "❌ `${{ inputs.script_name }}` failed in ${{ github.repository }} (${{ github.ref_name }})"
+            }

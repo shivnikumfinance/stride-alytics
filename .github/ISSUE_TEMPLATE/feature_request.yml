@@ -1,0 +1,55 @@
+name: ✨ Feature Request
+description: Propose a new feature for the platform.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem you want solved and how you'd know it's done.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      placeholder: "As a [user type] I want to [action] so that [outcome]."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Screener
+        - Greeks calculator
+        - Market regime
+        - Portfolio / trades
+        - Weekly picks
+        - Auth / subscription
+        - Mobile (iOS / Android)
+        - Infrastructure / CI-CD
+    validations:
+      required: true
+
+  - type: dropdown
+    id: plan
+    attributes:
+      label: Tier
+      options:
+        - Free
+        - Pro
+        - Both

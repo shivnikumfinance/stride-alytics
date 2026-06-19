@@ -1,0 +1,83 @@
+# ============================================================================
+# StrideAlytics root .gitignore
+# Per-package ignore rules live alongside the package
+# (e.g. backend/.dockerignore, frontend/.gitignore).
+# ============================================================================
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ---- Editors / IDEs ----
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.cursor/
+
+# ---- Secrets ----
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+# Allow committing the .env.example templates!
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.venv/
+venv/
+env/
+
+# ---- Node / Frontend ----
+node_modules/
+.npm/
+.yarn/
+.pnp.*
+.parcel-cache/
+.vite/
+
+# ---- Expo / Mobile ----
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/.eas-build/
+mobile/.npmrc
+
+# ---- Build artefacts ----
+*.log
+logs/
+
+# ---- Test outputs ----
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# ---- OS noise ----
+*.tmp
+*.bak
+*.orig
+
+# ---- Editor auto-saves ----
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json

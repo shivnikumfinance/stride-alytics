@@ -1,0 +1,1 @@
+"""StrideAlytics backend application package."""
