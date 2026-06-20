@@ -15,6 +15,7 @@ from app.services.portfolio import (
     calculate_pnl,
     portfolio_summary,
     portfolio_trade_breakdown,
+    reset_store,
     store as portfolio_store,
 )
 from app.services.auth import plan_from_claims, verify_supabase_jwt
@@ -34,6 +35,7 @@ __all__ = [
     "calculate_pnl",
     "portfolio_summary",
     "portfolio_trade_breakdown",
+    "reset_store",
     "portfolio_store",
     "verify_supabase_jwt",
     "plan_from_claims",

@@ -18,14 +18,29 @@ Thumbs.db
 *.sublime-workspace
 .cursor/
 
-# ---- Secrets ----
+# ---- Secrets (block everything except tracked templates) ----
 .env
 .env.local
 .env.*.local
 .env.production
 .env.development
-# Allow committing the .env.example templates!
-!.env.example
+
+# Allow committing the .env.example templates at any level
+!**/.env.example
+
+# Block every real file under secrets/ except the tracked templates + README
+secrets/*.env
+secrets/*.env.local
+secrets/*.key
+secrets/*.pem
+secrets/google-credentials*.json
+secrets/firebase-*.json
+# Explicitly keep these tracked (overrides the rules above)
+!secrets/README.md
+!secrets/local.env.example
+!secrets/staging.env.example
+!secrets/production.env.example
+!secrets/github-secrets.txt
 
 # ---- Python ----
 __pycache__/

@@ -121,22 +121,26 @@ def portfolio_summary(portfolio: Portfolio) -> dict:
 
 
 def portfolio_trade_breakdown(trades: Iterable[Trade]) -> list[dict]:
-    return [
-        {
-            "trade_id": str(t.id),
-            "symbol": normalize_symbol(t.symbol),
-            "trade_type": t.trade_type,
-            "direction": t.direction,
-            "quantity": t.quantity,
-            "entry_price": t.entry_price,
-            "exit_price": t.exit_price,
-            "entry_date": t.entry_date.isoformat(),
-            "exit_date": t.exit_date.isoformat() if t.exit_date else None,
-            "pnl": round(calculate_pnl(t), 2),
-            "open": t.exit_price is None,
-        }
-        for t in trades
-    ]
+    out = []
+    for t in trades:
+        # Default entry_date to today if not set (dev-token / in-memory path).
+        entry = t.entry_date or date.today()
+        out.append(
+            {
+                "trade_id": str(t.id),
+                "symbol": normalize_symbol(t.symbol),
+                "trade_type": t.trade_type,
+                "direction": t.direction,
+                "quantity": t.quantity,
+                "entry_price": t.entry_price,
+                "exit_price": t.exit_price,
+                "entry_date": entry.isoformat(),
+                "exit_date": t.exit_date.isoformat() if t.exit_date else None,
+                "pnl": round(calculate_pnl(t), 2),
+                "open": t.exit_price is None,
+            }
+        )
+    return out
 
 
 # --- Convenience aliases so endpoint imports stay short and explicit ---
