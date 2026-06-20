@@ -11,6 +11,10 @@
     "test:backend": "cd backend && uv run pytest",
     "lint:frontend": "cd frontend && npx eslint src/",
     "lint:backend": "cd backend && uv run ruff check app/",
+    "scheduler:health-check": "cd scheduler && uv run python scripts/health_check.py",
+    "scheduler:greeks": "cd scheduler && uv run python scripts/calculate_greeks.py",
+    "scheduler:market-data": "cd scheduler && uv run python scripts/fetch_market_data.py",
+    "scheduler:picks": "cd scheduler && uv run python scripts/generate_picks.py",
     "secrets:load": "node scripts/load-secrets.mjs",
     "secrets:check": "node scripts/check-secrets.mjs"
   },
