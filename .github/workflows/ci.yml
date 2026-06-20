@@ -102,15 +102,32 @@ jobs:
   scheduler:
     name: Scheduler · Smoke
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scheduler
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install scheduler deps
-        run: pip install -r scheduler/requirements.txt
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-scheduler-${{ runner.os }}-${{ hashFiles('scheduler/uv.lock', 'scheduler/pyproject.toml') }}
+          restore-keys: uv-scheduler-${{ runner.os }}-
+
+      - name: Install dependencies (generate lock if needed)
+        run: uv sync
+
       - name: Syntax-check scheduler scripts
-        run: python -m py_compile scheduler/scripts/*.py
+        run: uv run python -m py_compile scripts/*.py
 
   all-green:
     name: All Checks Passed

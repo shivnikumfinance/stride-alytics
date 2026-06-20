@@ -4,6 +4,8 @@ name: Reusable · Python Task
 # Reusable workflow invoked by the scheduler jobs. Pass `script_name`
 # (without .py) to run scheduler/scripts/<name>.py.
 #
+# Uses uv (Astral) for dependency management — same as the backend.
+#
 # Usage from a caller workflow:
 #
 #   jobs:
@@ -37,27 +39,46 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scheduler
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python_version }}
-      - name: Install scheduler deps
-        run: pip install -r scheduler/requirements.txt
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-scheduler-${{ runner.os }}-${{ hashFiles('scheduler/uv.lock', 'scheduler/pyproject.toml') }}
+          restore-keys: uv-scheduler-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: uv sync --frozen
 
       - name: Run script
+        working-directory: ${{ github.workspace }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-        run: python scheduler/scripts/${{ inputs.script_name }}.py
+        run: cd scheduler && uv run python scripts/${{ inputs.script_name }}.py
 
       - name: Notify Slack on failure
-        if: failure() && secrets.SLACK_WEBHOOK != ''
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-          payload: |
-            {
-              "text": "❌ `${{ inputs.script_name }}` failed in ${{ github.repository }} (${{ github.ref_name }})"
-            }
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SCRIPT_NAME: ${{ inputs.script_name }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -s -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"❌ \`$SCRIPT_NAME\` failed in ${{ github.repository }} (${{ github.ref_name }})\"}" \
+              "$SLACK_WEBHOOK"
+          fi

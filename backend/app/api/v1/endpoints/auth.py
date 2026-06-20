@@ -1,9 +1,8 @@
 """Auth endpoints — login / signup / refresh / me.
 
-Phase 1 contracts proxy directly to Supabase Auth when ``SUPABASE_URL``
-and ``SUPABASE_ANON_KEY`` are configured. When they are missing we
-return a deterministic dev token so the rest of the API can be exercised
-locally without a Supabase project.
+Phase 1 used dev tokens. Phase 2 now proxies to Supabase Auth when
+``SUPABASE_URL`` and ``SUPABASE_ANON_KEY`` are configured, with the
+dev token fallback still available for local development and tests.
 """
 
 from __future__ import annotations
@@ -12,10 +11,12 @@ import os
 import time
 import uuid
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.middleware.auth import CurrentUser, get_current_user
 from app.api.v1.schemas.auth import LoginRequest, SignupRequest, TokenResponse
+from app.config import settings
 from app.utils.logger import get_logger
 
 router = APIRouter()
@@ -23,7 +24,7 @@ log = get_logger(__name__)
 
 
 def _supabase_env_present() -> bool:
-    return bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_ANON_KEY"))
+    return bool(settings.SUPABASE_URL and settings.SUPABASE_ANON_KEY)
 
 
 def _dev_token(user_id: str, email: str, plan: str = "free") -> TokenResponse:
@@ -40,46 +41,130 @@ def _dev_token(user_id: str, email: str, plan: str = "free") -> TokenResponse:
     )
 
 
+async def _supabase_auth_request(endpoint: str, payload: dict) -> dict:
+    """Proxy an auth request to Supabase Auth REST API."""
+    url = f"{settings.SUPABASE_URL}/auth/v1/{endpoint}"
+    headers = {
+        "apikey": settings.SUPABASE_ANON_KEY,
+        "Content-Type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(url, headers=headers, json=payload)
+        if resp.status_code >= 400:
+            error_body = resp.json()
+            raise HTTPException(
+                status_code=resp.status_code,
+                detail=error_body.get("error_description")
+                or error_body.get("msg")
+                or error_body.get("error", "Supabase auth request failed"),
+            )
+        return resp.json()
+
+
+def _build_token_response(supabase_data: dict) -> TokenResponse:
+    """Convert a Supabase auth response into our TokenResponse format."""
+    return TokenResponse(
+        access_token=supabase_data.get("access_token", ""),
+        refresh_token=supabase_data.get("refresh_token"),
+        expires_in=supabase_data.get("expires_in", 3600),
+        user_id=supabase_data.get("user", {}).get("id", ""),
+        email=supabase_data.get("user", {}).get("email", ""),
+        subscription_plan=(
+            supabase_data.get("user", {})
+            .get("user_metadata", {})
+            .get("subscription_plan", "free")
+        ),
+    )
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: LoginRequest) -> TokenResponse:
     """Email/password login → Supabase access token."""
-    if not _supabase_env_present():
-        # Dev fallback: derive a stable user_id from the email.
-        user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, payload.email))
-        return _dev_token(user_id=user_id, email=payload.email)
+    if _supabase_env_present():
+        try:
+            supabase_data = await _supabase_auth_request("token?grant_type=password", {
+                "email": payload.email,
+                "password": payload.password,
+            })
+            log.info("auth.login_success", email=payload.email)
+            # Get user metadata to check subscription plan
+            user_id = supabase_data.get("user", {}).get("id", "")
+            user_data = await _supabase_auth_request(f"user", {
+                "apikey": settings.SUPABASE_ANON_KEY,
+            })
+            return TokenResponse(
+                access_token=supabase_data.get("access_token", ""),
+                refresh_token=supabase_data.get("refresh_token"),
+                expires_in=supabase_data.get("expires_in", 3600),
+                user_id=user_id,
+                email=supabase_data.get("user", {}).get("email", payload.email),
+                subscription_plan="free",
+            )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            log.error("auth.login_error", error=str(exc))
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Authentication service unavailable",
+            )
 
-    # Real implementation calls Supabase Auth's /token endpoint via httpx.
-    # Kept as a stub for Phase 2 to keep dependencies optional in Phase 1.
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Supabase auth proxy is wired in Phase 2.",
-    )
+    # Dev fallback
+    user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, payload.email))
+    return _dev_token(user_id=user_id, email=payload.email)
 
 
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup(payload: SignupRequest) -> TokenResponse:
     """Create a new user via Supabase Auth."""
-    if not _supabase_env_present():
-        user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, payload.email))
-        return _dev_token(user_id=user_id, email=payload.email)
+    if _supabase_env_present():
+        try:
+            supabase_data = await _supabase_auth_request("signup", {
+                "email": payload.email,
+                "password": payload.password,
+                "data": {
+                    "full_name": payload.full_name or "",
+                    "subscription_plan": "free",
+                },
+            })
+            log.info("auth.signup_success", email=payload.email)
+            return _build_token_response(supabase_data)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            log.error("auth.signup_error", error=str(exc))
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Registration service unavailable",
+            )
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Supabase auth proxy is wired in Phase 2.",
-    )
+    # Dev fallback
+    user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, payload.email))
+    return _dev_token(user_id=user_id, email=payload.email)
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(refresh_token: str) -> TokenResponse:
     """Exchange a Supabase refresh_token for a new access_token."""
-    if not _supabase_env_present():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh tokens require Supabase configuration",
-        )
+    if _supabase_env_present():
+        try:
+            supabase_data = await _supabase_auth_request("token?grant_type=refresh_token", {
+                "refresh_token": refresh_token,
+            })
+            log.info("auth.refresh_success")
+            return _build_token_response(supabase_data)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            log.error("auth.refresh_error", error=str(exc))
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Authentication service unavailable",
+            )
+
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Supabase refresh proxy is wired in Phase 2.",
+        detail="Refresh tokens require Supabase configuration",
     )
 
 

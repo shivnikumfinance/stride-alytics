@@ -1,69 +1,130 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
+import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { ActivityIndicator, View, Text, StyleSheet } from "react-native";
+
+import { useAuthStore } from "./src/store/auth.store";
+import LoginScreen from "./src/screens/LoginScreen";
+import DashboardScreen from "./src/screens/DashboardScreen";
+import ScreenerScreen from "./src/screens/ScreenerScreen";
+import GreeksScreen from "./src/screens/GreeksScreen";
+import RegimeScreen from "./src/screens/RegimeScreen";
+import PicksScreen from "./src/screens/PicksScreen";
+import PortfolioScreen from "./src/screens/PortfolioScreen";
+import SettingsScreen from "./src/screens/SettingsScreen";
+
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 const API_URL =
   Constants.expoConfig?.extra?.apiUrl || "http://localhost:8000";
 
-export default function App() {
-  const [connected, setConnected] = useState(null);
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/v1/health`)
-      .then((res) => res.json())
-      .then((data) => setConnected(data.status === "healthy"))
-      .catch(() => setConnected(false));
-  }, []);
-
-  const statusText =
-    connected === null
-      ? "Checking…"
-      : connected
-      ? "Backend Connected: Yes"
-      : "Backend Connected: No";
-
-  const statusColor = connected === null ? "#eab308" : connected ? "#16a34a" : "#dc2626";
-
+function TabIcon({ label, focused }) {
+  const icons = {
+    Dashboard: focused ? "📊" : "📈",
+    Screener: focused ? "🔍" : "🔎",
+    Greeks: focused ? "📐" : "📏",
+    Regime: focused ? "🌡️" : "🌤️",
+    Picks: focused ? "🎯" : "⭐",
+    Portfolio: focused ? "💼" : "📁",
+    Settings: focused ? "⚙️" : "🔧",
+  };
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>StrideAlytics</Text>
-      <Text style={styles.subtitle}>Hello from StrideAlytics</Text>
-      <View style={[styles.badge, { backgroundColor: statusColor }]}>
-        <Text style={styles.badgeText}>{statusText}</Text>
-      </View>
-      <StatusBar style="auto" />
+    <View style={{ alignItems: "center" }}>
+      <Text style={{ fontSize: 20 }}>{icons[label] || "📋"}</Text>
     </View>
   );
 }
 
+function HomeTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
+        tabBarActiveTintColor: "#4f46e5",
+        tabBarInactiveTintColor: "#9ca3af",
+        tabBarStyle: {
+          backgroundColor: "#ffffff",
+          borderTopWidth: 1,
+          borderTopColor: "#e5e7eb",
+          paddingBottom: 4,
+          paddingTop: 4,
+          height: 60,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        headerStyle: { backgroundColor: "#4f46e5" },
+        headerTintColor: "#ffffff",
+        headerTitleStyle: { fontWeight: "700" },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Screener" component={ScreenerScreen} />
+      <Tab.Screen name="Greeks" component={GreeksScreen} />
+      <Tab.Screen name="Regime" component={RegimeScreen} />
+      <Tab.Screen name="Picks" component={PicksScreen} />
+      <Tab.Screen name="Portfolio" component={PortfolioScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+    </Tab.Navigator>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#4f46e5" />
+      <Text style={styles.loadingText}>StrideAlytics</Text>
+    </View>
+  );
+}
+
+export default function App() {
+  const [ready, setReady] = useState(false);
+  const [initialRoute, setInitialRoute] = useState("Login");
+  const { hydrate } = useAuthStore();
+
+  useEffect(() => {
+    async function init() {
+      await hydrate();
+      const token = await SecureStore.getItemAsync("stride_token");
+      setInitialRoute(token ? "Home" : "Login");
+      setReady(true);
+    }
+    init();
+  }, []);
+
+  if (!ready) return <LoadingScreen />;
+
+  return (
+    <>
+      <StatusBar style="light" />
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Home" component={HomeTabs} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: "#f3f4f6",
-    alignItems: "center",
     justifyContent: "center",
-    padding: 24,
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
   },
-  title: {
-    fontSize: 28,
+  loadingText: {
+    marginTop: 16,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#1f2937",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginBottom: 24,
-  },
-  badge: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 999,
-  },
-  badgeText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
+    color: "#4f46e5",
   },
 });

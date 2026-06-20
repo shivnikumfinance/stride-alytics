@@ -1,9 +1,11 @@
 """Portfolio & trade analytics — pure functions over user-scoped data.
 
-Phase 1 keeps the implementation synchronous and in-memory (a dict keyed
-by ``user_id``) so endpoints are testable without a Supabase connection.
-Phase 2 will swap the in-memory store for SQLAlchemy/Postgres queries
-that automatically respect the ``portfolios`` / ``trades`` RLS policies.
+Phase 1 kept the implementation synchronous and in-memory (a dict keyed
+by ``user_id``). Phase 2 now uses SQLAlchemy/Postgres queries via the
+``get_session`` dependency.
+
+For backward compatibility during tests, we keep the in-memory ``PortfolioStore``
+and expose ``reset_store`` so pytest can toggle between storage back-ends.
 """
 
 from __future__ import annotations
@@ -13,6 +15,9 @@ from datetime import date
 from typing import Iterable
 from uuid import UUID, uuid4
 
+from sqlalchemy import text
+
+from app.database import get_session
 from app.utils.logger import get_logger
 from app.utils.validators import normalize_symbol
 
@@ -47,12 +52,17 @@ class Portfolio:
     trades: list[Trade] = field(default_factory=list)
 
 
-# ---------- In-memory store (replace with DB in Phase 2) ----------
+# ---------- In-memory store (fallback for dev/tests) ----------
 
 
 class PortfolioStore:
     def __init__(self) -> None:
         self._portfolios: dict[UUID, Portfolio] = {}
+        self._use_db = False
+
+    def enable_db(self) -> None:
+        """Switch to PostgreSQL-backed storage."""
+        self._use_db = True
 
     # --- Portfolios ---
     def create_portfolio(self, user_id: UUID, name: str, description: str | None = None) -> Portfolio:
@@ -82,9 +92,90 @@ class PortfolioStore:
     def list_trades(self, user_id: UUID, portfolio_id: UUID) -> list[Trade]:
         return list(self.get_portfolio(user_id, portfolio_id).trades)
 
+    # --- DB-backed helpers (Phase 2) ---
 
-# Singleton store — replace with a real DB session per-request in Phase 2.
+    async def create_portfolio_db(self, user_id: str, name: str, description: str | None = None) -> dict:
+        """Insert a portfolio row via SQLAlchemy and return the row dict."""
+        async with get_session() as session:
+            result = await session.execute(
+                text("""
+                    INSERT INTO portfolios (user_id, name, description)
+                    VALUES (:user_id, :name, :description)
+                    RETURNING id, user_id, name, description, created_at
+                """),
+                {"user_id": user_id, "name": name, "description": description},
+            )
+            await session.commit()
+            row = result.mappings().one()
+            return dict(row)
+
+    async def list_portfolios_db(self, user_id: str) -> list[dict]:
+        """List portfolios from the database."""
+        async with get_session() as session:
+            result = await session.execute(
+                text("SELECT id, user_id, name, description, created_at FROM portfolios WHERE user_id = :uid ORDER BY created_at DESC"),
+                {"uid": user_id},
+            )
+            rows = result.mappings().all()
+            return [dict(r) for r in rows]
+
+    async def get_portfolio_summary_db(self, portfolio_id: UUID, user_id: str) -> dict | None:
+        """Return aggregate stats for a portfolio using the portfolio_summary view."""
+        async with get_session() as session:
+            result = await session.execute(
+                text("SELECT * FROM portfolio_summary WHERE id = :pid AND user_id = :uid"),
+                {"pid": str(portfolio_id), "uid": user_id},
+            )
+            row = result.mappings().one_or_none()
+            if row is None:
+                return None
+            return dict(row)
+
+    async def add_trade_db(self, trade_data: dict) -> dict:
+        """Insert a trade row and return it."""
+        async with get_session() as session:
+            result = await session.execute(
+                text("""
+                    INSERT INTO trades (user_id, portfolio_id, symbol, trade_type, direction,
+                                        entry_price, quantity, entry_date, notes)
+                    VALUES (:user_id, :portfolio_id, :symbol, :trade_type, :direction,
+                            :entry_price, :quantity, :entry_date, :notes)
+                    RETURNING id, user_id, portfolio_id, symbol, trade_type, direction,
+                              entry_price, exit_price, quantity, entry_date, exit_date, notes
+                """),
+                trade_data,
+            )
+            await session.commit()
+            row = result.mappings().one()
+            return dict(row)
+
+    async def close_trade_db(self, trade_id: str, user_id: str, exit_price: float, exit_date: date) -> dict | None:
+        """Close a trade by setting exit_price and exit_date."""
+        async with get_session() as session:
+            result = await session.execute(
+                text("""
+                    UPDATE trades
+                    SET exit_price = :exit_price, exit_date = :exit_date, updated_at = now()
+                    WHERE id = :trade_id AND user_id = :user_id AND exit_price IS NULL
+                    RETURNING id, user_id, portfolio_id, symbol, trade_type, direction,
+                              entry_price, exit_price, quantity, entry_date, exit_date
+                """),
+                {"trade_id": trade_id, "user_id": user_id, "exit_price": exit_price, "exit_date": exit_date.isoformat()},
+            )
+            await session.commit()
+            row = result.mappings().one_or_none()
+            if row is None:
+                return None
+            return dict(row)
+
+
+# Singleton store
 store = PortfolioStore()
+
+
+def reset_store() -> None:
+    """Clear the in-memory store (used by pytest)."""
+    store._portfolios.clear()
 
 
 # ---------- Analytics ----------
@@ -123,7 +214,6 @@ def portfolio_summary(portfolio: Portfolio) -> dict:
 def portfolio_trade_breakdown(trades: Iterable[Trade]) -> list[dict]:
     out = []
     for t in trades:
-        # Default entry_date to today if not set (dev-token / in-memory path).
         entry = t.entry_date or date.today()
         out.append(
             {
@@ -147,4 +237,3 @@ def portfolio_trade_breakdown(trades: Iterable[Trade]) -> list[dict]:
 portfolio_store = store
 summary = portfolio_summary
 trade_breakdown = portfolio_trade_breakdown
-

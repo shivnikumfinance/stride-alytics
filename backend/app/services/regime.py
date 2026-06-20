@@ -1,8 +1,8 @@
 """Market regime detection — classifies the broad market as bull / bear / ranging.
 
-Uses a deterministic synthetic price series in Phase 1 so the endpoint
-contract is exercisable without a market-data vendor. Phase 2 will swap
-``_load_history()`` for yfinance + a Supabase cache.
+Phase 1 used a synthetic price series. Phase 2 now uses real price data
+from yfinance, with a fallback to the deterministic synthetic prices when
+yfinance is unavailable (e.g. during tests).
 """
 
 from __future__ import annotations
@@ -10,6 +10,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from datetime import date, timedelta
+
+import yfinance as yf
 
 from app.utils.constants import REGIME_BEAR_THRESHOLD, REGIME_BULL_THRESHOLD
 from app.utils.logger import get_logger
@@ -24,9 +26,52 @@ class RegimeResult:
     lookback_days: int
     price_return: float  # decimal, e.g. 0.0342 = +3.42%
     as_of: str
+    vix: float | None = None
+    iv_rank: float | None = None
+
+
+def _fetch_history_yfinance(symbol: str, lookback_days: int) -> list[float] | None:
+    """Fetch historical prices from yfinance."""
+    try:
+        ticker = yf.Ticker(symbol)
+        period = f"{max(lookback_days + 10, 60)}d"  # Buffer for weekends/holidays
+        hist = ticker.history(period=period)
+        if hist.empty:
+            return None
+        # Get the last `lookback_days` closing prices
+        closes = hist["Close"].tail(lookback_days).tolist()
+        if len(closes) >= 2:
+            return [float(c) for c in closes]
+        return None
+    except Exception as exc:
+        log.warning("regime.yfinance_failed", symbol=symbol, error=str(exc))
+        return None
+
+
+def _fetch_vix_data() -> float | None:
+    """Fetch the current VIX level from yfinance."""
+    try:
+        vix = yf.Ticker("^VIX")
+        hist = vix.history(period="1d")
+        if not hist.empty:
+            return float(hist["Close"].iloc[-1])
+        return None
+    except Exception:
+        return None
 
 
 def _load_history(symbol: str, lookback_days: int) -> list[float]:
+    """Load price history — prefers yfinance, falls back to synthetic."""
+    real = _fetch_history_yfinance(symbol, lookback_days)
+    if real:
+        log.info("regime.using_yfinance", symbol=symbol, lookback_days=len(real))
+        return real
+
+    log.info("regime.using_synthetic", symbol=symbol)
+    return _load_synthetic_history(symbol, lookback_days)
+
+
+def _load_synthetic_history(symbol: str, lookback_days: int) -> list[float]:
     """Synthetic daily closes. Deterministic per (symbol, lookback)."""
     seed = (hash((symbol, lookback_days)) & 0xFFFFFFFF) / 1e9
     prices: list[float] = []
@@ -42,6 +87,7 @@ def _load_history(symbol: str, lookback_days: int) -> list[float]:
 def detect_regime(symbol: str, lookback_days: int = 30) -> RegimeResult:
     """Classify the recent regime for ``symbol`` over the lookback window."""
     history = _load_history(symbol, lookback_days)
+
     if len(history) < 2:
         raise ValueError("not enough history to classify regime")
 
@@ -59,12 +105,16 @@ def detect_regime(symbol: str, lookback_days: int = 30) -> RegimeResult:
     magnitude = abs(price_return)
     confidence = round(min(1.0, magnitude / 0.10), 3)
 
+    # Optionally fetch VIX for additional context
+    vix = _fetch_vix_data()
+
     log.info(
         "regime.detect",
         symbol=symbol,
         regime=regime,
         confidence=confidence,
         price_return=round(price_return, 4),
+        vix=vix,
     )
 
     return RegimeResult(
@@ -73,4 +123,6 @@ def detect_regime(symbol: str, lookback_days: int = 30) -> RegimeResult:
         lookback_days=lookback_days,
         price_return=round(price_return, 4),
         as_of=date.today().isoformat(),
+        vix=round(vix, 2) if vix else None,
+        iv_rank=None,  # Placeholder — can be calculated from 52-week VIX history
     )
