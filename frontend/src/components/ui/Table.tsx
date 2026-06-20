@@ -4,7 +4,7 @@ interface Column<T> {
   key: string;
   header: string;
   align?: "left" | "right" | "center";
-  render: (row: T) => React.ReactNode;
+  render?: (row: T) => React.ReactNode;
   className?: string;
 }
 
@@ -58,7 +58,7 @@ export function Table<T>({ columns, rows, rowKey, empty, loading, className }: T
                     c.className,
                   )}
                 >
-                  {c.render(row)}
+                  {c.render ? c.render(row) : (row as Record<string, unknown>)[c.key]?.toString() ?? ""}
                 </td>
               ))}
             </tr>

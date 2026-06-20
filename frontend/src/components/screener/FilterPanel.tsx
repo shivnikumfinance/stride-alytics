@@ -5,7 +5,6 @@ export function FilterPanel() {
   const filters = useScreenerStore((s) => s.filters);
   const setFilters = useScreenerStore((s) => s.setFilters);
   const resetFilters = useScreenerStore((s) => s.resetFilters);
-  const runScreener = useScreenerStore.getState; // not used; we run via mutation
 
   return (
     <Card title="Filters" subtitle="Narrow the options chain" bodyClassName="space-y-4">
