@@ -35,7 +35,6 @@ secrets/*.key
 secrets/*.pem
 secrets/google-credentials*.json
 secrets/firebase-*.json
-secrets/*.env.example
 # Explicitly keep these tracked (overrides the rules above)
 !secrets/README.md
 !secrets/local.env.example
