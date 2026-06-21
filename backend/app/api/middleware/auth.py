@@ -49,16 +49,17 @@ async def verify_jwt(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Local/dev fallback: accept stub tokens ``dev:<user_id>`` or ``dev-admin-token``.
+    token = credentials.credentials
+    if token == "dev-admin-token":
+        log.warning("auth.dev_admin_token_used")
+        return CurrentUser(user_id="00000000-0000-0000-0000-000000000000", plan="pro", email="admin@stridealytics.com")
+    if token.startswith("dev:"):
+        user_id = token.split(":", 1)[1] or "dev-user"
+        log.warning("auth.dev_token_used", user_id=user_id)
+        return CurrentUser(user_id=user_id, plan="free")
+
     if not settings.SUPABASE_JWT_SECRET:
-        # Local/dev fallback: accept stub tokens ``dev:<user_id>`` or ``dev-admin-token``.
-        token = credentials.credentials
-        if token == "dev-admin-token":
-            log.warning("auth.dev_admin_token_used")
-            return CurrentUser(user_id="00000000-0000-0000-0000-000000000000", plan="pro", email="admin@stridealytics.com")
-        if token.startswith("dev:"):
-            user_id = token.split(":", 1)[1] or "dev-user"
-            log.warning("auth.dev_token_used", user_id=user_id)
-            return CurrentUser(user_id=user_id, plan="free")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Auth not configured (SUPABASE_JWT_SECRET missing)",
