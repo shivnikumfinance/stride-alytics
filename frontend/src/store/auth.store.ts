@@ -14,6 +14,7 @@ interface AuthStoreState {
   login: (body: LoginRequest) => Promise<void>;
   signup: (body: SignupRequest) => Promise<void>;
   logout: () => void;
+  devAdminLogin: () => void;
 }
 
 function persist(token: TokenResponse): User {
@@ -24,6 +25,12 @@ function persist(token: TokenResponse): User {
     subscription_plan: token.subscription_plan,
   };
 }
+
+export const adminUser: User = {
+  id: "00000000-0000-0000-0000-000000000000",
+  email: "admin@stridealytics.com",
+  subscription_plan: "pro",
+};
 
 export const useAuthStore = create<AuthStoreState>((set) => ({
   user: null,
@@ -63,5 +70,10 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   logout: () => {
     tokenStore.clear();
     set({ user: null, token: null });
+  },
+
+  devAdminLogin: () => {
+    tokenStore.set("dev-admin-token");
+    set({ user: adminUser, token: "dev-admin-token", loading: false, error: null });
   },
 }));
