@@ -3,7 +3,9 @@ services:
     name: stridealytics-api
     env: python
     plan: starter
-    buildCommand: uv sync --frozen --no-dev
+    rootDirectory: backend
+    runtime: python3.12
+    buildCommand: "uv sync --frozen --no-dev --active"
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     numInstances: 1
     envVars:
