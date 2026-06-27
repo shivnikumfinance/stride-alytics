@@ -1,0 +1,71 @@
+name: 🐛 Bug Report
+description: Report a defect in the web app, mobile app, or backend API.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Please fill in the sections below so we
+        can reproduce and fix it quickly.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did the bug occur?
+      options:
+        - Web app (frontend)
+        - Backend API (FastAPI)
+        - Mobile app (Expo)
+        - Database / RLS
+        - Scheduler (GitHub Actions)
+        - Deployment (Vercel / Render / Docker)
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "e.g. production, staging, local dev — Chrome 126, iPhone 15, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to /screener
+        2. Set symbol=AAPL, limit=50
+        3. Click Run
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Paste relevant log lines or attach screenshots.
+
+  - type: input
+    id: endpoint
+    attributes:
+      label: Endpoint or route
+      placeholder: "e.g. POST /api/v1/greeks/calculate"

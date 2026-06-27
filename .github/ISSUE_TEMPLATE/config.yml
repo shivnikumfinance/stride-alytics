@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/stridealytics/stride-alytics/tree/main/docs
+    about: Architecture, blueprint, layer guides.
+  - name: 💬 Discord
+    url: https://discord.gg/stridealytics
+    about: Community support.
