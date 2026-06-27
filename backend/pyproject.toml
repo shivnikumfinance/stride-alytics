@@ -6,15 +6,15 @@ requires-python = "==3.12.*"
 
 dependencies = [
     # --- Core ---
-    "fastapi>=0.136.3",
+    "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.6",
     "pydantic>=2.13.0",
-    "pydantic-settings>=2.14.0",
+    "pydantic-settings>=2.4.0",
     "python-multipart>=0.0.12",
-    "email-validator>=2.2.0",  # Added to fix Pydantic email validation
+    "email-validator>=2.2.0",
 
     # --- Database ---
-    "sqlalchemy[asyncio]>=2.0.30,<2.1.0",  # Fixed to match stable 2.0 production releases
+    "sqlalchemy[asyncio]>=2.0.30,<2.1.0",
     "psycopg[binary,pool]>=3.2.0,<4.0.0",
     "supabase>=2.8.1",
 
@@ -30,12 +30,11 @@ dependencies = [
     "numpy==1.26.4",  # Required 1.x version for stable TA-Lib linking on Python 3.12
     "pandas>=2.2.3",
     "scipy>=1.14.1",
-    "ta-lib==0.4.32",
-    
+
     # --- Logging ---
     "structlog>=24.4.0",
 
-    # --- Scheduling (for inline jobs) ---
+    # --- Scheduling ---
     "apscheduler>=3.10.4",
 ]
 
@@ -76,5 +75,8 @@ pythonpath = ["."]
 no-build-package = ["ta-lib"]
 
 [tool.uv.sources]
-ta-lib = { path = "./lib/TA_Lib-0.4.32-cp312-cp312-win_amd64.whl" }
+ta-lib = [
+    { path = "./lib/TA_Lib-0.4.32-cp312-cp312-win_amd64.whl", marker = "sys_platform == 'win32'" },
+    { path = "./lib/TA_Lib-0.4.0-cp312-cp312-manylinux_2_17_x86_64.whl", marker = "sys_platform == 'linux'" }
+]
 
