@@ -5,7 +5,8 @@
 
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = apiUrl.replace(/\/+$/, "");
 const TOKEN_KEY = "stride_token";
 
 export const tokenStore = {
