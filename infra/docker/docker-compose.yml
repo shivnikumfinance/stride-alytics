@@ -1,0 +1,99 @@
+name: stridealytics
+
+# ----------------------------------------------------------------------------
+# Local development stack. Brings up Postgres + the FastAPI backend with
+# hot-reload, plus optional adminer + redis for inspection.
+#
+# Usage:
+#   docker compose --profile tools up         # include adminer + redis
+#   docker compose --profile test up backend  # for integration tests
+# ----------------------------------------------------------------------------
+
+services:
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: stridealytics-backend:local
+    container_name: stridealytics-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../../backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/stridealytics
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      DEBUG: "true"
+    volumes:
+      # Live-reload for local dev — mount the source tree but exclude .venv
+      - ../../backend/app:/app/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [stridealytics]
+
+  db:
+    image: postgres:16-alpine
+    container_name: stridealytics-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stridealytics
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../../database/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stridealytics"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [stridealytics]
+
+  # ---- Optional tooling (start with --profile tools) ----
+  adminer:
+    image: adminer:latest
+    container_name: stridealytics-adminer
+    profiles: ["tools"]
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: pepa-linha-dark
+    depends_on:
+      - db
+    networks: [stridealytics]
+
+  redis:
+    image: redis:7-alpine
+    container_name: stridealytics-redis
+    profiles: ["tools"]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks: [stridealytics]
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  stridealytics:
+    driver: bridge

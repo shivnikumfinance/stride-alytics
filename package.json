@@ -1,0 +1,32 @@
+{
+  "name": "stride-alytics",
+  "private": true,
+  "version": "0.1.0",
+  "description": "StrideAlytics — options trading analytics platform",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && uv run uvicorn app.main:app --reload",
+    "build:frontend": "cd frontend && npm run build",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && uv run pytest",
+    "lint:frontend": "cd frontend && npx eslint src/",
+    "lint:backend": "cd backend && uv run ruff check app/",
+    "scheduler:health-check": "cd scheduler && uv run python scripts/health_check.py",
+    "scheduler:greeks": "cd scheduler && uv run python scripts/calculate_greeks.py",
+    "scheduler:market-data": "cd scheduler && uv run python scripts/fetch_market_data.py",
+    "scheduler:picks": "cd scheduler && uv run python scripts/generate_picks.py",
+    "secrets:load": "node scripts/load-secrets.mjs",
+    "secrets:check": "node scripts/check-secrets.mjs"
+  },
+  "workspaces": [
+    "frontend",
+    "mobile",
+    "shared"
+  ],
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-native": "^0.72.8",
+    "typescript": "^6.0.3"
+  }
+}

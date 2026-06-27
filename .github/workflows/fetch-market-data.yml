@@ -1,0 +1,20 @@
+name: Fetch Market Data
+
+# Runs weekdays at 8 PM UTC (3 PM EST).
+# Delegates to reusable-python-task.yml for the actual script execution.
+
+on:
+  schedule:
+    - cron: "0 20 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    uses: ./.github/workflows/reusable-python-task.yml
+    with:
+      script_name: fetch_market_data
+    secrets:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "StrideAlytics",
+    "slug": "stride-alytics",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#ffffff" } },
+    "web": { "bundler": "metro" },
+    "extra": {
+      "apiUrl": "http://localhost:8000"
+    },
+    "plugins": []
+  }
+}
