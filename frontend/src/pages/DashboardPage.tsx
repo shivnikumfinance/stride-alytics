@@ -14,7 +14,7 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card title="Account" subtitle="Current plan & limits">
-          {limits.data ? (
+          {limits.data?.data ? (
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Plan</span>
