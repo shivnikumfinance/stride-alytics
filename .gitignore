@@ -95,4 +95,4 @@ playwright-report/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
-!.vscode/launch.json
+!.vscode/launch.json`r`n# Secret scrubbing tools`r`nfilter-replacements.txt`r`nscrub-secrets.py`r`n
