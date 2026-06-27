@@ -26,9 +26,14 @@ param(
     [ValidateSet("local", "staging", "production")]
     [string]$Env = "local",
 
-    [string]$Root = (Resolve-Path "$PSScriptRoot\..\").Path
+    [string]$Root
 )
 
+if ($PSScriptRoot) {
+    $Root = Split-Path -Parent $PSScriptRoot
+} else {
+    $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+}
 $ErrorActionPreference = "Stop"
 
 # ---- Resolve paths ----

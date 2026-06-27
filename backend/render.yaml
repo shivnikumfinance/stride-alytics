@@ -23,3 +23,11 @@ services:
         value: StrideAlytics
       - key: DEBUG
         value: "false"
+      - key: ENVIRONMENT
+        value: "production"
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SLACK_WEBHOOK
+        sync: false
