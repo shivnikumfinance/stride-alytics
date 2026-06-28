@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -24,7 +25,7 @@ def _resolve_user_uuid(raw: str) -> UUID:
     try:
         return UUID(raw)
     except (ValueError, AttributeError):
-        return UUID(int=0)
+        return uuid.uuid5(uuid.NAMESPACE_DNS, raw)
 
 
 @router.get("/{portfolio_id}", response_model=list[TradeOut])
