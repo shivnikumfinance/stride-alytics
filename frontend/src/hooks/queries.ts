@@ -10,6 +10,7 @@ import {
   screenerApi,
   tradesApi,
 } from "../api/endpoints";
+import { withApiErrorLogging } from "../api/errors";
 import type {
   GreeksInputs,
   PortfolioCreate,
@@ -37,6 +38,7 @@ export const useRunScreener = () => {
   return useMutation({
     mutationFn: (filters: ScreenerFilters) => screenerApi.run(filters),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["screener"] }),
+    onError: withApiErrorLogging("screener.run", "Screener request failed"),
   });
 };
 
@@ -52,6 +54,7 @@ export const useScreenerLimits = () =>
 export const useCalculateGreeks = () =>
   useMutation({
     mutationFn: (inputs: GreeksInputs) => greeksApi.calculate(inputs),
+    onError: withApiErrorLogging("greeks.calculate", "Greeks calculation failed"),
   });
 
 // --- Regime ---
@@ -77,6 +80,7 @@ export const useCreatePortfolio = () => {
   return useMutation<PortfolioSummary, Error, PortfolioCreate>({
     mutationFn: (body) => portfolioApi.create(body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["portfolios"] }),
+    onError: withApiErrorLogging("portfolio.create", "Could not create portfolio"),
   });
 };
 
@@ -104,6 +108,7 @@ export const useAddTrade = (portfolioId?: string) => {
       qc.invalidateQueries({ queryKey: ["trades", portfolioId] });
       qc.invalidateQueries({ queryKey: ["portfolio"] });
     },
+    onError: withApiErrorLogging("trades.create", "Could not add trade"),
   });
 };
 
@@ -115,5 +120,6 @@ export const useCloseTrade = (portfolioId?: string) => {
       qc.invalidateQueries({ queryKey: ["trades", portfolioId] });
       qc.invalidateQueries({ queryKey: ["portfolio"] });
     },
+    onError: withApiErrorLogging("trades.close", "Could not close trade"),
   });
 };
