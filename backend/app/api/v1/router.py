@@ -2,11 +2,12 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, greeks, portfolio, regime, screener, trades
+from app.api.v1.endpoints import auth, greeks, market, portfolio, regime, screener, trades
 
 router = APIRouter(prefix="/api/v1")
 
 router.include_router(auth.router, prefix="/auth", tags=["auth"])
+router.include_router(market.router, prefix="/market", tags=["market"])
 router.include_router(screener.router, prefix="/screener", tags=["screener"])
 router.include_router(greeks.router, prefix="/greeks", tags=["greeks"])
 router.include_router(regime.router, prefix="/regime", tags=["regime"])

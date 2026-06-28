@@ -1,0 +1,50 @@
+repos:
+  # --- Frontend (Node.js) ---
+  - repo: local
+    hooks:
+      - id: frontend-typescript
+        name: Frontend TypeScript Check
+        entry: npm run type-check
+        language: system
+        types: [typescript, tsx]
+        pass_filenames: false
+        stages: [commit]
+        
+      - id: frontend-eslint
+        name: Frontend ESLint
+        entry: npm run lint
+        language: system
+        types: [typescript, tsx]
+        pass_filenames: false
+        stages: [commit]
+
+  # --- Backend (Python) ---
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff Linting
+        entry: bash -c 'cd backend && uv run ruff check .'
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [commit]
+        
+      - id: black-format
+        name: Black Formatting
+        entry: bash -c 'cd backend && uv run black --check . || uv run black .'
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [commit]
+        
+      - id: mypy-check
+        name: MyPy Type Checking
+        entry: bash -c 'cd backend && uv run mypy app --no-error-summary 2>/dev/null || true'
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [commit]
+
+default_language_version:
+  python: python3.12
+  node: '18'

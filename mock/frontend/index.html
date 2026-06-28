@@ -478,6 +478,32 @@
     @media (max-width: 1200px) { .grid-4 { grid-template-columns: 1fr 1fr; } .grid-main-sidebar { grid-template-columns: 1fr; } }
     @media (max-width: 768px) { .sidebar { display: none; } .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } .page-container { padding: 16px; } }
 
+    /* ===== SHIMMER LOADING ANIMATION ===== */
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    .shimmer-loading {
+      background: linear-gradient(
+        90deg,
+        var(--bg-primary) 0%,
+        var(--bg-hover) 50%,
+        var(--bg-primary) 100%
+      );
+      background-size: 1000px 100%;
+      animation: shimmer 2s infinite;
+    }
+    .shimmer-loading span {
+      visibility: hidden;
+    }
+    .shimmer-loading.loaded {
+      animation: none;
+      background: var(--bg-primary);
+    }
+    .shimmer-loading.loaded span {
+      visibility: visible;
+    }
+
     /* ===== LOADING & NOTIFICATIONS ===== */
     .loading-pulse { animation: pulse 1.5s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -533,29 +559,38 @@
 
   <!-- MAIN -->
   <div class="main-area">
-    <!-- HEADER (Modern Market Feed Style) -->
+    <!-- HEADER (Dynamic Real-Time Ticker) -->
     <header class="header">
-      <div class="header-left">
-        <!-- S&P 500 -->
-        <div class="index-box">
-          <span class="index-label">S&P 500</span>
-          <span class="index-value">7,504.94</span>
-          <span class="index-change negative">-0.085%</span>
-          <span class="index-pts negative">-6.41</span>
+      <div class="header-left" id="tickerContainer">
+        <!-- Shimmer loaders for each ticker -->
+        <div class="index-box shimmer-loading" data-ticker="SPY">
+          <span class="index-label">SPY</span>
+          <span class="index-value">—</span>
+          <span class="index-change">—</span>
+          <span class="index-pts">—</span>
         </div>
-        <!-- Nasdaq -->
-        <div class="index-box">
-          <span class="index-label">Nasdaq</span>
-          <span class="index-value">26,321.74</span>
-          <span class="index-change negative">-0.21%</span>
-          <span class="index-pts negative">-54.61</span>
+        <div class="index-box shimmer-loading" data-ticker="QQQ">
+          <span class="index-label">QQQ</span>
+          <span class="index-value">—</span>
+          <span class="index-change">—</span>
+          <span class="index-pts">—</span>
         </div>
-        <!-- Dow Jones -->
-        <div class="index-box">
-          <span class="index-label">Dow Jones</span>
-          <span class="index-value">52,125.60</span>
-          <span class="index-change positive">+0.24%</span>
-          <span class="index-pts positive">+125.93</span>
+        <div class="index-box shimmer-loading" data-ticker="DIA">
+          <span class="index-label">DIA</span>
+          <span class="index-value">—</span>
+          <span class="index-change">—</span>
+          <span class="index-pts">—</span>
+        </div>
+        <div class="index-box shimmer-loading" data-ticker="VIX">
+          <span class="index-label">VIX</span>
+          <span class="index-value">—</span>
+          <span class="index-change">—</span>
+          <span class="index-pts">—</span>
+        </div>
+        <!-- Last Refreshed Timestamp -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); margin-left: auto;">
+          <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+          <span id="lastRefreshedTime">Initializing...</span>
         </div>
       </div>
       <div class="header-right">
@@ -566,7 +601,7 @@
         </div>
         <!-- Action Icons -->
         <div class="header-actions">
-          <button class="header-icon-btn" onclick="refreshAll()" title="Refresh market feed">
+          <button class="header-icon-btn" onclick="tickerService.manualRefresh()" title="Refresh market feed">
             <i data-lucide="refresh-cw"></i>
           </button>
           <button class="header-icon-btn" title="System Notifications">
@@ -1049,7 +1084,165 @@ function showToast(msg, type = 'info') {
   t.textContent = msg; t.className = `toast toast-${type} show`;
   clearTimeout(t._timeout); t._timeout = setTimeout(() => t.classList.remove('show'), 3000);
 }
-async function init() { await loadAllData(); renderHome(); lucide.createIcons(); }
+
+// ===== TICKER SERVICE (Real-Time Market Data) =====
+const tickerService = {
+  tickers: ['SPY', 'QQQ', 'DIA', 'VIX'],
+  pollInterval: 30000, // 30 seconds
+  pollingId: null,
+  previousData: {}, // Fallback cache
+  
+  /**
+   * Fetch market data from Yahoo Finance API
+   */
+  async fetchTickerData(symbol) {
+    try {
+      // Yahoo Finance API endpoint
+      const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}&fields=symbol,regularMarketPrice,regularMarketChange,regularMarketChangePercent`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const quoteData = data.quoteResponse?.result?.[0];
+      
+      if (!quoteData) {
+        throw new Error('No quote data returned');
+      }
+      
+      return {
+        symbol: quoteData.symbol,
+        price: quoteData.regularMarketPrice?.toFixed(2),
+        change: quoteData.regularMarketChange?.toFixed(2),
+        changePercent: quoteData.regularMarketChangePercent?.toFixed(2),
+        timestamp: new Date()
+      };
+    } catch (error) {
+      console.warn(`❌ Ticker fetch failed for ${symbol}:`, error.message);
+      // Return previous cached data or fallback
+      return this.previousData[symbol] || null;
+    }
+  },
+  
+  /**
+   * Render a single ticker element
+   */
+  renderTicker(data) {
+    if (!data) return;
+    
+    const element = document.querySelector(`[data-ticker="${data.symbol}"]`);
+    if (!element) return;
+    
+    const changeNum = parseFloat(data.change);
+    const changePercent = parseFloat(data.changePercent);
+    const isNegative = changeNum < 0;
+    const changeClass = isNegative ? 'negative' : 'positive';
+    const changeSign = changeNum >= 0 ? '+' : '';
+    
+    element.innerHTML = `
+      <span class="index-label">${data.symbol}</span>
+      <span class="index-value">${data.price}</span>
+      <span class="index-change ${changeClass}">${changeSign}${changePercent}%</span>
+      <span class="index-pts ${changeClass}">${changeSign}${data.change}</span>
+    `;
+    
+    // Mark as loaded (removes shimmer)
+    element.classList.add('loaded');
+    element.classList.remove('shimmer-loading');
+    
+    // Cache for fallback
+    this.previousData[data.symbol] = data;
+  },
+  
+  /**
+   * Update "Last Refreshed" timestamp
+   */
+  updateRefreshTimestamp() {
+    const element = document.getElementById('lastRefreshedTime');
+    if (element) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: true 
+      });
+      element.textContent = `Last: ${timeStr}`;
+    }
+  },
+  
+  /**
+   * Poll and update all tickers
+   */
+  async pollTickers() {
+    try {
+      const promises = this.tickers.map(symbol => this.fetchTickerData(symbol));
+      const results = await Promise.all(promises);
+      
+      results.forEach(data => {
+        if (data) {
+          this.renderTicker(data);
+        }
+      });
+      
+      this.updateRefreshTimestamp();
+      
+      // Log successful refresh
+      console.log('✅ Ticker data refreshed at', new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Poll cycle failed:', error);
+      // UI stays stable; will retry on next poll
+    }
+  },
+  
+  /**
+   * Start polling
+   */
+  start() {
+    console.log('🚀 Starting ticker service...');
+    
+    // Initial fetch
+    this.pollTickers();
+    
+    // Set up recurring polls
+    this.pollingId = setInterval(() => {
+      this.pollTickers();
+    }, this.pollInterval);
+  },
+  
+  /**
+   * Stop polling
+   */
+  stop() {
+    if (this.pollingId) {
+      clearInterval(this.pollingId);
+      this.pollingId = null;
+      console.log('⏸️ Ticker service stopped');
+    }
+  },
+  
+  /**
+   * Manual refresh (called from refresh button)
+   */
+  async manualRefresh() {
+    console.log('🔄 Manual refresh triggered');
+    await this.pollTickers();
+  }
+};
+
+// Start ticker service on initialization
+function initTickerService() {
+  tickerService.start();
+}
+
+async function init() { await loadAllData(); renderHome(); lucide.createIcons(); initTickerService(); }
 init();
 </script>
 </body>

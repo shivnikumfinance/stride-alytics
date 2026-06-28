@@ -1,0 +1,39 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running backend pre-commit checks..."
+
+cd backend
+
+# Ruff linting
+echo "🔧 Running ruff linting..."
+uv run ruff check .
+if [ $? -ne 0 ]; then
+  echo "❌ Ruff linting failed. Commit aborted."
+  exit 1
+fi
+
+# Black formatting check
+echo "🎨 Checking code formatting (black)..."
+uv run black --check .
+if [ $? -ne 0 ]; then
+  echo "⚠️  Black formatting issues found. Running auto-fix..."
+  uv run black .
+  echo "✨ Code formatted. Please stage the changes and commit again."
+  exit 1
+fi
+
+# MyPy type checking
+echo "📘 Checking types with mypy..."
+uv run mypy app --no-error-summary 2>/dev/null || true
+# Note: mypy warnings don't block commit, just informational
+
+# Pytest
+echo "🧪 Running pytest..."
+uv run pytest tests -q
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Commit aborted."
+  exit 1
+fi
+
+echo "✅ All backend checks passed! Proceeding with commit..."
