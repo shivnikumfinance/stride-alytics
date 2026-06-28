@@ -13,14 +13,13 @@ Run with:  uv run pytest backend/tests/test_services.py -v
 from __future__ import annotations
 
 import math
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
 from app.services.greeks import calculate_greeks, calculate_greeks_dict, calculate_option_price
 from app.services.regime import detect_regime
 from app.services.portfolio import (
-    Portfolio,
     PortfolioStore,
     Trade,
     calculate_pnl,

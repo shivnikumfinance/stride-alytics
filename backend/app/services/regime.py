@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 
-import yfinance as yf
+import yfinance as yf  # type: ignore[import-untyped]
 
 from app.utils.constants import REGIME_BEAR_THRESHOLD, REGIME_BULL_THRESHOLD
 from app.utils.logger import get_logger

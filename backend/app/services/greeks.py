@@ -53,6 +53,16 @@ def _d1_d2(
     return d1, d2
 
 
+def _norm_cdf(x: float) -> float:
+    """Standard normal CDF narrowed to ``float`` (scipy returns ``np.floating``)."""
+    return float(stats.norm.cdf(x))
+
+
+def _norm_pdf(x: float) -> float:
+    """Standard normal PDF narrowed to ``float`` (scipy returns ``np.floating``)."""
+    return float(stats.norm.pdf(x))
+
+
 def calculate_option_price(
     spot: float,
     strike: float,
@@ -66,9 +76,9 @@ def calculate_option_price(
     discount = math.exp(-risk_free_rate * time_to_expiry)
 
     if option_type == "call":
-        return spot * stats.norm.cdf(d1) - strike * discount * stats.norm.cdf(d2)
+        return spot * _norm_cdf(d1) - strike * discount * _norm_cdf(d2)
     if option_type == "put":
-        return strike * discount * stats.norm.cdf(-d2) - spot * stats.norm.cdf(-d1)
+        return strike * discount * _norm_cdf(-d2) - spot * _norm_cdf(-d1)
     raise ValueError(f"option_type must be 'call' or 'put', got: {option_type!r}")
 
 
@@ -88,9 +98,9 @@ def calculate_greeks(
     """
     d1, d2 = _d1_d2(spot, strike, time_to_expiry, risk_free_rate, volatility)
     sqrt_t = math.sqrt(time_to_expiry)
-    nd1 = stats.norm.cdf(d1)
-    nd2 = stats.norm.cdf(d2)
-    npd1 = stats.norm.pdf(d1)
+    nd1 = _norm_cdf(d1)
+    nd2 = _norm_cdf(d2)
+    npd1 = _norm_pdf(d1)
     discount = math.exp(-risk_free_rate * time_to_expiry)
 
     # --- Greeks (common across call & put) ---

@@ -12,10 +12,9 @@ import math
 import random
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Any
 
 import httpx
-import yfinance as yf
+import yfinance as yf  # type: ignore[import-untyped]
 
 from app.services.greeks import calculate_greeks
 from app.utils.logger import get_logger
@@ -79,7 +78,6 @@ def _load_chain_from_yfinance(symbol: str) -> list[dict]:
         for expiry_str in expirations[:3]:
             try:
                 opt_chain = ticker.option_chain(expiry_str)
-                expiry_date = date.fromisoformat(expiry_str)
 
                 for opt_type, chain_data in [("call", opt_chain.calls), ("put", opt_chain.puts)]:
                     for _, row in chain_data.iterrows():

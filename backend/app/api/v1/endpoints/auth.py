@@ -7,7 +7,6 @@ dev token fallback still available for local development and tests.
 
 from __future__ import annotations
 
-import os
 import time
 import uuid
 
@@ -44,8 +43,8 @@ def _dev_token(user_id: str, email: str, plan: str = "free") -> TokenResponse:
 async def _supabase_auth_request(endpoint: str, payload: dict) -> dict:
     """Proxy an auth request to Supabase Auth REST API."""
     url = f"{settings.SUPABASE_URL}/auth/v1/{endpoint}"
-    headers = {
-        "apikey": settings.SUPABASE_ANON_KEY,
+    headers: dict[str, str] = {
+        "apikey": settings.SUPABASE_ANON_KEY or "",
         "Content-Type": "application/json",
     }
     async with httpx.AsyncClient(timeout=15) as client:
@@ -87,18 +86,26 @@ async def login(payload: LoginRequest) -> TokenResponse:
                 "password": payload.password,
             })
             log.info("auth.login_success", email=payload.email)
-            # Get user metadata to check subscription plan
+            # Look up subscription plan from the user record (best-effort).
             user_id = supabase_data.get("user", {}).get("id", "")
-            user_data = await _supabase_auth_request(f"user", {
-                "apikey": settings.SUPABASE_ANON_KEY,
-            })
+            try:
+                user_record = await _supabase_auth_request("user", {
+                    "apikey": settings.SUPABASE_ANON_KEY,
+                })
+                subscription_plan = (
+                    user_record.get("user_metadata", {}).get("subscription_plan", "free")
+                )
+            except Exception:
+                # If the user-record lookup fails we still return the token
+                # with the default free plan rather than failing the login.
+                subscription_plan = "free"
             return TokenResponse(
                 access_token=supabase_data.get("access_token", ""),
                 refresh_token=supabase_data.get("refresh_token"),
                 expires_in=supabase_data.get("expires_in", 3600),
                 user_id=user_id,
                 email=supabase_data.get("user", {}).get("email", payload.email),
-                subscription_plan="free",
+                subscription_plan=subscription_plan,  # type: ignore[arg-type]
             )
         except HTTPException:
             raise

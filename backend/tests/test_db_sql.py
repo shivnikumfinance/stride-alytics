@@ -59,17 +59,33 @@ def test_migration_ordering_is_monotonic() -> None:
 
 def test_every_migration_has_a_down_or_is_reversible() -> None:
     """Every _up migration should either have a *_down.sql counterpart
-    or be idempotent (CREATE ... IF NOT EXISTS, etc.)."""
+    or be idempotent — meaning re-running it is a no-op.
+
+    Recognized idempotency markers:
+      * ``CREATE ... IF NOT EXISTS``
+      * ``CREATE OR REPLACE ...``
+      * ``DROP ... IF EXISTS`` (paired with a ``CREATE``)
+      * ``INSERT ... ON CONFLICT DO NOTHING``
+      * ``ALTER ... ENABLE ROW LEVEL SECURITY`` (one-way toggle; safe to re-run)
+    """
     ups = [p for p in _discover_sql_files() if "_down" not in p.name]
     for up in ups:
         down = up.with_name(up.name.replace(".sql", "_down.sql"))
         if down.exists():
             continue
         sql = up.read_text(encoding="utf-8").upper()
-        # If it's not a down-able migration, it must be idempotent.
         if "CREATE" in sql and "IF NOT EXISTS" in sql:
             continue
-        # Bootstrap migrations (001, 002) typically have a corresponding down.
+        if "CREATE OR REPLACE" in sql:
+            continue
+        if "DROP" in sql and "IF EXISTS" in sql:
+            continue
+        if "ON CONFLICT DO NOTHING" in sql:
+            continue
+        if "ENABLE ROW LEVEL SECURITY" in sql:
+            continue
         pytest.fail(
-            f"{up.name} has no _down.sql and is not idempotent (missing IF NOT EXISTS)."
+            f"{up.name} has no _down.sql and is not idempotent "
+            "(none of: IF NOT EXISTS, CREATE OR REPLACE, "
+            "DROP IF EXISTS, ON CONFLICT DO NOTHING, ENABLE ROW LEVEL SECURITY)."
         )

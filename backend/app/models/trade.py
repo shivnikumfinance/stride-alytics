@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DECIMAL, Date, TIMESTAMP, text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DECIMAL, TIMESTAMP, text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
