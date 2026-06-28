@@ -21,15 +21,15 @@ export function WatchlistPage() {
     return <Minus className="w-4 h-4 text-slate-400" />;
   };
 
-  const getBandColor = (band: string) => {
-    const colors: any = {
+  const getBandColor = (band: string): string => {
+    const colors: Record<string, string> = {
       A: "bg-green-100 text-green-800 border-green-200",
       B: "bg-blue-100 text-blue-800 border-blue-200",
       C: "bg-yellow-100 text-yellow-800 border-yellow-200",
       D: "bg-orange-100 text-orange-800 border-orange-200",
       E: "bg-red-100 text-red-800 border-red-200",
     };
-    return colors[band] || "bg-slate-100 text-slate-800 border-slate-200";
+    return colors[band] ?? "bg-slate-100 text-slate-800 border-slate-200";
   };
 
   return (

@@ -1,4 +1,12 @@
-"""Main API v1 router — aggregates all endpoint routers."""
+"""Main API v1 router — aggregates all endpoint routers.
+
+Single source of truth for the public URL surface. To add a new resource:
+1. Create ``app/api/v1/endpoints/<name>.py`` exposing ``router``.
+2. Create ``app/api/v1/schemas/<name>.py`` with Pydantic models.
+3. Create ``app/services/<name>.py`` with business logic (no HTTP).
+4. Register the endpoint router below with the correct ``prefix`` and ``tags``.
+5. Re‑export the schemas and services from their respective ``__init__.py``.
+"""
 
 from fastapi import APIRouter
 

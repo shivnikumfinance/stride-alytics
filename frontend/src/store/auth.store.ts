@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { authApi } from "../api/endpoints";
+import { extractErrorMessage } from "../api/errors";
 import { tokenStore } from "../api/client";
 import type { LoginRequest, SignupRequest, TokenResponse, User } from "../types";
 
@@ -49,8 +50,8 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
       const token = await authApi.login(body);
       const user = persist(token);
       set({ user, token: token.access_token, loading: false });
-    } catch (err: any) {
-      set({ loading: false, error: err?.response?.data?.error?.message ?? "Login failed" });
+    } catch (err: unknown) {
+      set({ loading: false, error: extractErrorMessage(err, "Login failed") });
       throw err;
     }
   },
@@ -61,8 +62,8 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
       const token = await authApi.signup(body);
       const user = persist(token);
       set({ user, token: token.access_token, loading: false });
-    } catch (err: any) {
-      set({ loading: false, error: err?.response?.data?.error?.message ?? "Signup failed" });
+    } catch (err: unknown) {
+      set({ loading: false, error: extractErrorMessage(err, "Signup failed") });
       throw err;
     }
   },
