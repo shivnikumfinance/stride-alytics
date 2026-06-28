@@ -12,28 +12,40 @@ if [ "$FRONTEND_CHANGED" -gt 0 ]; then
   echo ""
   echo "📦 Frontend changes detected, running frontend checks..."
   cd frontend
-  
+
+  echo "🧹 Clean caches + dist..."
+  npm run clean
+  if [ $? -ne 0 ]; then
+    echo "❌ Clean step failed. Commit aborted."
+    exit 1
+  fi
+
   echo "📘 TypeScript check..."
   npm run type-check
   if [ $? -ne 0 ]; then
     echo "❌ TypeScript errors found. Commit aborted."
     exit 1
   fi
-  
+
   echo "🔧 ESLint..."
   npm run lint
   if [ $? -ne 0 ]; then
     echo "❌ ESLint errors found. Commit aborted."
     exit 1
   fi
-  
-  echo "📦 Building..."
-  npm run build
+
+  echo "🏗  Production build (clean + tsc + vite build)..."
+  npm run prebuild:prod
   if [ $? -ne 0 ]; then
-    echo "❌ Build failed. Commit aborted."
+    echo "❌ Pre-build (clean + type-check) failed. Commit aborted."
     exit 1
   fi
-  
+  npm run build:prod
+  if [ $? -ne 0 ]; then
+    echo "❌ Production build failed. Commit aborted."
+    exit 1
+  fi
+
   cd ..
 fi
 
@@ -42,14 +54,21 @@ if [ "$BACKEND_CHANGED" -gt 0 ]; then
   echo ""
   echo "🐍 Backend changes detected, running backend checks..."
   cd backend
-  
+
+  echo "🧹 Clear __pycache__ + .pytest_cache + .ruff_cache + .mypy_cache..."
+  find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .ruff_cache -o -name .mypy_cache -o -name .venv \) -prune -exec rm -rf {} + 2>/dev/null || true
+  if [ $? -ne 0 ]; then
+    echo "❌ Clean step failed. Commit aborted."
+    exit 1
+  fi
+
   echo "🔧 Ruff linting..."
   uv run ruff check .
   if [ $? -ne 0 ]; then
     echo "❌ Ruff errors found. Commit aborted."
     exit 1
   fi
-  
+
   echo "🎨 Black formatting check..."
   uv run black --check .
   if [ $? -ne 0 ]; then
@@ -58,17 +77,24 @@ if [ "$BACKEND_CHANGED" -gt 0 ]; then
     echo "✨ Code auto-formatted. Stage changes and commit again."
     exit 1
   fi
-  
+
   echo "📘 MyPy type check..."
   uv run mypy app --no-error-summary 2>/dev/null || true
-  
+
+  echo "🏗  Production-style import smoke test..."
+  uv run python -c "import app.main; import app.services; import app.api.v1.router; print('OK: backend imports clean')"
+  if [ $? -ne 0 ]; then
+    echo "❌ Backend import smoke test failed. Commit aborted."
+    exit 1
+  fi
+
   echo "🧪 Running tests..."
   uv run pytest tests -q
   if [ $? -ne 0 ]; then
     echo "❌ Tests failed. Commit aborted."
     exit 1
   fi
-  
+
   cd ..
 fi
 
