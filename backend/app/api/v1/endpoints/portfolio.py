@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -15,16 +16,11 @@ router = APIRouter()
 log = get_logger(__name__)
 
 
-def _looks_like_uuid(value: str) -> bool:
+def _resolve_user_uuid(raw: str) -> UUID:
     try:
-        UUID(value)
-        return True
+        return UUID(raw)
     except (ValueError, AttributeError):
-        return False
-
-
-def _user_uuid(user_id: str) -> UUID | None:
-    return UUID(user_id) if _looks_like_uuid(user_id) else None
+        return uuid.uuid5(uuid.NAMESPACE_DNS, raw)
 
 
 @router.get("")
@@ -32,9 +28,7 @@ async def list_portfolios(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     """List all portfolios owned by the authenticated user."""
-    user_uuid = _user_uuid(current_user.user_id)
-    if user_uuid is None:
-        return {"success": True, "data": []}
+    user_uuid = _resolve_user_uuid(current_user.user_id)
     items = portfolio_store.list_portfolios(user_uuid)
     return {
         "success": True,
@@ -51,7 +45,7 @@ async def create_portfolio(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> PortfolioSummary:
     """Create a new portfolio for the authenticated user."""
-    user_uuid = _user_uuid(current_user.user_id) or UUID(int=0)
+    user_uuid = _resolve_user_uuid(current_user.user_id)
     try:
         portfolio = portfolio_store.create_portfolio(
             user_id=user_uuid,
@@ -73,9 +67,7 @@ async def portfolio_summary_endpoint(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> PortfolioSummary:
     """Return aggregate stats for a single portfolio."""
-    user_uuid = _user_uuid(current_user.user_id)
-    if user_uuid is None:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
+    user_uuid = _resolve_user_uuid(current_user.user_id)
     try:
         portfolio = portfolio_store.get_portfolio(user_uuid, portfolio_id)
     except KeyError as exc:
