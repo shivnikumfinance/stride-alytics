@@ -1,0 +1,74 @@
+name: Build Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./frontend
+      
+      - name: Check TypeScript types
+        run: npm run type-check
+        working-directory: ./frontend
+      
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: ./frontend
+      
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./frontend
+
+  backend-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
+      - name: Install dependencies
+        run: |
+          cd backend
+          uv sync
+      
+      - name: Run ruff linting
+        run: |
+          cd backend
+          uv run ruff check .
+      
+      - name: Check black formatting
+        run: |
+          cd backend
+          uv run black --check .
+      
+      - name: Run mypy type checking
+        run: |
+          cd backend
+          uv run mypy app --no-error-summary
+        continue-on-error: true
+      
+      - name: Run pytest tests
+        run: |
+          cd backend
+          uv run pytest tests -v
