@@ -40,11 +40,13 @@ Supporting documentation for tech stack, infrastructure, and configuration.
 
 ## 📏 Rules & Standards
 
-Guidelines for consistent development across the project.
+Layer-scoped rules. Start with the [Rules index](./RULES/README.md) — it tells you which doc to read for each code path.
 
-- [**CODING-STANDARDS**](./RULES/CODING-STANDARDS.md) — Code conventions, naming, best practices
-- [**FOLDER-CONVENTIONS**](./RULES/FOLDER-CONVENTIONS.md) — Directory naming and organization rules
-- [**DATA-FLOW-RULES**](./RULES/DATA-FLOW-RULES.md) — Request/response patterns and data contracts
+- [**RULES/README**](./RULES/README.md) — Index + which doc applies to which file
+- [**api-flow**](./RULES/api-flow/API-FLOW.md) — Cross-cutting endpoint ↔ service ↔ schema layering and URL construction rules
+- [**backend**](./RULES/backend/) — Backend coding standards, folder conventions, data flow
+- [**frontend**](./RULES/frontend/) — Frontend coding standards, folder conventions, data flow
+- [**database**](./RULES/database/) — Database coding standards, migrations, RLS
 
 ---
 
@@ -122,9 +124,24 @@ docs/
 │   └── INFRASTRUCTURE-OVERVIEW.md
 │
 └── RULES/
-    ├── CODING-STANDARDS.md
-    ├── FOLDER-CONVENTIONS.md
-    └── DATA-FLOW-RULES.md
+    ├── README.md
+    ├── api-flow/
+    │   ├── API-FLOW.md
+    │   ├── ENDPOINT-CHECKLIST.md
+    │   └── DATA-FLOW-RULES.md
+    ├── backend/
+    │   ├── BACKEND-CODING-STANDARDS.md
+    │   ├── BACKEND-FOLDER-CONVENTIONS.md
+    │   └── BACKEND-DATA-FLOW.md
+    ├── frontend/
+    │   ├── FRONTEND-CODING-STANDARDS.md
+    │   ├── FRONTEND-FOLDER-CONVENTIONS.md
+    │   └── FRONTEND-DATA-FLOW.md
+    └── database/
+        ├── DATABASE-CODING-STANDARDS.md
+        ├── DATABASE-FOLDER-CONVENTIONS.md
+        ├── DATABASE-MIGRATIONS.md
+        └── DATABASE-RLS-POLICIES.md
 ```
 
 ---

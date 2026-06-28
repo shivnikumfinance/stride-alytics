@@ -44,11 +44,15 @@ Welcome to the **StrideAlytics Documentation** – your comprehensive guide to t
 | 🔄 CI/CD | **07-CI-CD-LAYER.md** | GitHub Actions pipelines |
 
 #### Standards & Guidelines (RULES/ subfolder)
-| Document | Purpose |
-|----------|---------|
-| **CODING-STANDARDS.md** | Code conventions, naming rules, and best practices |
-| **FOLDER-CONVENTIONS.md** | Directory naming and organization standards |
-| **DATA-FLOW-RULES.md** | API request/response patterns and data contracts |
+**Layer-scoped.** Start with [RULES/README.md](TECHNICAL/RULES/README.md) — it tells you which doc applies to which code path.
+
+| Folder | Layer | Purpose |
+|--------|-------|---------|
+| [README.md](TECHNICAL/RULES/README.md) | (index) | Which doc to read for which file |
+| [api-flow/](TECHNICAL/RULES/api-flow/) | cross-cutting | Endpoint ↔ service ↔ schema layering + URL rules |
+| [backend/](TECHNICAL/RULES/backend/) | `backend/**` | Backend coding standards, folder conventions, data flow |
+| [frontend/](TECHNICAL/RULES/frontend/) | `frontend/src/**` | Frontend coding standards, folder conventions, data flow |
+| [database/](TECHNICAL/RULES/database/) | `database/**` | SQL style, migrations, RLS |
 
 #### References (REFERENCES/ subfolder)
 | Document | Purpose |
@@ -81,21 +85,21 @@ Welcome to the **StrideAlytics Documentation** – your comprehensive guide to t
 1. [TECHNICAL/01-SYSTEM-OVERVIEW.md](TECHNICAL/01-SYSTEM-OVERVIEW.md) – System architecture overview
 2. [TECHNICAL/LAYERS/03-BACKEND-LAYER.md](TECHNICAL/LAYERS/03-BACKEND-LAYER.md) – Backend API design and implementation
 3. [TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md](TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md) – Backend dependencies
-4. [TECHNICAL/RULES/CODING-STANDARDS.md](TECHNICAL/RULES/CODING-STANDARDS.md) – Code conventions
-5. [TECHNICAL/RULES/DATA-FLOW-RULES.md](TECHNICAL/RULES/DATA-FLOW-RULES.md) – API patterns and contracts
+4. [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) – Rules index → [backend/](TECHNICAL/RULES/backend/) folder
+5. [TECHNICAL/RULES/api-flow/API-FLOW.md](TECHNICAL/RULES/api-flow/API-FLOW.md) – API patterns and contracts
 
 ### 🎨 Frontend Developers
 1. [TECHNICAL/01-SYSTEM-OVERVIEW.md](TECHNICAL/01-SYSTEM-OVERVIEW.md) – System architecture overview
 2. [TECHNICAL/LAYERS/01-FRONTEND-LAYER.md](TECHNICAL/LAYERS/01-FRONTEND-LAYER.md) – Frontend architecture and components
 3. [TECHNICAL/02-SYSTEM-DIAGRAMS.md](TECHNICAL/02-SYSTEM-DIAGRAMS.md) – UI/UX context and flows
 4. [TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md](TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md) – Frontend dependencies
-5. [TECHNICAL/RULES/CODING-STANDARDS.md](TECHNICAL/RULES/CODING-STANDARDS.md) – Code conventions
+5. [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) – Rules index → [frontend/](TECHNICAL/RULES/frontend/) folder
 
 ### 📱 Mobile Developers
 1. [TECHNICAL/01-SYSTEM-OVERVIEW.md](TECHNICAL/01-SYSTEM-OVERVIEW.md) – System architecture overview
 2. [TECHNICAL/LAYERS/02-MOBILE-LAYER.md](TECHNICAL/LAYERS/02-MOBILE-LAYER.md) – Mobile app architecture
 3. [TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md](TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md) – Mobile dependencies
-4. [TECHNICAL/RULES/CODING-STANDARDS.md](TECHNICAL/RULES/CODING-STANDARDS.md) – Code conventions
+4. [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) – Rules index
 
 ### 🚀 DevOps & Infrastructure Engineers
 1. [TECHNICAL/LAYERS/06-DEPLOYMENT-LAYER.md](TECHNICAL/LAYERS/06-DEPLOYMENT-LAYER.md) – Infrastructure and deployment
@@ -109,13 +113,14 @@ Welcome to the **StrideAlytics Documentation** – your comprehensive guide to t
 3. [TECHNICAL/02-SYSTEM-DIAGRAMS.md](TECHNICAL/02-SYSTEM-DIAGRAMS.md) – Architecture diagrams
 4. [TECHNICAL/BLUEPRINT.md](TECHNICAL/BLUEPRINT.md) – Master design blueprint
 5. All layer documents in [TECHNICAL/LAYERS/](TECHNICAL/LAYERS/)
+6. [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) – Layer-scoped rules index
 
 ### 👤 New Team Members
 1. [BUSINESS/01-BUSINESS-REQUIREMENTS.md](BUSINESS/01-BUSINESS-REQUIREMENTS.md) – Understand the product
 2. [TECHNICAL/01-SYSTEM-OVERVIEW.md](TECHNICAL/01-SYSTEM-OVERVIEW.md) – Understand the system
 3. [TECHNICAL/02-SYSTEM-DIAGRAMS.md](TECHNICAL/02-SYSTEM-DIAGRAMS.md) – Visualize the architecture
 4. Your specific layer documentation in [TECHNICAL/LAYERS/](TECHNICAL/LAYERS/)
-5. [TECHNICAL/RULES/CODING-STANDARDS.md](TECHNICAL/RULES/CODING-STANDARDS.md) – Follow development standards
+5. [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) – Rules index → pick the doc for your layer
 
 ---
 
@@ -134,8 +139,8 @@ TECHNICAL/02-SYSTEM-DIAGRAMS
     ↓ (Visualize interactions)
 TECHNICAL/LAYERS/ (Choose your layer)
     ↓ (Deep dive into your area)
-TECHNICAL/RULES/CODING-STANDARDS
-    ↓ (Follow standards)
+TECHNICAL/RULES/README.md
+    ↓ (Pick the layer-scoped rule doc for your code path)
 TECHNICAL/PHASES/IMPLEMENTATION-PHASES
     ↓ (Understand rollout plan)
 ```
@@ -168,10 +173,21 @@ TECHNICAL/PHASES/IMPLEMENTATION-PHASES
 - TECHNICAL/LAYERS/06-DEPLOYMENT-LAYER.md
 - TECHNICAL/LAYERS/07-CI-CD-LAYER.md
 
-**Rules (3):**
-- TECHNICAL/RULES/CODING-STANDARDS.md
-- TECHNICAL/RULES/FOLDER-CONVENTIONS.md
-- TECHNICAL/RULES/DATA-FLOW-RULES.md
+**Rules (12, layer-scoped):**
+- TECHNICAL/RULES/README.md
+- TECHNICAL/RULES/api-flow/API-FLOW.md
+- TECHNICAL/RULES/api-flow/ENDPOINT-CHECKLIST.md
+- TECHNICAL/RULES/api-flow/DATA-FLOW-RULES.md
+- TECHNICAL/RULES/backend/BACKEND-CODING-STANDARDS.md
+- TECHNICAL/RULES/backend/BACKEND-FOLDER-CONVENTIONS.md
+- TECHNICAL/RULES/backend/BACKEND-DATA-FLOW.md
+- TECHNICAL/RULES/frontend/FRONTEND-CODING-STANDARDS.md
+- TECHNICAL/RULES/frontend/FRONTEND-FOLDER-CONVENTIONS.md
+- TECHNICAL/RULES/frontend/FRONTEND-DATA-FLOW.md
+- TECHNICAL/RULES/database/DATABASE-CODING-STANDARDS.md
+- TECHNICAL/RULES/database/DATABASE-FOLDER-CONVENTIONS.md
+- TECHNICAL/RULES/database/DATABASE-MIGRATIONS.md
+- TECHNICAL/RULES/database/DATABASE-RLS-POLICIES.md
 
 **References (2):**
 - TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md
@@ -183,7 +199,7 @@ TECHNICAL/PHASES/IMPLEMENTATION-PHASES
 - TECHNICAL/PHASES/ROADMAP.md
 - TECHNICAL/PHASES/UPGRADE-TRIGGERS.md
 
-**Total: 25 comprehensive documents**
+**Total: 34 comprehensive documents**
 
 ---
 
@@ -199,7 +215,7 @@ TECHNICAL/PHASES/IMPLEMENTATION-PHASES
 - **Architecture Overview?** → [TECHNICAL/01-SYSTEM-OVERVIEW.md](TECHNICAL/01-SYSTEM-OVERVIEW.md)
 - **Tech Stack Details?** → [TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md](TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md)
 - **How to Deploy?** → [TECHNICAL/LAYERS/06-DEPLOYMENT-LAYER.md](TECHNICAL/LAYERS/06-DEPLOYMENT-LAYER.md)
-- **Coding Standards?** → [TECHNICAL/RULES/CODING-STANDARDS.md](TECHNICAL/RULES/CODING-STANDARDS.md)
+- **Coding Standards?** → [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) (then pick the layer folder)
 - **Implementation Plan?** → [TECHNICAL/PHASES/IMPLEMENTATION-PHASES.md](TECHNICAL/PHASES/IMPLEMENTATION-PHASES.md)
 
 ---
@@ -231,9 +247,24 @@ TECHNICAL/
 │   ├── INFRASTRUCTURE-OVERVIEW.md
 │   └── LIBRARIES-BY-LAYER.md
 ├── RULES/
-│   ├── CODING-STANDARDS.md
-│   ├── DATA-FLOW-RULES.md
-│   └── FOLDER-CONVENTIONS.md
+│   ├── README.md
+│   ├── api-flow/
+│   │   ├── API-FLOW.md
+│   │   ├── ENDPOINT-CHECKLIST.md
+│   │   └── DATA-FLOW-RULES.md
+│   ├── backend/
+│   │   ├── BACKEND-CODING-STANDARDS.md
+│   │   ├── BACKEND-FOLDER-CONVENTIONS.md
+│   │   └── BACKEND-DATA-FLOW.md
+│   ├── frontend/
+│   │   ├── FRONTEND-CODING-STANDARDS.md
+│   │   ├── FRONTEND-FOLDER-CONVENTIONS.md
+│   │   └── FRONTEND-DATA-FLOW.md
+│   └── database/
+│       ├── DATABASE-CODING-STANDARDS.md
+│       ├── DATABASE-FOLDER-CONVENTIONS.md
+│       ├── DATABASE-MIGRATIONS.md
+│       └── DATABASE-RLS-POLICIES.md
 └── PHASES/
     ├── IMPLEMENTATION-PHASES.md
     ├── QUICK-START-CHECKLIST.md
@@ -256,8 +287,8 @@ TECHNICAL/
 | **My Layer** | TECHNICAL/LAYERS/XX-LAYER.md | Deep dive into your area |
 | **Dependencies** | TECHNICAL/REFERENCES/LIBRARIES-BY-LAYER.md | Know what tools are available |
 | **Infrastructure** | TECHNICAL/REFERENCES/INFRASTRUCTURE-OVERVIEW.md | Understand deployment |
-| **Code Style** | TECHNICAL/RULES/CODING-STANDARDS.md | Write consistent code |
-| **API Design** | TECHNICAL/RULES/DATA-FLOW-RULES.md | Follow API patterns |
+| **Code Style** | [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) (pick your layer) | Write consistent code |
+| **API Design** | [TECHNICAL/RULES/api-flow/API-FLOW.md](TECHNICAL/RULES/api-flow/API-FLOW.md) | Follow API patterns |
 | **Rollout Plan** | TECHNICAL/PHASES/IMPLEMENTATION-PHASES.md | Know the timeline |
 | **Setup Guide** | TECHNICAL/PHASES/QUICK-START-CHECKLIST.md | Get started quickly |
 
@@ -285,7 +316,7 @@ Keep documentation updated as:
 - Implementation progresses
 - Deployment procedures update
 
-All team members should maintain documentation consistency following [TECHNICAL/RULES/CODING-STANDARDS.md](TECHNICAL/RULES/CODING-STANDARDS.md).
+All team members should maintain documentation consistency following the [TECHNICAL/RULES/README.md](TECHNICAL/RULES/README.md) layer-scoped index.
 
 ---
 
