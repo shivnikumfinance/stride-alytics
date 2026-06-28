@@ -6,15 +6,26 @@ import { Toaster as HotToaster } from "react-hot-toast";
 import { AppLayout } from "./components/layout";
 import { useAuthStore } from "./store";
 import {
+  ActiveHoldingsPage,
+  ActiveTradesPage,
+  AdminPage,
   DashboardPage,
+  ExitAlertsPage,
   GreeksPage,
+  HeatDashboardPage,
   LoginPage,
+  OptionChainPage,
   PicksPage,
   PortfolioPage,
   RegimePage,
+  ScenariosPage,
   ScreenerPage,
   SettingsPage,
+  SignalLogPage,
   SignupPage,
+  SizingPage,
+  StrategyMatrixPage,
+  WatchlistPage,
 } from "./pages";
 
 const queryClient = new QueryClient({
@@ -28,7 +39,6 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Restores the JWT from localStorage on first mount. */
 function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const hydrate = useAuthStore((s) => s.hydrate);
   useEffect(() => {
@@ -37,7 +47,6 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/** Redirects unauthenticated users to /login (preserving the target). */
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
   const location = useLocation();
@@ -45,7 +54,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -69,6 +78,17 @@ function App() {
               <Route path="picks" element={<PicksPage />} />
               <Route path="portfolio" element={<PortfolioPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="exit-alerts" element={<ExitAlertsPage />} />
+              <Route path="active-holdings" element={<ActiveHoldingsPage />} />
+              <Route path="strategy-matrix" element={<StrategyMatrixPage />} />
+              <Route path="watchlist" element={<WatchlistPage />} />
+              <Route path="option-chain" element={<OptionChainPage />} />
+              <Route path="active-trades" element={<ActiveTradesPage />} />
+              <Route path="sizing" element={<SizingPage />} />
+              <Route path="scenarios" element={<ScenariosPage />} />
+              <Route path="heat-dashboard" element={<HeatDashboardPage />} />
+              <Route path="signal-log" element={<SignalLogPage />} />
+              <Route path="admin" element={<AdminPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -78,5 +98,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;
