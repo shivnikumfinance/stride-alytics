@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
-  BarChart3,
   Briefcase,
   Calculator,
   Compass,
@@ -12,7 +11,6 @@ import {
   LineChart,
   List,
   LogOut,
-  Menu,
   Ruler,
   Settings,
   Settings2,
@@ -130,21 +128,5 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
       </aside>
     </>
-  );
-}
-
-export function Topbar({ onMenu }: { onMenu: () => void }) {
-  return (
-    <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 px-4 lg:px-8 h-14 flex items-center">
-      <button
-        type="button"
-        onClick={onMenu}
-        className="lg:hidden mr-2 p-2 rounded-md text-slate-700 hover:bg-slate-100"
-        aria-label="Open menu"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-      <h1 className="text-sm font-medium text-slate-700">Options Trading Analytics</h1>
-    </header>
   );
 }
