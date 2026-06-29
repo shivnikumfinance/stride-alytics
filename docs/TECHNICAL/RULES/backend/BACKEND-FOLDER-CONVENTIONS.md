@@ -33,7 +33,8 @@ backend/
 │   └── utils/                        # logger, validators, helpers, constants
 │
 ├── tests/                            # pytest, mirrors app/ structure
-├── scripts/                          # one-off CLI tools (not part of app)
+├── scripts/                          # developer-experience entry points +
+│   │                                 # cross-platform wrappers (.sh + .ps1)
 ├── pyproject.toml
 └── .env.example
 ```
@@ -63,6 +64,36 @@ backend/
 - ❌ `services/` modules importing `from fastapi import ...`.
 - ❌ Duplicating the URL prefix `/api/v1` outside `api/v1/router.py`.
 - ❌ Putting Pydantic models in `models/` or ORM models in `schemas/`.
+
+## 5. The `scripts/` folder
+
+Both one‑off CLIs **and** the developer verify chain live here:
+
+```
+scripts/
+├── _common.py                # shared helpers (banner, run, step, project_root)
+├── lint.py                   # `uv run lint`
+├── format.py                 # `uv run format`
+├── typecheck.py              # `uv run typecheck`
+├── test.py                   # `uv run test`
+├── verify.py                 # `uv run verify`
+├── migrate-to-uv.sh          # legacy one-shot (unchanged)
+├── migrate-to-uv.ps1
+├── verify.{sh,ps1}           # thin wrapper — delegates to `uv run verify`
+├── lint.{sh,ps1}
+├── format.{sh,ps1}
+├── typecheck.{sh,ps1}
+└── test.{sh,ps1}
+```
+
+Every script exposes a `main() -> int` returning the process exit code
+so they can be composed into `verify`. The shell wrappers exist only
+for discoverability — they always delegate to the Python entry point
+so there is one source of truth.
+
+When adding a new developer command: add `_common.py`'s helpers,
+drop a `<name>.py`, register it in `pyproject.toml
+[project.scripts]`, then add the matching `<name>.{sh,ps1}` shells.
 
 ---
 

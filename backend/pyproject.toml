@@ -46,10 +46,27 @@ dev = [
     "ruff>=0.9.0",
     "black>=25.1.0",
     "mypy>=1.13.0",
+    # Type stubs for libraries that ship without inline types
+    "scipy-stubs>=1.18.0",
+    "types-python-jose>=3.5.0.20260408",
 ]
+
+# Backend developer-experience scripts — discoverable as `uv run lint`,
+# `uv run format`, `uv run typecheck`, `uv run test`, `uv run verify`.
+[project.scripts]
+lint = "scripts.lint:main"
+format = "scripts.format:main"
+typecheck = "scripts.typecheck:main"
+test = "scripts.test:main"
+verify = "scripts.verify:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app/"]
+
+# The ``scripts/`` package is dev-tooling. Include it so the
+# [project.scripts] entry points resolve when the wheel is installed.
+[tool.hatch.build.targets.wheel.force-include]
+"scripts" = "scripts"
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -70,6 +87,34 @@ target-version = ["py312"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+omit = [
+    "app/main.py",        # FastAPI app factory — exercised via TestClient
+    "app/config.py",      # pydantic-settings — exercised implicitly
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 0          # bumped in a follow-up once baseline is captured
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["app"]
+ignore_missing_imports = false
+# ``yfinance`` ships no type information and is not stubbed anywhere.
+[[tool.mypy.overrides]]
+module = ["yfinance.*"]
+ignore_missing_imports = true
 
 [tool.uv]
 no-build-package = ["ta-lib"]
