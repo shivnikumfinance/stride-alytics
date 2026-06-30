@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.middleware.auth import CurrentUser, get_current_user
@@ -27,11 +29,7 @@ async def run(
     Free-tier users are capped at ``FREE_TIER_SCREENER_LIMIT`` results;
     pro users at ``PRO_TIER_SCREENER_LIMIT``.
     """
-    max_limit = (
-        PRO_TIER_SCREENER_LIMIT
-        if current_user.plan == "pro"
-        else FREE_TIER_SCREENER_LIMIT
-    )
+    max_limit = PRO_TIER_SCREENER_LIMIT if current_user.plan == "pro" else FREE_TIER_SCREENER_LIMIT
     if payload.limit > max_limit:
         if current_user.plan == "free":
             raise HTTPException(
@@ -63,13 +61,9 @@ async def run(
 
 
 @router.get("/limits")
-async def limits(current_user: CurrentUser = Depends(get_current_user)) -> dict:
+async def limits(current_user: CurrentUser = Depends(get_current_user)) -> dict[str, Any]:
     """Return the caller's current screener limits."""
-    max_limit = (
-        PRO_TIER_SCREENER_LIMIT
-        if current_user.plan == "pro"
-        else FREE_TIER_SCREENER_LIMIT
-    )
+    max_limit = PRO_TIER_SCREENER_LIMIT if current_user.plan == "pro" else FREE_TIER_SCREENER_LIMIT
     return {
         "success": True,
         "data": {

@@ -104,6 +104,35 @@ async def run(payload: ScreenerQuery, current_user = Depends(get_current_user)):
 
 ---
 
+## 9. Before you finish — the verify chain
+
+Run these commands locally before pushing a branch or opening a PR.
+Each is implemented as a Python entry point (registered in
+`pyproject.toml [project.scripts]`) and exposed via thin shell
+wrappers for discoverability:
+
+| What | Python entry point | Bash | PowerShell |
+|------|--------------------|------|------------|
+| Full gate (lint → mypy → smoke → tests) | `uv run verify` | `bash scripts/verify.sh` | `.\scripts\verify.ps1` |
+| Ruff lint (pass `--fix` to autofix) | `uv run lint [--fix]` | `bash scripts/lint.sh` | `.\scripts\lint.ps1` |
+| mypy on `app/` | `uv run typecheck` | `bash scripts/typecheck.sh` | `.\scripts\typecheck.ps1` |
+| pytest (forward args) | `uv run test [-k ...]` | `bash scripts/test.sh` | `.\scripts\test.ps1` |
+| black (pass `--write` to apply) | `uv run format [--write]` | `bash scripts/format.sh` | `.\scripts\format.ps1` |
+
+The pre-commit hook runs the same chain (clean caches → ruff →
+black --check → mypy → import smoke → pytest) so an editor that says
+"OK" matches CI exactly. Any of these commands exit non‑zero if a
+step fails — never suppress a verify failure with `--no-verify`.
+
+`backend/.vscode/tasks.json` exposes the same commands as
+Ctrl+Shift+B tasks; the default task is **Verify**.
+
+Type stubs the project depends on (`scipy-stubs`, `types-python-jose`)
+live in `[dependency-groups].dev` so a fresh `uv sync` installs them
+automatically.
+
+---
+
 ## See also
 
 - [BACKEND-FOLDER-CONVENTIONS.md](./BACKEND-FOLDER-CONVENTIONS.md)

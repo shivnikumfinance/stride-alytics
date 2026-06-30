@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 from scipy import stats
 
@@ -45,12 +46,21 @@ def _d1_d2(
         raise ValueError("spot and strike must be > 0")
 
     sqrt_t = math.sqrt(time_to_expiry)
-    d1 = (
-        math.log(spot / strike)
-        + (risk_free_rate + 0.5 * volatility**2) * time_to_expiry
-    ) / (volatility * sqrt_t)
+    d1 = (math.log(spot / strike) + (risk_free_rate + 0.5 * volatility**2) * time_to_expiry) / (
+        volatility * sqrt_t
+    )
     d2 = d1 - volatility * sqrt_t
     return d1, d2
+
+
+def _norm_cdf(x: float) -> float:
+    """Standard normal CDF narrowed to ``float`` (scipy returns ``np.floating``)."""
+    return float(stats.norm.cdf(x))
+
+
+def _norm_pdf(x: float) -> float:
+    """Standard normal PDF narrowed to ``float`` (scipy returns ``np.floating``)."""
+    return float(stats.norm.pdf(x))
 
 
 def calculate_option_price(
@@ -66,9 +76,9 @@ def calculate_option_price(
     discount = math.exp(-risk_free_rate * time_to_expiry)
 
     if option_type == "call":
-        return spot * stats.norm.cdf(d1) - strike * discount * stats.norm.cdf(d2)
+        return spot * _norm_cdf(d1) - strike * discount * _norm_cdf(d2)
     if option_type == "put":
-        return strike * discount * stats.norm.cdf(-d2) - spot * stats.norm.cdf(-d1)
+        return strike * discount * _norm_cdf(-d2) - spot * _norm_cdf(-d1)
     raise ValueError(f"option_type must be 'call' or 'put', got: {option_type!r}")
 
 
@@ -88,9 +98,9 @@ def calculate_greeks(
     """
     d1, d2 = _d1_d2(spot, strike, time_to_expiry, risk_free_rate, volatility)
     sqrt_t = math.sqrt(time_to_expiry)
-    nd1 = stats.norm.cdf(d1)
-    nd2 = stats.norm.cdf(d2)
-    npd1 = stats.norm.pdf(d1)
+    nd1 = _norm_cdf(d1)
+    nd2 = _norm_cdf(d2)
+    npd1 = _norm_pdf(d1)
     discount = math.exp(-risk_free_rate * time_to_expiry)
 
     # --- Greeks (common across call & put) ---
@@ -100,8 +110,7 @@ def calculate_greeks(
     if option_type == "call":
         delta = nd1
         theta = (
-            -spot * npd1 * volatility / (2 * sqrt_t)
-            - risk_free_rate * strike * discount * nd2
+            -spot * npd1 * volatility / (2 * sqrt_t) - risk_free_rate * strike * discount * nd2
         ) / 365.0
         rho = strike * time_to_expiry * discount * nd2 / 100.0
     elif option_type == "put":
@@ -139,7 +148,7 @@ def calculate_greeks_dict(
     risk_free_rate: float = DEFAULT_RISK_FREE_RATE,
     volatility: float = DEFAULT_VOLATILITY,
     option_type: str = "call",
-) -> dict:
+) -> dict[str, Any]:
     """Convenience wrapper returning a plain ``dict`` (JSON-friendly)."""
     result = calculate_greeks(
         spot=spot,

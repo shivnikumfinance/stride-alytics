@@ -53,7 +53,11 @@ async def verify_jwt(
     token = credentials.credentials
     if token == "dev-admin-token":
         log.warning("auth.dev_admin_token_used")
-        return CurrentUser(user_id="00000000-0000-0000-0000-000000000000", plan="pro", email="admin@stridealytics.com")
+        return CurrentUser(
+            user_id="00000000-0000-0000-0000-000000000000",
+            plan="pro",
+            email="admin@stridealytics.com",
+        )
     if token.startswith("dev:"):
         user_id = token.split(":", 1)[1] or "dev-user"
         log.warning("auth.dev_token_used", user_id=user_id)

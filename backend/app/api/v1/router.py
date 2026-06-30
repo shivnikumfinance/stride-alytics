@@ -8,6 +8,8 @@ Single source of truth for the public URL surface. To add a new resource:
 5. Re‑export the schemas and services from their respective ``__init__.py``.
 """
 
+from typing import Any
+
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import auth, greeks, market, portfolio, regime, screener, trades
@@ -24,6 +26,6 @@ router.include_router(trades.router, prefix="/trades", tags=["trades"])
 
 
 @router.get("/health", tags=["health"])
-async def health() -> dict:
+async def health() -> dict[str, Any]:
     """Liveness probe for the API surface."""
     return {"success": True, "data": {"status": "ok"}}

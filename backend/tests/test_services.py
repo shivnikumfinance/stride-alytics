@@ -13,14 +13,13 @@ Run with:  uv run pytest backend/tests/test_services.py -v
 from __future__ import annotations
 
 import math
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
 from app.services.greeks import calculate_greeks, calculate_greeks_dict, calculate_option_price
 from app.services.regime import detect_regime
 from app.services.portfolio import (
-    Portfolio,
     PortfolioStore,
     Trade,
     calculate_pnl,
@@ -30,10 +29,10 @@ from app.services.portfolio import (
 from app.services.screener import ScreenerFilters, run_screener
 from app.services.auth import plan_from_claims
 
-
 # ---------------------------------------------------------------------------
 # Greeks
 # ---------------------------------------------------------------------------
+
 
 class TestGreeks:
     def test_call_delta_in_0_1_range(self):
@@ -73,13 +72,20 @@ class TestGreeks:
     def test_dict_round_trip(self):
         d = calculate_greeks_dict(100, 100, 0.1, option_type="call")
         assert set(d.keys()) == {
-            "delta", "gamma", "theta", "vega", "rho", "price_call", "price_put"
+            "delta",
+            "gamma",
+            "theta",
+            "vega",
+            "rho",
+            "price_call",
+            "price_put",
         }
 
 
 # ---------------------------------------------------------------------------
 # Regime
 # ---------------------------------------------------------------------------
+
 
 class TestRegime:
     def test_returns_valid_regime(self):
@@ -96,39 +102,66 @@ class TestRegime:
 # Screener
 # ---------------------------------------------------------------------------
 
+
 class TestScreener:
     def test_run_returns_payload(self):
-        result = run_screener(ScreenerFilters(
-            symbol="AAPL", expiry_days_min=0, expiry_days_max=60,
-            min_volume=0, min_open_interest=0, limit=10,
-        ))
+        result = run_screener(
+            ScreenerFilters(
+                symbol="AAPL",
+                expiry_days_min=0,
+                expiry_days_max=60,
+                min_volume=0,
+                min_open_interest=0,
+                limit=10,
+            )
+        )
         assert result["symbol"] == "AAPL"
         assert result["spot"] > 0
         assert isinstance(result["results"], list)
         assert len(result["results"]) <= 10
 
     def test_option_type_filter(self):
-        result = run_screener(ScreenerFilters(
-            symbol="MSFT", option_type="call", expiry_days_min=0, expiry_days_max=60,
-            min_volume=0, min_open_interest=0, limit=50,
-        ))
+        result = run_screener(
+            ScreenerFilters(
+                symbol="MSFT",
+                option_type="call",
+                expiry_days_min=0,
+                expiry_days_max=60,
+                min_volume=0,
+                min_open_interest=0,
+                limit=50,
+            )
+        )
         for row in result["results"]:
             assert row["option_type"] == "call"
 
     def test_strike_range_filter(self):
-        result = run_screener(ScreenerFilters(
-            symbol="SPY", min_strike=550, max_strike=600,
-            expiry_days_min=0, expiry_days_max=60,
-            min_volume=0, min_open_interest=0, limit=50,
-        ))
+        result = run_screener(
+            ScreenerFilters(
+                symbol="SPY",
+                min_strike=550,
+                max_strike=600,
+                expiry_days_min=0,
+                expiry_days_max=60,
+                min_volume=0,
+                min_open_interest=0,
+                limit=50,
+            )
+        )
         for row in result["results"]:
             assert 550 <= row["strike"] <= 600
 
     def test_limit_caps_results(self):
-        result = run_screener(ScreenerFilters(
-            symbol="AAPL", limit=3, expiry_days_min=0, expiry_days_max=60,
-            min_volume=0, min_open_interest=0,
-        ))
+        result = run_screener(
+            ScreenerFilters(
+                symbol="AAPL",
+                limit=3,
+                expiry_days_min=0,
+                expiry_days_max=60,
+                min_volume=0,
+                min_open_interest=0,
+            )
+        )
         assert len(result["results"]) <= 3
 
 
@@ -136,13 +169,22 @@ class TestScreener:
 # Portfolio analytics
 # ---------------------------------------------------------------------------
 
+
 class TestPortfolio:
     def _make_trade(self, **overrides) -> Trade:
         defaults = dict(
-            id=uuid4(), user_id=uuid4(), portfolio_id=uuid4(),
-            symbol="AAPL", trade_type="call", direction="long",
-            entry_price=2.0, exit_price=3.0, quantity=10,
-            entry_date=None, exit_date=None, notes=None,
+            id=uuid4(),
+            user_id=uuid4(),
+            portfolio_id=uuid4(),
+            symbol="AAPL",
+            trade_type="call",
+            direction="long",
+            entry_price=2.0,
+            exit_price=3.0,
+            quantity=10,
+            entry_date=None,
+            exit_date=None,
+            notes=None,
         )
         defaults.update(overrides)
         return Trade(**defaults)
@@ -194,14 +236,22 @@ class TestPortfolio:
         rows = portfolio_trade_breakdown([t])
         assert len(rows) == 1
         assert set(rows[0].keys()) >= {
-            "trade_id", "symbol", "trade_type", "direction",
-            "quantity", "entry_price", "exit_price", "pnl", "open",
+            "trade_id",
+            "symbol",
+            "trade_type",
+            "direction",
+            "quantity",
+            "entry_price",
+            "exit_price",
+            "pnl",
+            "open",
         }
 
 
 # ---------------------------------------------------------------------------
 # Auth helpers
 # ---------------------------------------------------------------------------
+
 
 class TestAuthPlan:
     def test_default_free(self):

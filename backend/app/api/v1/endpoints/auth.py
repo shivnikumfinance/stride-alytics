@@ -7,9 +7,9 @@ dev token fallback still available for local development and tests.
 
 from __future__ import annotations
 
-import os
 import time
 import uuid
+from typing import Any, Literal
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -27,7 +27,7 @@ def _supabase_env_present() -> bool:
     return bool(settings.SUPABASE_URL and settings.SUPABASE_ANON_KEY)
 
 
-def _dev_token(user_id: str, email: str, plan: str = "free") -> TokenResponse:
+def _dev_token(user_id: str, email: str, plan: Literal["free", "pro"] = "free") -> TokenResponse:
     """Return a deterministic dev token when Supabase isn't configured."""
     token = f"dev:{user_id}:{uuid.uuid4().hex[:8]}"
     log.warning("auth.dev_token_issued", user_id=user_id, email=email)
@@ -37,31 +37,32 @@ def _dev_token(user_id: str, email: str, plan: str = "free") -> TokenResponse:
         expires_in=3600,
         user_id=user_id,
         email=email,
-        subscription_plan=plan,  # type: ignore[arg-type]
+        subscription_plan=plan,
     )
 
 
-async def _supabase_auth_request(endpoint: str, payload: dict) -> dict:
+async def _supabase_auth_request(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
     """Proxy an auth request to Supabase Auth REST API."""
     url = f"{settings.SUPABASE_URL}/auth/v1/{endpoint}"
-    headers = {
-        "apikey": settings.SUPABASE_ANON_KEY,
+    headers: dict[str, str] = {
+        "apikey": settings.SUPABASE_ANON_KEY or "",
         "Content-Type": "application/json",
     }
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.post(url, headers=headers, json=payload)
         if resp.status_code >= 400:
-            error_body = resp.json()
+            error_body: dict[str, Any] = resp.json()
             raise HTTPException(
                 status_code=resp.status_code,
                 detail=error_body.get("error_description")
                 or error_body.get("msg")
                 or error_body.get("error", "Supabase auth request failed"),
             )
-        return resp.json()
+        result: dict[str, Any] = resp.json()
+        return result
 
 
-def _build_token_response(supabase_data: dict) -> TokenResponse:
+def _build_token_response(supabase_data: dict[str, Any]) -> TokenResponse:
     """Convert a Supabase auth response into our TokenResponse format."""
     return TokenResponse(
         access_token=supabase_data.get("access_token", ""),
@@ -70,9 +71,7 @@ def _build_token_response(supabase_data: dict) -> TokenResponse:
         user_id=supabase_data.get("user", {}).get("id", ""),
         email=supabase_data.get("user", {}).get("email", ""),
         subscription_plan=(
-            supabase_data.get("user", {})
-            .get("user_metadata", {})
-            .get("subscription_plan", "free")
+            supabase_data.get("user", {}).get("user_metadata", {}).get("subscription_plan", "free")
         ),
     )
 
@@ -82,23 +81,38 @@ async def login(payload: LoginRequest) -> TokenResponse:
     """Email/password login → Supabase access token."""
     if _supabase_env_present():
         try:
-            supabase_data = await _supabase_auth_request("token?grant_type=password", {
-                "email": payload.email,
-                "password": payload.password,
-            })
+            supabase_data = await _supabase_auth_request(
+                "token?grant_type=password",
+                {
+                    "email": payload.email,
+                    "password": payload.password,
+                },
+            )
             log.info("auth.login_success", email=payload.email)
-            # Get user metadata to check subscription plan
+            # Look up subscription plan from the user record (best-effort).
             user_id = supabase_data.get("user", {}).get("id", "")
-            user_data = await _supabase_auth_request(f"user", {
-                "apikey": settings.SUPABASE_ANON_KEY,
-            })
+            subscription_plan: Literal["free", "pro"] = "free"
+            try:
+                user_record = await _supabase_auth_request(
+                    "user",
+                    {
+                        "apikey": settings.SUPABASE_ANON_KEY,
+                    },
+                )
+                raw_plan = user_record.get("user_metadata", {}).get("subscription_plan", "free")
+                if raw_plan == "pro":
+                    subscription_plan = "pro"
+            except Exception:
+                # If the user-record lookup fails we still return the token
+                # with the default free plan rather than failing the login.
+                pass
             return TokenResponse(
                 access_token=supabase_data.get("access_token", ""),
                 refresh_token=supabase_data.get("refresh_token"),
                 expires_in=supabase_data.get("expires_in", 3600),
                 user_id=user_id,
                 email=supabase_data.get("user", {}).get("email", payload.email),
-                subscription_plan="free",
+                subscription_plan=subscription_plan,
             )
         except HTTPException:
             raise
@@ -119,14 +133,17 @@ async def signup(payload: SignupRequest) -> TokenResponse:
     """Create a new user via Supabase Auth."""
     if _supabase_env_present():
         try:
-            supabase_data = await _supabase_auth_request("signup", {
-                "email": payload.email,
-                "password": payload.password,
-                "data": {
-                    "full_name": payload.full_name or "",
-                    "subscription_plan": "free",
+            supabase_data = await _supabase_auth_request(
+                "signup",
+                {
+                    "email": payload.email,
+                    "password": payload.password,
+                    "data": {
+                        "full_name": payload.full_name or "",
+                        "subscription_plan": "free",
+                    },
                 },
-            })
+            )
             log.info("auth.signup_success", email=payload.email)
             return _build_token_response(supabase_data)
         except HTTPException:
@@ -148,9 +165,12 @@ async def refresh_token(refresh_token: str) -> TokenResponse:
     """Exchange a Supabase refresh_token for a new access_token."""
     if _supabase_env_present():
         try:
-            supabase_data = await _supabase_auth_request("token?grant_type=refresh_token", {
-                "refresh_token": refresh_token,
-            })
+            supabase_data = await _supabase_auth_request(
+                "token?grant_type=refresh_token",
+                {
+                    "refresh_token": refresh_token,
+                },
+            )
             log.info("auth.refresh_success")
             return _build_token_response(supabase_data)
         except HTTPException:
@@ -169,7 +189,7 @@ async def refresh_token(refresh_token: str) -> TokenResponse:
 
 
 @router.get("/me")
-async def me(current_user: CurrentUser = Depends(get_current_user)) -> dict:
+async def me(current_user: CurrentUser = Depends(get_current_user)) -> dict[str, Any]:
     """Return the authenticated user's identity (from the JWT)."""
     return {
         "success": True,
