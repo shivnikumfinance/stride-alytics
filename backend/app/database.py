@@ -1,11 +1,20 @@
 """Database connection verification using psycopg / SQLAlchemy."""
 
 import logging
+from collections.abc import AsyncIterator
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from contextlib import asynccontextmanager
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+class Base(DeclarativeBase):
+    """Declarative base class for all ORM models."""
+
 
 engine = None
 async_session_factory = None
@@ -24,9 +33,7 @@ async def verify_db_connection() -> bool:
         return False
     try:
         async with engine.connect() as conn:
-            await conn.execute(
-                __import__("sqlalchemy").text("SELECT 1")
-            )
+            await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
         logger.info("✓ Database connection verified.")
         return True
     except Exception as exc:
@@ -34,8 +41,9 @@ async def verify_db_connection() -> bool:
         return False
 
 
-async def get_session() -> AsyncSession:  # type: ignore[return]
-    """Yield an async database session (for dependency injection)."""
+@asynccontextmanager
+async def get_session() -> AsyncIterator[AsyncSession]:
+    """Yield an async database session (for dependency injection + ``async with``)."""
     if async_session_factory is None:
         raise RuntimeError("DATABASE_URL is not configured.")
     async with async_session_factory() as session:

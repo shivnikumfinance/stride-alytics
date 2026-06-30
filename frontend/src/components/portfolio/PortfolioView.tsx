@@ -9,7 +9,7 @@ import {
   useCloseTrade,
 } from "../../hooks/queries";
 import { fmtDate, fmtUsd, fmtPct } from "../../utils";
-import type { TradeOut } from "../../types";
+import type { TradeOut, TradeType, Direction } from "../../types";
 
 export function PortfolioView() {
   const { data: portfoliosData } = usePortfolios();
@@ -159,14 +159,14 @@ function NewTradeCard({ portfolioId }: { portfolioId: string }) {
       >
         <div className="grid grid-cols-2 gap-3">
           <Input label="Symbol" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} required />
-          <Select label="Type" value={tradeType} onChange={(e) => setTradeType(e.target.value as any)}>
+          <Select label="Type" value={tradeType} onChange={(e) => setTradeType(e.target.value as TradeType)}>
             <option value="call">Call</option>
             <option value="put">Put</option>
             <option value="stock">Stock</option>
           </Select>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Direction" value={direction} onChange={(e) => setDirection(e.target.value as any)}>
+          <Select label="Direction" value={direction} onChange={(e) => setDirection(e.target.value as Direction)}>
             <option value="long">Long</option>
             <option value="short">Short</option>
           </Select>

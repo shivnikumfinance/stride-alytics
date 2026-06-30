@@ -1,4 +1,10 @@
-"""Business-logic services for the StrideAlytics API."""
+"""Business-logic services for the StrideAlytics API.
+
+One file per backend resource. Services must be HTTP‑agnostic — they take
+plain Python types and return plain Python types / Pydantic models. The
+endpoint layer (``app.api.v1.endpoints.*``) is the only place that imports
+``fastapi`` and translates requests into service calls.
+"""
 
 from app.services.greeks import (
     GreeksResult,
@@ -6,6 +12,7 @@ from app.services.greeks import (
     calculate_greeks_dict,
     calculate_option_price,
 )
+from app.services.market import fetch_tickers
 from app.services.screener import ScreenerFilters, run_screener
 from app.services.regime import RegimeResult, detect_regime
 from app.services.portfolio import (
@@ -25,6 +32,7 @@ __all__ = [
     "calculate_greeks",
     "calculate_greeks_dict",
     "calculate_option_price",
+    "fetch_tickers",
     "ScreenerFilters",
     "run_screener",
     "RegimeResult",

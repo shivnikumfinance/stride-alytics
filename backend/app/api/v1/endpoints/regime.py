@@ -10,6 +10,10 @@ from app.services.regime import detect_regime
 from app.utils.logger import get_logger
 from app.utils.validators import normalize_symbol
 
+# ``result.regime`` is a plain ``str`` upstream; coerce into the
+# Literal the schema expects so mypy is satisfied.
+_LITERAL_REGIMES = ("bull", "bear", "ranging")
+
 router = APIRouter()
 log = get_logger(__name__)
 
@@ -31,9 +35,10 @@ async def get_regime(
         regime=result.regime,
     )
 
+    regime_value = result.regime if result.regime in _LITERAL_REGIMES else "ranging"
     return RegimeResponse(
         symbol=normalize_symbol(symbol),
-        regime=result.regime,
+        regime=regime_value,  # type: ignore[arg-type]
         confidence=result.confidence,
         lookback_days=result.lookback_days,
         price_return=result.price_return,

@@ -1,6 +1,7 @@
 /** Typed wrappers around `/api/v1/*` endpoints. */
 
 import client from "./client";
+import type { TickerPayload } from "../types/market";
 import type {
   GreeksInputs,
   GreeksResult,
@@ -61,4 +62,18 @@ export const tradesApi = {
   create: (body: TradeCreate) => client.post<TradeOut>("/trades", body).then((r) => r.data),
   close: (tradeId: string, body: TradeClose) =>
     client.post<TradeOut>(`/trades/${tradeId}/close`, body).then((r) => r.data),
+};
+
+// --- Market ---
+// Canonical home for the wire types is `src/types/market.ts`.
+// Import them directly from there — do NOT re-export them from this file
+// (see docs/TECHNICAL/RULES/api-flow/API-FLOW.md — endpoint wrappers
+// must not own domain types).
+
+export const marketApi = {
+  /** Returns the full ``TickerPayload`` envelope from ``/market/tickers``. */
+  tickers: () =>
+    client
+      .get<TickerPayload>("/market/tickers")
+      .then((r) => r.data),
 };

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -26,16 +27,13 @@ def _resolve_user_uuid(raw: str) -> UUID:
 @router.get("")
 async def list_portfolios(
     current_user: CurrentUser = Depends(get_current_user),
-) -> dict:
+) -> dict[str, Any]:
     """List all portfolios owned by the authenticated user."""
     user_uuid = _resolve_user_uuid(current_user.user_id)
     items = portfolio_store.list_portfolios(user_uuid)
     return {
         "success": True,
-        "data": [
-            {"id": str(p.id), "name": p.name, "description": p.description}
-            for p in items
-        ],
+        "data": [{"id": str(p.id), "name": p.name, "description": p.description} for p in items],
     }
 
 
@@ -53,9 +51,7 @@ async def create_portfolio(
             description=payload.description,
         )
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
     log.info("portfolio.created", user_id=current_user.user_id, name=payload.name)
     return PortfolioSummary(**portfolio_summary_fn(portfolio))

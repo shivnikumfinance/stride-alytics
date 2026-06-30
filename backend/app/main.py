@@ -1,6 +1,8 @@
 """StrideAlytics Backend — FastAPI entry point."""
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +19,7 @@ log = get_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Verify connectivity on boot; nothing else to clean up."""
     log.info("app.startup", app=settings.APP_NAME, debug=settings.DEBUG)
     if settings.DATABASE_URL:
@@ -49,7 +51,7 @@ app.include_router(api_v1_router)
 
 
 @app.get("/", tags=["root"])
-async def root() -> dict:
+async def root() -> dict[str, Any]:
     """Root discovery endpoint."""
     return {
         "success": True,

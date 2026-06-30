@@ -7,6 +7,15 @@ interface Signal {
   details: string;
 }
 
+type BadgeTone = React.ComponentProps<typeof Badge>["tone"];
+
+const BADGE_CONFIG: Record<Signal["type"], { tone: BadgeTone; label: string }> = {
+  entry: { tone: "green", label: "Entry" },
+  exit: { tone: "red", label: "Exit" },
+  regime: { tone: "blue", label: "Regime" },
+  alert: { tone: "yellow", label: "Alert" },
+};
+
 export function SignalLogPage() {
   const signals: Signal[] = [
     { timestamp: "2024-01-15 14:32:45", type: "exit", rule: "Max Profit Threshold", details: "SPY Covered Call reached 85% max profit" },
@@ -20,13 +29,7 @@ export function SignalLogPage() {
   ];
 
   const getTypeBadge = (type: Signal["type"]) => {
-    const config: any = {
-      entry: { tone: "green", label: "Entry" },
-      exit: { tone: "red", label: "Exit" },
-      regime: { tone: "blue", label: "Regime" },
-      alert: { tone: "yellow", label: "Alert" },
-    };
-    const { tone, label } = config[type];
+    const { tone, label } = BADGE_CONFIG[type];
     return <Badge tone={tone}>{label}</Badge>;
   };
 

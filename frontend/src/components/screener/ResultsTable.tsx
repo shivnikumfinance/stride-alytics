@@ -6,7 +6,7 @@ import type { ScreenerRow } from "../../types";
 
 const columns = [
   { key: "symbol", header: "Symbol" },
-  { key: "strike", header: "Strike", align: "right", render: (r: ScreenerRow) => fmtUsd(r.strike) },
+  { key: "strike", header: "Strike", align: "right" as const, render: (r: ScreenerRow) => fmtUsd(r.strike) },
   { key: "expiry", header: "Expiry" },
   {
     key: "option_type",
@@ -15,13 +15,13 @@ const columns = [
       <Badge tone={r.option_type === "call" ? "indigo" : "purple"}>{r.option_type.toUpperCase()}</Badge>
     ),
   },
-  { key: "last_price", header: "Last", align: "right", render: (r: ScreenerRow) => fmtUsd(r.last_price) },
-  { key: "bid", header: "Bid", align: "right", render: (r: ScreenerRow) => fmtUsd(r.bid) },
-  { key: "ask", header: "Ask", align: "right", render: (r: ScreenerRow) => fmtUsd(r.ask) },
-  { key: "implied_vol", header: "IV", align: "right", render: (r: ScreenerRow) => fmtIv(r.implied_vol) },
-  { key: "delta", header: "Δ", align: "right", render: (r: ScreenerRow) => fmtNum(r.delta, 3) },
-  { key: "volume", header: "Vol", align: "right", render: (r: ScreenerRow) => r.volume.toLocaleString() },
-  { key: "open_interest", header: "OI", align: "right", render: (r: ScreenerRow) => r.open_interest.toLocaleString() },
+  { key: "last_price", header: "Last", align: "right" as const, render: (r: ScreenerRow) => fmtUsd(r.last_price) },
+  { key: "bid", header: "Bid", align: "right" as const, render: (r: ScreenerRow) => fmtUsd(r.bid) },
+  { key: "ask", header: "Ask", align: "right" as const, render: (r: ScreenerRow) => fmtUsd(r.ask) },
+  { key: "implied_vol", header: "IV", align: "right" as const, render: (r: ScreenerRow) => fmtIv(r.implied_vol) },
+  { key: "delta", header: "Δ", align: "right" as const, render: (r: ScreenerRow) => fmtNum(r.delta, 3) },
+  { key: "volume", header: "Vol", align: "right" as const, render: (r: ScreenerRow) => r.volume.toLocaleString() },
+  { key: "open_interest", header: "OI", align: "right" as const, render: (r: ScreenerRow) => r.open_interest.toLocaleString() },
 ];
 
 export function ResultsTable() {
@@ -61,8 +61,8 @@ export function ResultsTable() {
         </button>
       }
     >
-      <Table
-        columns={columns as any}
+      <Table<ScreenerRow>
+        columns={columns}
         rows={results}
         rowKey={(r) => `${r.symbol}-${r.strike}-${r.expiry}-${r.option_type}`}
         loading={loading}

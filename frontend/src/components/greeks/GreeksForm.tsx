@@ -54,11 +54,8 @@ export function GreeksForm() {
 
       <Card title="Results" subtitle={result ? `Inputs: spot ${result.inputs.spot} · strike ${result.inputs.strike}` : "Awaiting input"}>
         {result ? (
-          <Table
-            columns={[
-              { key: "metric", header: "Metric" },
-              { key: "value", header: "Value", align: "right", render: (r: any) => r.value },
-            ]}
+          <Table<GreeksRow>
+            columns={GREEKS_COLUMNS}
             rows={[
               { metric: "Delta (Δ)", value: fmtNum(result.delta) },
               { metric: "Gamma (Γ)", value: fmtNum(result.gamma, 6) },
@@ -77,3 +74,13 @@ export function GreeksForm() {
     </div>
   );
 }
+
+interface GreeksRow {
+  metric: string;
+  value: string;
+}
+
+const GREEKS_COLUMNS = [
+  { key: "metric", header: "Metric" },
+  { key: "value", header: "Value", align: "right" as const },
+];

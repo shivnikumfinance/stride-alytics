@@ -510,7 +510,7 @@ vercel --prod        # Deploy to production
 
 - **View Diagrams?** → [02-SYSTEM-DIAGRAMS](../02-SYSTEM-DIAGRAMS.md)
 - **Check Libraries?** → [LIBRARIES-BY-LAYER](../REFERENCES/LIBRARIES-BY-LAYER.md)
-- **Coding Standards?** → [CODING-STANDARDS](../RULES/CODING-STANDARDS.md)
+- **Coding Standards?** → [RULES/README](../RULES/README.md) → [frontend/](../RULES/frontend/)
 - **See Other Layers?** → [LAYERS/](../)
 
 ---

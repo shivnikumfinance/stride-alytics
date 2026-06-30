@@ -1,5 +1,6 @@
 import { Card, Input, Select, Button } from "../ui";
 import { useScreenerStore } from "../../store";
+import type { OptionType } from "../../types";
 
 export function FilterPanel() {
   const filters = useScreenerStore((s) => s.filters);
@@ -51,7 +52,10 @@ export function FilterPanel() {
         label="Option type"
         name="option_type"
         value={filters.option_type ?? ""}
-        onChange={(e) => setFilters({ option_type: (e.target.value || null) as any })}
+        onChange={(e) => {
+          const v = e.target.value;
+          setFilters({ option_type: v === "" ? null : (v as OptionType) });
+        }}
       >
         <option value="">Both</option>
         <option value="call">Calls</option>

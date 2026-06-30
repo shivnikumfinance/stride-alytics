@@ -18,7 +18,8 @@ export function LoginPage() {
     e.preventDefault();
     try {
       await login({ email, password });
-      const redirect = (location.state as any)?.from?.pathname ?? "/";
+      const state = location.state as { from?: { pathname?: string } } | null;
+      const redirect = state?.from?.pathname ?? "/";
       navigate(redirect, { replace: true });
     } catch {
       /* error already in store */

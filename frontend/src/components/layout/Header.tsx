@@ -1,90 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Clock, Menu, Search, RefreshCw, Bell, Settings, Download } from "lucide-react";
 import { classNames } from "../../utils";
+import { tickerService } from "../../api/services/ticker.service";
+import type { TickerData } from "../../types/market";
 import styles from "./Header.module.css";
 
-interface TickerData {
-  symbol: string;
-  price: string;
-  change: string;
-  changePercent: string;
-  timestamp: Date;
-}
-
 const TICKERS = ["SPY", "QQQ", "DIA", "VIX"];
-const POLL_INTERVAL = 30000; // 30 seconds
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-// Ticker Service
-export const tickerService = {
-  previousData: {} as Record<string, TickerData>,
-  pollingId: null as ReturnType<typeof setInterval> | null,
-
-  async fetchTickerData(): Promise<TickerData[]> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/market/tickers`);
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const tickersData = data.data || {};
-
-      const results: TickerData[] = [];
-      for (const symbol of TICKERS) {
-        if (tickersData[symbol]) {
-          const ticker = {
-            symbol,
-            price: tickersData[symbol].price,
-            change: tickersData[symbol].change,
-            changePercent: tickersData[symbol].changePercent,
-            timestamp: new Date(),
-          };
-          results.push(ticker);
-          this.previousData[symbol] = ticker;
-        } else if (this.previousData[symbol]) {
-          results.push(this.previousData[symbol]);
-        }
-      }
-
-      console.log("✅ Tickers fetched successfully:", results.length);
-      return results;
-    } catch (error) {
-      console.warn(`⚠️ Ticker fetch failed, using fallback:`, error);
-      // Return cached data as fallback
-      const cached = TICKERS
-        .map((sym) => this.previousData[sym])
-        .filter((d) => d !== undefined) as TickerData[];
-      
-      if (cached.length > 0) {
-        console.log("📦 Using cached ticker data");
-        return cached;
-      }
-
-      // Return empty array - will trigger shimmer state
-      return [];
-    }
-  },
-
-  async fetchAllTickers(): Promise<TickerData[]> {
-    return this.fetchTickerData();
-  },
-
-  startPolling(callback: (data: TickerData[]) => void) {
-    this.fetchAllTickers().then(callback);
-    this.pollingId = setInterval(() => {
-      this.fetchAllTickers().then(callback);
-    }, POLL_INTERVAL);
-  },
-
-  stopPolling() {
-    if (this.pollingId) {
-      clearInterval(this.pollingId);
-      this.pollingId = null;
-    }
-  },
-};
 
 // Ticker Box Component
 function TickerBox({ data }: { data: TickerData | null }) {
@@ -129,6 +50,11 @@ export function Header({ onMenu }: { onMenu: () => void }) {
   const refreshCounterRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    // Capture the current value into a local — the ref itself can change
+    // between now and cleanup, and we want to clear exactly the interval
+    // we own.
+    const interval = refreshCounterRef.current;
+
     // Start polling on mount
     tickerService.startPolling((data) => {
       setTickers(TICKERS.map((sym) => data.find((d) => d.symbol === sym) || null));
@@ -138,8 +64,8 @@ export function Header({ onMenu }: { onMenu: () => void }) {
     return () => {
       // Cleanup on unmount
       tickerService.stopPolling();
-      if (refreshCounterRef.current) {
-        clearInterval(refreshCounterRef.current);
+      if (interval) {
+        clearInterval(interval);
       }
     };
   }, []);

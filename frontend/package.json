@@ -5,12 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "clean": "node -e \"const fs=require('fs');for(const d of ['dist','.vite','node_modules/.vite','node_modules/.cache','tsconfig.tsbuildinfo']){try{fs.rmSync(d,{recursive:true,force:true});console.log('removed',d);}catch(e){}}\"",
+    "prebuild": "npm run clean && npm run type-check",
+    "build:dev": "npm run prebuild && vite build --mode development",
+    "build:prod": "npm run prebuild && vite build --mode production",
+    "build": "npm run build:prod",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
+    "verify": "npm run type-check && npm run lint",
     "test": "vitest run",
-    "postinstall": "husky install"
+    "prepare": "husky install"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
@@ -26,12 +31,15 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.0",
+    "@eslint/js": "^9.21.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@typescript-eslint/eslint-plugin": "^8.18.1",
     "@typescript-eslint/parser": "^8.18.1",
+    "typescript-eslint": "^8.18.1",
     "@vitejs/plugin-react": "^5.2.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.21.0",

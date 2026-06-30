@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 
 import yfinance as yf
 
@@ -21,8 +21,8 @@ log = get_logger(__name__)
 
 @dataclass(frozen=True)
 class RegimeResult:
-    regime: str          # 'bull' | 'bear' | 'ranging'
-    confidence: float    # 0..1
+    regime: str  # 'bull' | 'bear' | 'ranging'
+    confidence: float  # 0..1
     lookback_days: int
     price_return: float  # decimal, e.g. 0.0342 = +3.42%
     as_of: str

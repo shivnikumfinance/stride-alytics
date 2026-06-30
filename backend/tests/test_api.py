@@ -27,9 +27,15 @@ def test_root(client: TestClient) -> None:
 
 
 def test_unauthenticated_greeks_rejected(client: TestClient) -> None:
-    r = client.post("/api/v1/greeks/calculate", json={
-        "spot": 100, "strike": 100, "time_to_expiry": 0.1, "option_type": "call",
-    })
+    r = client.post(
+        "/api/v1/greeks/calculate",
+        json={
+            "spot": 100,
+            "strike": 100,
+            "time_to_expiry": 0.1,
+            "option_type": "call",
+        },
+    )
     assert r.status_code == 401
 
 
@@ -38,8 +44,11 @@ def test_greeks_calculate(client: TestClient, dev_headers) -> None:
         "/api/v1/greeks/calculate",
         headers=dev_headers,
         json={
-            "spot": 100, "strike": 100, "time_to_expiry": 0.0822,
-            "volatility": 0.3, "option_type": "call",
+            "spot": 100,
+            "strike": 100,
+            "time_to_expiry": 0.0822,
+            "volatility": 0.3,
+            "option_type": "call",
         },
     )
     assert r.status_code == 200, r.text
