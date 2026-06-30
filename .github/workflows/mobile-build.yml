@@ -42,7 +42,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # Expo SDK 51+ requires Node ^18.18 || >=20.0; we standardize
+          # on 22 LTS across all JS workflows (matches build-check.yml
+          # and frontend-ci-cd.yml).
+          node-version: "22"
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
