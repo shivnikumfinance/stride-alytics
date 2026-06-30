@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 from scipy import stats
 
@@ -45,10 +46,9 @@ def _d1_d2(
         raise ValueError("spot and strike must be > 0")
 
     sqrt_t = math.sqrt(time_to_expiry)
-    d1 = (
-        math.log(spot / strike)
-        + (risk_free_rate + 0.5 * volatility**2) * time_to_expiry
-    ) / (volatility * sqrt_t)
+    d1 = (math.log(spot / strike) + (risk_free_rate + 0.5 * volatility**2) * time_to_expiry) / (
+        volatility * sqrt_t
+    )
     d2 = d1 - volatility * sqrt_t
     return d1, d2
 
@@ -110,8 +110,7 @@ def calculate_greeks(
     if option_type == "call":
         delta = nd1
         theta = (
-            -spot * npd1 * volatility / (2 * sqrt_t)
-            - risk_free_rate * strike * discount * nd2
+            -spot * npd1 * volatility / (2 * sqrt_t) - risk_free_rate * strike * discount * nd2
         ) / 365.0
         rho = strike * time_to_expiry * discount * nd2 / 100.0
     elif option_type == "put":
@@ -149,7 +148,7 @@ def calculate_greeks_dict(
     risk_free_rate: float = DEFAULT_RISK_FREE_RATE,
     volatility: float = DEFAULT_VOLATILITY,
     option_type: str = "call",
-) -> dict:
+) -> dict[str, Any]:
     """Convenience wrapper returning a plain ``dict`` (JSON-friendly)."""
     result = calculate_greeks(
         spot=spot,

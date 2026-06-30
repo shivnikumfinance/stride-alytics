@@ -32,5 +32,8 @@ class Trade(Base):
         TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=text("now()"), onupdate=text("now()"), nullable=False
+        TIMESTAMP(timezone=True),
+        server_default=text("now()"),
+        onupdate=text("now()"),
+        nullable=False,
     )

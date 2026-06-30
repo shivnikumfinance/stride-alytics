@@ -115,10 +115,7 @@ def import_smoke() -> int:
     "declarative_base() missing" / circular import / typo class of
     bug before the test suite even starts.
     """
-    code = (
-        "import app.main, app.services, app.api.v1.router;"
-        " print('OK: backend imports clean')"
-    )
+    code = "import app.main, app.services, app.api.v1.router;" " print('OK: backend imports clean')"
     return run((sys.executable, "-c", code))
 
 

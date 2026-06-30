@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Awaitable, Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -16,7 +17,9 @@ log = get_logger(__name__)
 class AccessLogMiddleware(BaseHTTPMiddleware):
     """Emit a single structured log line for every HTTP request."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start = time.perf_counter()
         response: Response = await call_next(request)
         duration_ms = round((time.perf_counter() - start) * 1000, 2)

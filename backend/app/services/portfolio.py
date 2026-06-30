@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Iterable
+from typing import Any, Iterable
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -33,8 +33,8 @@ class Trade:
     user_id: UUID
     portfolio_id: UUID
     symbol: str
-    trade_type: str         # 'call' | 'put' | 'stock'
-    direction: str          # 'long' | 'short'
+    trade_type: str  # 'call' | 'put' | 'stock'
+    direction: str  # 'long' | 'short'
     entry_price: float
     exit_price: float | None
     quantity: int
@@ -65,7 +65,9 @@ class PortfolioStore:
         self._use_db = True
 
     # --- Portfolios ---
-    def create_portfolio(self, user_id: UUID, name: str, description: str | None = None) -> Portfolio:
+    def create_portfolio(
+        self, user_id: UUID, name: str, description: str | None = None
+    ) -> Portfolio:
         for p in self._portfolios.values():
             if p.user_id == user_id and p.name == name:
                 raise ValueError(f"portfolio named {name!r} already exists for this user")
@@ -94,7 +96,9 @@ class PortfolioStore:
 
     # --- DB-backed helpers (Phase 2) ---
 
-    async def create_portfolio_db(self, user_id: str, name: str, description: str | None = None) -> dict:
+    async def create_portfolio_db(
+        self, user_id: str, name: str, description: str | None = None
+    ) -> dict[str, Any]:
         """Insert a portfolio row via SQLAlchemy and return the row dict."""
         async with get_session() as session:
             result = await session.execute(
@@ -109,17 +113,21 @@ class PortfolioStore:
             row = result.mappings().one()
             return dict(row)
 
-    async def list_portfolios_db(self, user_id: str) -> list[dict]:
+    async def list_portfolios_db(self, user_id: str) -> list[dict[str, Any]]:
         """List portfolios from the database."""
         async with get_session() as session:
             result = await session.execute(
-                text("SELECT id, user_id, name, description, created_at FROM portfolios WHERE user_id = :uid ORDER BY created_at DESC"),
+                text(
+                    "SELECT id, user_id, name, description, created_at FROM portfolios WHERE user_id = :uid ORDER BY created_at DESC"
+                ),
                 {"uid": user_id},
             )
             rows = result.mappings().all()
             return [dict(r) for r in rows]
 
-    async def get_portfolio_summary_db(self, portfolio_id: UUID, user_id: str) -> dict | None:
+    async def get_portfolio_summary_db(
+        self, portfolio_id: UUID, user_id: str
+    ) -> dict[str, Any] | None:
         """Return aggregate stats for a portfolio using the portfolio_summary view."""
         async with get_session() as session:
             result = await session.execute(
@@ -131,7 +139,7 @@ class PortfolioStore:
                 return None
             return dict(row)
 
-    async def add_trade_db(self, trade_data: dict) -> dict:
+    async def add_trade_db(self, trade_data: dict[str, Any]) -> dict[str, Any]:
         """Insert a trade row and return it."""
         async with get_session() as session:
             result = await session.execute(
@@ -149,7 +157,9 @@ class PortfolioStore:
             row = result.mappings().one()
             return dict(row)
 
-    async def close_trade_db(self, trade_id: str, user_id: str, exit_price: float, exit_date: date) -> dict | None:
+    async def close_trade_db(
+        self, trade_id: str, user_id: str, exit_price: float, exit_date: date
+    ) -> dict[str, Any] | None:
         """Close a trade by setting exit_price and exit_date."""
         async with get_session() as session:
             result = await session.execute(
@@ -160,7 +170,12 @@ class PortfolioStore:
                     RETURNING id, user_id, portfolio_id, symbol, trade_type, direction,
                               entry_price, exit_price, quantity, entry_date, exit_date
                 """),
-                {"trade_id": trade_id, "user_id": user_id, "exit_price": exit_price, "exit_date": exit_date.isoformat()},
+                {
+                    "trade_id": trade_id,
+                    "user_id": user_id,
+                    "exit_price": exit_price,
+                    "exit_date": exit_date.isoformat(),
+                },
             )
             await session.commit()
             row = result.mappings().one_or_none()
@@ -188,7 +203,7 @@ def calculate_pnl(trade: Trade) -> float:
     return -raw if trade.direction == "short" else raw
 
 
-def portfolio_summary(portfolio: Portfolio) -> dict:
+def portfolio_summary(portfolio: Portfolio) -> dict[str, Any]:
     trades = portfolio.trades
     closed = [t for t in trades if t.exit_price is not None]
     open_trades = [t for t in trades if t.exit_price is None]
@@ -211,7 +226,7 @@ def portfolio_summary(portfolio: Portfolio) -> dict:
     }
 
 
-def portfolio_trade_breakdown(trades: Iterable[Trade]) -> list[dict]:
+def portfolio_trade_breakdown(trades: Iterable[Trade]) -> list[dict[str, Any]]:
     out = []
     for t in trades:
         entry = t.entry_date or date.today()

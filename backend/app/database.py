@@ -33,9 +33,7 @@ async def verify_db_connection() -> bool:
         return False
     try:
         async with engine.connect() as conn:
-            await conn.execute(
-                __import__("sqlalchemy").text("SELECT 1")
-            )
+            await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
         logger.info("✓ Database connection verified.")
         return True
     except Exception as exc:

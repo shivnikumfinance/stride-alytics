@@ -99,7 +99,11 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-fail_under = 0          # bumped in a follow-up once baseline is captured
+# Baseline captured 2026-06-29 — current 63% (after black reformat + dict
+# generic fix-up). Targeted raise to 80% lives in a follow-up commit
+# that adds tests for app/models/, app/services/market.py,
+# app/services/screener.py, and app/database.py.
+fail_under = 63
 exclude_lines = [
     "pragma: no cover",
     "raise NotImplementedError",
@@ -111,6 +115,7 @@ exclude_lines = [
 python_version = "3.12"
 files = ["app"]
 ignore_missing_imports = false
+strict = true
 # ``yfinance`` ships no type information and is not stubbed anywhere.
 [[tool.mypy.overrides]]
 module = ["yfinance.*"]

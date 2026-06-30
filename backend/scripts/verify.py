@@ -9,9 +9,10 @@ mistakes; later steps are slower and assume earlier ones passed.
 
   1. clean caches       — fast, ensures no stale .pyc
   2. ruff lint          — fast, catches unused imports + style
-  3. mypy typecheck     — medium, catches real type bugs
-  4. import smoke       — fast, catches missing Base / circular imports
-  5. pytest             — slow, the actual contract test
+  3. black --check      — fast, catches formatting drift
+  4. mypy --strict      — medium, catches real type bugs
+  5. import smoke       — fast, catches missing Base / circular imports
+  6. pytest + coverage  — slow, contract test + coverage gate
 
 Exit codes:
   0   — every step passed
@@ -28,16 +29,37 @@ from scripts._common import (
     clean_caches,
     import_smoke,
     project_root,
+    run,
     step,
 )
+
+
+def _pytest_with_coverage() -> int:
+    """Run pytest with coverage enabled. Coverage fails the run if under
+    ``[tool.coverage.report] fail_under``.
+
+    Uses the project's pyproject.toml — no extra config file required.
+    Forward any extra args (e.g. ``-k greeks``) to pytest by appending
+    to ``sys.argv``.
+    """
+    args = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "tests",
+        "--cov=app",
+        "--cov-report=term-missing",
+        "--cov-config=pyproject.toml",
+        *sys.argv[1:],
+    ]
+    return run(tuple(args))
 
 
 def main() -> int:
     root = project_root()
     if not (root / "app").is_dir():
         print(
-            f"!! verify must be run from the backend/ directory "
-            f"(missing {root / 'app'})",
+            f"!! verify must be run from the backend/ directory " f"(missing {root / 'app'})",
             file=sys.stderr,
         )
         return 2
@@ -56,18 +78,26 @@ def main() -> int:
 
     results.append(("ruff lint", step("ruff lint", lint_main)))
 
-    # --- 3. mypy ---
+    # --- 3. black format check ---
+    from scripts.format import main as format_main
+
+    results.append(("black --check", step("black --check", format_main)))
+
+    # --- 4. mypy (strict) ---
     from scripts.typecheck import main as typecheck_main
 
-    results.append(("mypy", step("mypy", typecheck_main)))
+    results.append(("mypy --strict", step("mypy --strict", typecheck_main)))
 
-    # --- 4. import smoke ---
+    # --- 5. import smoke ---
     results.append(("import smoke", step("import smoke", import_smoke)))
 
-    # --- 5. pytest ---
-    from scripts.test import main as test_main
-
-    results.append(("pytest", step("pytest", test_main)))
+    # --- 6. pytest + coverage ---
+    results.append(
+        (
+            "pytest + coverage",
+            step("pytest + coverage", _pytest_with_coverage),
+        )
+    )
 
     # --- summary ---
     banner("summary")

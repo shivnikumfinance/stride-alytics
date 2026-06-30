@@ -21,11 +21,7 @@ MIGRATIONS_DIR = REPO_ROOT / "database" / "migrations"
 
 
 def _discover_sql_files() -> list[Path]:
-    return sorted(
-        p
-        for p in MIGRATIONS_DIR.glob("*.sql")
-        if p.is_file()
-    )
+    return sorted(p for p in MIGRATIONS_DIR.glob("*.sql") if p.is_file())
 
 
 @pytest.mark.parametrize("sql_path", _discover_sql_files(), ids=lambda p: p.name)
@@ -33,6 +29,7 @@ def test_sql_parses(sql_path: Path) -> None:
     sql = sql_path.read_text(encoding="utf-8")
     try:
         import pglast  # type: ignore
+
         pglast.parse_sql(sql)
     except ImportError:
         # Fallback: at minimum, ensure files are non-empty and contain a
@@ -40,9 +37,7 @@ def test_sql_parses(sql_path: Path) -> None:
         assert sql.strip(), f"{sql_path.name} is empty"
         upper = sql.upper()
         assert (
-            ("CREATE" in upper)
-            or ("INSERT" in upper)
-            or ("DROP" in upper)
+            ("CREATE" in upper) or ("INSERT" in upper) or ("DROP" in upper)
         ), f"{sql_path.name} contains no DDL/DML"
     except Exception as exc:  # pragma: no cover - pglast raises on bad SQL
         pytest.fail(f"{sql_path.name} failed to parse: {exc}")
@@ -52,9 +47,7 @@ def test_migration_ordering_is_monotonic() -> None:
     """Migration filenames must sort in apply order."""
     files = _discover_sql_files()
     prefixes = [re.match(r"^(\d{3,})_", f.name).group(1) for f in files]  # type: ignore[union-attr]
-    assert prefixes == sorted(prefixes), (
-        f"Migration files are not in numeric order: {prefixes}"
-    )
+    assert prefixes == sorted(prefixes), f"Migration files are not in numeric order: {prefixes}"
 
 
 def test_every_migration_has_a_down_or_is_reversible() -> None:

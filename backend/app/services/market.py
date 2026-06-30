@@ -11,7 +11,7 @@ adapter that delegates here. The reasoning:
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Any, Final
 
 import httpx
 
@@ -48,7 +48,7 @@ REQUEST_TIMEOUT_SECONDS: Final[float] = 10.0
 log = get_logger(__name__)
 
 
-def _to_ticker(quote: dict) -> TickerData:
+def _to_ticker(quote: dict[str, Any]) -> TickerData:
     """Convert one Yahoo quote row into a ``TickerData``."""
     return TickerData(
         symbol=str(quote.get("symbol") or ""),
