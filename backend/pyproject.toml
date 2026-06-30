@@ -49,6 +49,9 @@ dev = [
     # Type stubs for libraries that ship without inline types
     "scipy-stubs>=1.18.0",
     "types-python-jose>=3.5.0.20260408",
+    # Async SQLite driver — used by tests/test_models.py to exercise the
+    # SQLAlchemy ORM round-trip in-process without a Postgres dependency.
+    "aiosqlite>=0.20.0",
 ]
 
 # Backend developer-experience scripts — discoverable as `uv run lint`,

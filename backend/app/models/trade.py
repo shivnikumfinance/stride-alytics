@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import DECIMAL, TIMESTAMP, text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DECIMAL, ForeignKey, TIMESTAMP, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.portfolio import Portfolio
 
 
 class Trade(Base):
@@ -17,8 +21,10 @@ class Trade(Base):
     __tablename__ = "trades"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=text("gen_random_uuid()"))
-    user_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
-    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(
+        ForeignKey("portfolios.id"), nullable=False, index=True
+    )
     symbol: Mapped[str] = mapped_column(nullable=False)
     trade_type: Mapped[str] = mapped_column(nullable=False)
     direction: Mapped[str] = mapped_column(nullable=False)
@@ -37,3 +43,5 @@ class Trade(Base):
         onupdate=text("now()"),
         nullable=False,
     )
+
+    portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="trades")
