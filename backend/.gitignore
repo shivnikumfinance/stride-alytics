@@ -23,4 +23,7 @@ build/
 Thumbs.db
 
 # uv / pip
-.python-version
+# NOTE: .python-version is INTENTIONALLY tracked. Render's uv-managed
+# build sandbox needs it to know which Python interpreter to install
+# (uv 0.10.2's `python-downloads=never` default will not auto-fetch a
+# Python 3.12 interpreter on its own).
