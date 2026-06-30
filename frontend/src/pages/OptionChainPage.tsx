@@ -24,12 +24,12 @@ export function OptionChainPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <header>
         <h1 className="text-2xl font-semibold text-slate-900">Option Chain</h1>
         <p className="text-sm text-slate-500 mt-1">
           SPY — Jul 17, 2026 (30 DTE) — Underlying: ${underlying.toFixed(2)}
         </p>
-      </div>
+      </header>
 
       <Card>
         <div className="overflow-x-auto">

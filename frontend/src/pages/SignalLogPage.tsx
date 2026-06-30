@@ -35,33 +35,33 @@ export function SignalLogPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <header>
         <h1 className="text-2xl font-semibold text-slate-900">Signal Log</h1>
         <p className="text-sm text-slate-500 mt-1">
           Immutable record of rule-based decisions and regime shifts
         </p>
-      </div>
+      </header>
 
-      <Card>
+      <Card bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               <tr>
-                <th>Timestamp</th>
-                <th>Type</th>
-                <th>Rule</th>
-                <th>Details</th>
+                <th className="px-4 py-3">Timestamp</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Rule</th>
+                <th className="px-4 py-3">Details</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {signals.map((signal, idx) => (
-                <tr key={idx}>
-                  <td className="text-xs font-mono text-slate-500 whitespace-nowrap">
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-xs font-mono text-slate-500">
                     {signal.timestamp}
                   </td>
-                  <td>{getTypeBadge(signal.type)}</td>
-                  <td className="text-sm font-medium text-slate-900">{signal.rule}</td>
-                  <td className="text-sm text-slate-600">{signal.details}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{getTypeBadge(signal.type)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">{signal.rule}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{signal.details}</td>
                 </tr>
               ))}
             </tbody>

@@ -17,10 +17,10 @@ export function ExitAlertsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <header>
         <h1 className="text-2xl font-semibold text-slate-900">Exit Alerts & Recommendations</h1>
         <p className="text-sm text-slate-500 mt-1">Real-time exit signals, severity-filtered with suggested actions</p>
-      </div>
+      </header>
 
       <Card>
         <div className="flex items-center justify-between mb-4">
