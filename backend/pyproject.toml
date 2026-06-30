@@ -62,6 +62,7 @@ format = "scripts.format:main"
 typecheck = "scripts.typecheck:main"
 test = "scripts.test:main"
 verify = "scripts.verify:main"
+dev = "scripts.dev:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app/"]

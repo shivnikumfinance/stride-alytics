@@ -44,7 +44,9 @@ def _sanitize_sqlite_server_defaults(metadata: MetaData) -> None:
         for column in table.columns:
             if column.server_default is not None:
                 text_value = str(column.server_default.arg)
-                if any(token in text_value for token in ("auth.uid()", "gen_random_uuid()", "now()")):
+                if any(
+                    token in text_value for token in ("auth.uid()", "gen_random_uuid()", "now()")
+                ):
                     column.server_default = None
                     column.nullable = True
             if column.server_onupdate is not None:
