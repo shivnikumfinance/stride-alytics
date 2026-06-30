@@ -3,7 +3,12 @@ services:
     name: stridealytics-api
     rootDirectory: backend
     env: python
-    pythonVersion: "3.12"
+    # Use a fully-qualified patch version so Render installs the exact
+    # interpreter into the build sandbox. Bare "3.12" is unreliable
+    # when the build is delegated to uv (uv 0.10.2 + Render's
+    # `python-downloads=never` default will refuse to auto-fetch).
+    # `.python-version` is the secondary pin; either one works.
+    pythonVersion: "3.12.13"
     buildCommand: "uv sync --frozen --no-dev --active"
     startCommand: "uv run --active uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     numInstances: 1
@@ -19,8 +24,6 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
-      - key: PYTHON_VERSION
-        value: "3.12"
       - key: CORS_ORIGINS
         value: https://stridealytics.com,https://www.stridealytics.com
       - key: APP_NAME
