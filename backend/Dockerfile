@@ -8,6 +8,12 @@ WORKDIR /app
 # Copy dependency manifests first for Docker layer caching
 COPY pyproject.toml uv.lock ./
 
+# Copy the local ta-lib wheel(s) — uv.lock references them as
+# `wheels/ta_lib-0.6.5-*.whl` (relative to pyproject.toml). Without this
+# COPY the lockfile path resolves to nothing and `uv sync --frozen`
+# fails on Linux with "distribution not found".
+COPY wheels/ ./wheels/
+
 # Sync exact locked dependencies into the system Python (no dev, no project)
 RUN uv sync --frozen --no-dev --no-install-project
 

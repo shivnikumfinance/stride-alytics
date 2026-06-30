@@ -2,7 +2,8 @@
 name = "stride-alytics-backend"
 version = "0.1.0"
 description = "StrideAlytics platform — backend API"
-requires-python = ">=3.12"
+
+requires-python = ">=3.12,<3.13"
 
 dependencies = [
     # --- Core ---
@@ -27,9 +28,10 @@ dependencies = [
     "yfinance>=1.4.1",
 
     # --- Data / quant ---
-    "numpy==1.26.4",  # Required 1.x version for stable TA-Lib linking on Python 3.12
-    "pandas>=2.2.3",
-    "scipy>=1.14.1",
+    "numpy==1.26.4",
+    "scipy>=1.14.1,<1.18",
+    "pandas>=2.2.3,<3",
+    "ta-lib==0.6.5",
 
     # --- Logging ---
     "structlog>=24.4.0",
@@ -46,11 +48,8 @@ dev = [
     "ruff>=0.9.0",
     "black>=25.1.0",
     "mypy>=1.13.0",
-    # Type stubs for libraries that ship without inline types
     "scipy-stubs>=1.18.0",
     "types-python-jose>=3.5.0.20260408",
-    # Async SQLite driver — used by tests/test_models.py to exercise the
-    # SQLAlchemy ORM round-trip in-process without a Postgres dependency.
     "aiosqlite>=0.20.0",
 ]
 
@@ -66,9 +65,8 @@ dev = "scripts.dev:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app/"]
-
-# The ``scripts/`` package is dev-tooling. Include it so the
-# [project.scripts] entry points resolve when the wheel is installed.
+# Include scripts/ so [project.scripts] entry points resolve when the
+# wheel is installed.
 [tool.hatch.build.targets.wheel.force-include]
 "scripts" = "scripts"
 
@@ -103,10 +101,8 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-# Baseline captured 2026-06-29 — current 63% (after black reformat + dict
-# generic fix-up). Targeted raise to 80% lives in a follow-up commit
-# that adds tests for app/models/, app/services/market.py,
-# app/services/screener.py, and app/database.py.
+# Baseline 63%; raise to 80% as app/models, app/services, and
+# app/database test coverage lands.
 fail_under = 63
 exclude_lines = [
     "pragma: no cover",
@@ -120,7 +116,6 @@ python_version = "3.12"
 files = ["app"]
 ignore_missing_imports = false
 strict = true
-# ``yfinance`` ships no type information and is not stubbed anywhere.
 [[tool.mypy.overrides]]
 module = ["yfinance.*"]
 ignore_missing_imports = true
@@ -130,7 +125,7 @@ no-build-package = ["ta-lib"]
 
 [tool.uv.sources]
 ta-lib = [
-    { path = "./lib/TA_Lib-0.4.32-cp312-cp312-win_amd64.whl", marker = "sys_platform == 'win32'" },
-    { path = "./lib/TA_Lib-0.4.0-cp312-cp312-manylinux_2_17_x86_64.whl", marker = "sys_platform == 'linux'" }
+    { path = "./wheels/ta_lib-0.6.5-cp312-cp312-win_amd64.whl",            marker = "sys_platform == 'win32'" },
+    { path = "./wheels/ta_lib-0.6.5-cp312-cp312-manylinux_2_28_x86_64.whl", marker = "sys_platform == 'linux'" },
 ]
 
