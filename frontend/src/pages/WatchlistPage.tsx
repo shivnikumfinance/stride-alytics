@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { Card } from "../components/ui";
+import { PageHeader, Card } from "../components/ui";
 
 export function WatchlistPage() {
   const watchlist = [
@@ -34,54 +34,51 @@ export function WatchlistPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Watchlist</h1>
-        <p className="text-sm text-slate-500 mt-1">Primary Watchlist — 10 symbols tracked</p>
-      </div>
+      <PageHeader title="Watchlist" subtitle="Primary Watchlist — 10 symbols tracked" />
 
-      <Card>
+      <Card bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               <tr>
-                <th>Symbol</th>
-                <th className="text-right">Price</th>
-                <th className="text-right">Chg %</th>
-                <th className="text-right">IV</th>
-                <th className="text-right">IV Rank</th>
-                <th>Trend</th>
-                <th>Band</th>
-                <th className="text-right">Volume</th>
-                <th>DNT</th>
+                <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3 text-right">Price</th>
+                <th className="px-4 py-3 text-right">Chg %</th>
+                <th className="px-4 py-3 text-right">IV</th>
+                <th className="px-4 py-3 text-right">IV Rank</th>
+                <th className="px-4 py-3">Trend</th>
+                <th className="px-4 py-3">Band</th>
+                <th className="px-4 py-3 text-right">Volume</th>
+                <th className="px-4 py-3">DNT</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {watchlist.map((stock, idx) => (
-                <tr key={idx}>
-                  <td>
-                    <span className="symbol-cell font-semibold text-blue-600 cursor-pointer">
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="font-semibold text-blue-600 cursor-pointer">
                       {stock.symbol}
                     </span>
                   </td>
-                  <td className="text-right text-sm font-mono">${stock.price.toFixed(2)}</td>
-                  <td className={`text-right text-sm font-medium font-mono ${stock.change >= 0 ? "text-green-700" : "text-red-700"}`}>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-mono">${stock.price.toFixed(2)}</td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-medium font-mono ${stock.change >= 0 ? "text-green-700" : "text-red-700"}`}>
                     {stock.change >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%
                   </td>
-                  <td className="text-right text-sm text-slate-700">{stock.iv.toFixed(1)}%</td>
-                  <td className="text-right text-sm text-slate-700">{stock.ivRank}%</td>
-                  <td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-slate-700">{stock.iv.toFixed(1)}%</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-slate-700">{stock.ivRank}%</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       {getTrendIcon(stock.trend)}
                       <span className="text-xs capitalize text-slate-600">{stock.trend}</span>
                     </div>
                   </td>
-                  <td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getBandColor(stock.band)}`}>
                       {stock.band}
                     </span>
                   </td>
-                  <td className="text-right text-sm text-slate-700">{stock.volume}</td>
-                  <td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-slate-700">{stock.volume}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {stock.dnt === "No" ? (
                       <span className="text-xs text-slate-400">—</span>
                     ) : (

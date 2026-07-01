@@ -1,4 +1,4 @@
-import { Badge } from "../components/ui";
+import { PageHeader, Badge } from "../components/ui";
 
 export function ActiveTradesPage() {
   const trades = [
@@ -12,12 +12,9 @@ export function ActiveTradesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Active Trades</h1>
-        <p className="text-sm text-slate-500 mt-1">6 open positions — Total P&L: +$600.00</p>
-      </div>
-      <div className="overflow-x-auto border border-slate-200 rounded-lg">
-        <table className="data-table">
+      <PageHeader title="Active Trades" subtitle="6 open positions — Total P&L: +$600.00" />
+      <div className="overflow-x-auto border border-slate-200 rounded-lg bg-white">
+        <table className="w-full text-sm">
           <thead>
             <tr>
               <th>ID</th>
@@ -37,7 +34,7 @@ export function ActiveTradesPage() {
             {trades.map((t) => (
               <tr key={t.id}>
                 <td className="text-xs font-mono text-slate-500">{t.id}</td>
-                <td><span className="symbol-cell font-semibold text-blue-600">{t.symbol}</span></td>
+                <td><span className="font-semibold text-blue-600">{t.symbol}</span></td>
                 <td className="text-sm">{t.strategy}</td>
                 <td><Badge tone={t.layer === "Base" ? "blue" : "purple"}>{t.layer}</Badge></td>
                 <td><Badge tone={t.band === "A" ? "green" : t.band === "B" ? "blue" : "yellow"}>{t.band}</Badge></td>

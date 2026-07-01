@@ -66,13 +66,13 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       />
       <aside
         className={classNames(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 flex flex-col",
+          "fixed inset-y-0 left-0 z-40 w-56 bg-white border-r border-slate-200 flex flex-col",
           "transform transition-transform lg:static lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="h-16 px-5 border-b border-slate-200 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
+        <div className="h-14 px-3 border-b border-slate-200 flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-[10px]">
             SA
           </div>
           <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
@@ -80,7 +80,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           </span>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
           {navItems.map(({ to, label, icon: Icon, end, badge }) => (
             <NavLink
               key={to}
@@ -89,7 +89,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               onClick={onClose}
               className={({ isActive }) =>
                 classNames(
-                  "flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] font-medium transition-colors",
+                  "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm font-medium transition-colors",
                   isActive
                     ? "bg-slate-100 text-blue-600 border-l-[3px] border-l-blue-600"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-l-[3px] border-l-transparent",
@@ -107,9 +107,9 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           ))}
         </nav>
 
-        <div className="p-3 border-t border-slate-200">
+        <div className="p-2.5 border-t border-slate-200">
           {user && (
-            <div className="px-2.5 py-2 mb-2">
+            <div className="px-2 py-1.5 mb-1.5">
               <p className="text-sm font-medium text-slate-900 truncate">{user.email || user.id}</p>
               <span className="inline-block mt-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
                 {user.subscription_plan?.toUpperCase() || "FREE"} Plan
@@ -121,7 +121,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             size="sm"
             className="w-full justify-start text-slate-600 hover:text-slate-900"
             onClick={handleLogout}
-            icon={<LogOut className="w-4 h-4" />}
+            icon={<LogOut className="w-3.5 h-3.5" />}
           >
             Sign out
           </Button>

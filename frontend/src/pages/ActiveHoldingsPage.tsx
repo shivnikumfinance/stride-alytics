@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { Card, Badge } from "../components/ui";
+import { PageHeader, Card, Badge } from "../components/ui";
 
 export function ActiveHoldingsPage() {
   // Mock data - replace with real API call
@@ -74,37 +74,32 @@ export function ActiveHoldingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Active Trade & Alerts</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Enriched positions view with per-position alerts, suggested actions & Greeks monitoring
-        </p>
-      </div>
+      <PageHeader title="Active Trade & Alerts" subtitle="Enriched positions view with per-position alerts, suggested actions & Greeks monitoring" />
 
-      <Card>
+      <Card bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               <tr>
-                <th>Symbol</th>
-                <th>Strategy</th>
-                <th>Alert</th>
-                <th className="text-right">P&L</th>
-                <th className="text-right">P&L %</th>
-                <th className="text-right">DTE</th>
-                <th className="text-right">Delta</th>
-                <th className="text-right">Theta</th>
-                <th>Action</th>
+                <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3">Strategy</th>
+                <th className="px-4 py-3">Alert</th>
+                <th className="px-4 py-3 text-right">P&L</th>
+                <th className="px-4 py-3 text-right">P&L %</th>
+                <th className="px-4 py-3 text-right">DTE</th>
+                <th className="px-4 py-3 text-right">Delta</th>
+                <th className="px-4 py-3 text-right">Theta</th>
+                <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {holdings.map((holding, idx) => (
-                <tr key={idx}>
-                  <td>
-                    <span className="symbol-cell font-semibold text-blue-600">{holding.symbol}</span>
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="font-semibold text-blue-600">{holding.symbol}</span>
                   </td>
-                  <td className="text-sm">{holding.strategy}</td>
-                  <td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">{holding.strategy}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       {holding.alert !== "Stable" && (
                         <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
@@ -119,32 +114,32 @@ export function ActiveHoldingsPage() {
                       </span>
                     </div>
                   </td>
-                  <td className={`text-right text-sm font-medium font-mono ${
+                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-medium font-mono ${
                     holding.pnl >= 0 ? "text-green-700" : "text-red-700"
                   }`}>
                     {holding.pnl >= 0 ? "+" : ""}{holding.pnl.toFixed(2)}
                   </td>
-                  <td className={`text-right text-sm font-medium font-mono ${
+                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-medium font-mono ${
                     holding.pnlPercent >= 0 ? "text-green-700" : "text-red-700"
                   }`}>
                     {holding.pnlPercent >= 0 ? "+" : ""}{holding.pnlPercent.toFixed(1)}%
                   </td>
-                  <td className="text-right text-sm text-slate-700">{holding.dte}</td>
-                  <td className={`text-right text-sm font-mono ${
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-slate-700">{holding.dte}</td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-mono ${
                     Math.abs(holding.delta) > 0.7 ? "text-red-600 font-semibold" :
                     Math.abs(holding.delta) > 0.5 ? "text-amber-600" :
                     "text-slate-700"
                   }`}>
                     {holding.delta.toFixed(2)}
                   </td>
-                  <td className={`text-right text-sm font-mono ${
+                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-mono ${
                     holding.theta < -15 ? "text-red-600 font-semibold" :
                     holding.theta < -10 ? "text-amber-600" :
                     "text-slate-700"
                   }`}>
                     {holding.theta.toFixed(1)}
                   </td>
-                  <td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={
                       holding.action === "Take profits" ? "green" :
                       holding.action === "Review position" ? "yellow" :
