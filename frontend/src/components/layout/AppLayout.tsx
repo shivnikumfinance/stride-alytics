@@ -11,7 +11,7 @@ export function AppLayout() {
       <Sidebar open={open} onClose={() => setOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
         <Header onMenu={() => setOpen((o) => !o)} />
-        <main className="flex-1 py-6 px-4 lg:px-6">
+        <main className="flex-1 py-4 px-3 lg:px-4">
           <Outlet />
         </main>
       </div>

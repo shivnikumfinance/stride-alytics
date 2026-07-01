@@ -6,10 +6,10 @@ export function DashboardPage() {
   const regime = useRegime("SPY", 30);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Dashboard" subtitle="Market snapshot and quick access to all tools." />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card title="Account" subtitle="Current plan & limits">
           {limits.data?.data ? (
             <div className="space-y-2 text-sm">

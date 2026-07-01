@@ -1,17 +1,17 @@
-/* Header Container */
+/* Headericon was better earlier it  Container */
 .header {
   background: white;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 6px 12px;
+  padding: 4px 8px;
   flex-shrink: 0;
   gap: 8px;
   position: sticky;
   top: 0;
   z-index: 10;
-  min-height: 48px;
+  min-height: 56px;
 }
 
 /* Mobile Menu Button */
@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 6px;
   margin-right: 4px;
   border-radius: 6px;
   background: transparent;
@@ -41,7 +41,7 @@
 
   .header {
     justify-content: space-between;
-    padding: 6px 20px;
+    padding: 4px 16px;
   }
 }
 
@@ -71,12 +71,12 @@
 .indexBox {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: 11px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 4px 8px;
+  border-radius: 6px;
+  padding: 3px 6px;
   flex-shrink: 0;
   white-space: nowrap;
   transition: all 0.2s ease;
@@ -106,8 +106,8 @@
   font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
   font-size: 10px;
   font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 5px;
+  padding: 1px 4px;
+  border-radius: 4px;
 }
 
 .indexChangeNegative {
@@ -179,19 +179,19 @@
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   color: #94a3b8;
   opacity: 0.6;
 }
 
 .headerSearch input {
-  padding: 5px 10px 5px 26px;
+  padding: 5px 10px 5px 24px;
   font-size: 12px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 999px;
-  width: 140px;
+  width: 160px;
   outline: none;
   color: #0f172a;
   font-family: inherit;
@@ -214,16 +214,16 @@
 .headerActions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
   padding-right: 8px;
-  margin-right: 4px;
+  margin-right: 8px;
   border-right: 1px solid #e2e8f0;
   color: #94a3b8;
 }
 
 .headerIconBtn {
-  padding: 5px;
-  border-radius: 8px;
+  padding: 4px;
+  border-radius: 6px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -241,8 +241,8 @@
 }
 
 .headerIconBtn svg {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
 }
 
 .notifDot {
@@ -258,10 +258,10 @@
 
 /* Export Button */
 .headerExportBtn {
-  padding: 5px;
+  padding: 4px;
   font-size: 11px;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 6px;
   background: linear-gradient(135deg, #3b82f6, #6366f1);
   color: white;
   border: none;
@@ -281,8 +281,8 @@
 }
 
 .headerExportBtn svg {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
 }
 
 .headerExportBtn span {
@@ -293,13 +293,13 @@
 .timestamp {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: 11px;
   color: #94a3b8;
   margin-left: auto;
 }
 
 .timestamp svg {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
 }
