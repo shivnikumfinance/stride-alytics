@@ -8,7 +8,7 @@ export function SettingsPage() {
   const limits = useScreenerLimits();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Settings" subtitle="Manage your account and subscription." />
 
       <Card title="Account">

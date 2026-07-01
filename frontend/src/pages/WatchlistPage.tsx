@@ -33,7 +33,7 @@ export function WatchlistPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Watchlist" subtitle="Primary Watchlist — 10 symbols tracked" />
 
       <Card bodyClassName="p-0">

@@ -2,10 +2,10 @@ import { PageHeader, Card, Badge } from "../components/ui";
 
 export function HeatDashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Heat Dashboard" subtitle="Market health, risk gauges, and trend indicators" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card title="Risk Gauges">
           <div className="space-y-4">
             <div>
@@ -67,7 +67,7 @@ export function HeatDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card title="Volatility">
           <div className="space-y-3">
             <div>
