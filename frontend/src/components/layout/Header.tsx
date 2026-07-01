@@ -115,7 +115,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
         {/* Search */}
         <div className={styles.headerSearch}>
           <Search className={styles.searchIcon} />
-          <input placeholder="Search active tickers... ⌘+F" type="text" />
+          <input placeholder="Search Active Ticker" type="text" />
         </div>
 
         {/* Action Icons */}

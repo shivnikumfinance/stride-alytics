@@ -1,4 +1,4 @@
-import { Badge } from "../components/ui";
+import { PageHeader, Badge } from "../components/ui";
 
 export function AdminPage() {
   const users = [
@@ -18,10 +18,7 @@ export function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Admin Panel</h1>
-        <p className="text-sm text-slate-500 mt-1">System health, user management, and audit log</p>
-      </div>
+      <PageHeader title="Admin Panel" subtitle="System health, user management, and audit log" />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-lg p-4">
@@ -51,32 +48,32 @@ export function AdminPage() {
           <h3 className="text-sm font-semibold text-slate-900">User Management</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Tier</th>
-                <th>Status</th>
-                <th>Joined</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Tier</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Joined</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {users.map((user, idx) => (
-                <tr key={idx}>
-                  <td className="font-medium text-slate-900">{user.name}</td>
-                  <td className="text-sm">{user.email}</td>
-                  <td>
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-900">{user.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">{user.email}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={user.role === "Admin" ? "purple" : "blue"}>{user.role}</Badge>
                   </td>
-                  <td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={user.tier === "PRO" ? "indigo" : "gray"}>{user.tier}</Badge>
                   </td>
-                  <td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={user.status === "Active" ? "green" : "red"}>{user.status}</Badge>
                   </td>
-                  <td className="text-sm text-slate-600">{user.joined}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{user.joined}</td>
                 </tr>
               ))}
             </tbody>
@@ -89,21 +86,21 @@ export function AdminPage() {
           <h3 className="text-sm font-semibold text-slate-900">Audit Log</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               <tr>
-                <th>Timestamp</th>
-                <th>Admin</th>
-                <th>Action</th>
-                <th>Detail</th>
+                <th className="px-4 py-3">Timestamp</th>
+                <th className="px-4 py-3">Admin</th>
+                <th className="px-4 py-3">Action</th>
+                <th className="px-4 py-3">Detail</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {auditLog.map((log, idx) => (
-                <tr key={idx}>
-                  <td className="text-xs font-mono text-slate-500 whitespace-nowrap">{log.timestamp}</td>
-                  <td className="text-sm font-medium text-slate-900">{log.admin}</td>
-                  <td>
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-xs font-mono text-slate-500">{log.timestamp}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">{log.admin}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={
                       log.action === "Auto-upgrade" ? "green" :
                       log.action === "Alert" ? "red" :
@@ -112,7 +109,7 @@ export function AdminPage() {
                       {log.action}
                     </Badge>
                   </td>
-                  <td className="text-sm text-slate-600">{log.detail}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{log.detail}</td>
                 </tr>
               ))}
             </tbody>

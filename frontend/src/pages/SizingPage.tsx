@@ -1,10 +1,9 @@
+import { PageHeader, Input, Button } from "../components/ui";
+
 export function SizingPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Position Sizing Calculator</h1>
-        <p className="text-sm text-slate-500 mt-1">Calculate contract quantities and risk exposure</p>
-      </div>
+      <PageHeader title="Position Sizing Calculator" subtitle="Calculate contract quantities and risk exposure" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
@@ -12,29 +11,13 @@ export function SizingPage() {
             <h3 className="text-sm font-semibold text-slate-900 mb-4">Parameters</h3>
             
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Account Size</label>
-                <input type="text" defaultValue="100000" className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
-              </div>
-              
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Risk % Per Trade</label>
-                <input type="text" defaultValue="2" className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
-              </div>
-              
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Option Price</label>
-                <input type="text" defaultValue="2.45" className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
-              </div>
-              
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Delta</label>
-                <input type="text" defaultValue="0.65" className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
-              </div>
-
-              <button className="w-full mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700">
+              <Input label="Account Size" type="text" defaultValue="100000" />
+              <Input label="Risk % Per Trade" type="text" defaultValue="2" />
+              <Input label="Option Price" type="text" defaultValue="2.45" />
+              <Input label="Delta" type="text" defaultValue="0.65" />
+              <Button type="button" className="w-full mt-4">
                 Calculate
-              </button>
+              </Button>
             </div>
           </div>
         </div>
