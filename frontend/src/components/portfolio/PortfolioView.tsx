@@ -20,8 +20,8 @@ export function PortfolioView() {
   const trades = useTrades(activeId);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PortfoliosList
           portfolios={portfolios.map((p) => ({ id: p.id, name: p.name }))}
           selectedId={activeId}
@@ -49,7 +49,7 @@ export function PortfolioView() {
       )}
 
       {activeId && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <NewTradeCard portfolioId={activeId} />
           <TradesList trades={trades.data ?? []} portfolioId={activeId} />
         </div>

@@ -34,7 +34,7 @@ export function SignalLogPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Signal Log" subtitle="Immutable record of rule-based decisions and regime shifts" />
 
       <Card bodyClassName="p-0">

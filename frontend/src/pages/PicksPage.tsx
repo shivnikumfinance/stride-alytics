@@ -11,7 +11,7 @@ export function PicksPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Weekly Picks" subtitle="Auto-generated ideas refreshed every Sunday at 6 PM ET." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {sample.map((p) => (

@@ -3,9 +3,9 @@ import { FilterPanel, ResultsTable } from "../components/screener";
 
 export function ScreenerPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Options Screener" subtitle="Filter the chain by strike, expiry, IV, volume, and Greeks." />
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="lg:col-span-1">
           <FilterPanel />
         </div>
