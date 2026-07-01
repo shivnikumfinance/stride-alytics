@@ -1,10 +1,9 @@
+import { PageHeader } from "../components/ui";
+
 export function ScenariosPage() {
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Scenario Simulations</h1>
-        <p className="text-sm text-slate-500 mt-1">What-if analysis and stress testing</p>
-      </header>
+      <PageHeader title="Scenario Simulations" subtitle="What-if analysis and stress testing" />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-lg p-5">

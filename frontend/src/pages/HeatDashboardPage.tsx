@@ -1,12 +1,9 @@
-import { Card, Badge } from "../components/ui";
+import { PageHeader, Card, Badge } from "../components/ui";
 
 export function HeatDashboardPage() {
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Heat Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Market health, risk gauges, and trend indicators</p>
-      </header>
+      <PageHeader title="Heat Dashboard" subtitle="Market health, risk gauges, and trend indicators" />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card title="Risk Gauges">

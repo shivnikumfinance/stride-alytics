@@ -1,4 +1,4 @@
-import { Badge } from "../components/ui";
+import { PageHeader, Badge } from "../components/ui";
 
 export function ActiveTradesPage() {
   const trades = [
@@ -12,10 +12,7 @@ export function ActiveTradesPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Active Trades</h1>
-        <p className="text-sm text-slate-500 mt-1">6 open positions — Total P&L: +$600.00</p>
-      </header>
+      <PageHeader title="Active Trades" subtitle="6 open positions — Total P&L: +$600.00" />
       <div className="overflow-x-auto border border-slate-200 rounded-lg bg-white">
         <table className="w-full text-sm">
           <thead>

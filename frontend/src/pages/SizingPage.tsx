@@ -1,12 +1,9 @@
-import { Input, Button } from "../components/ui";
+import { PageHeader, Input, Button } from "../components/ui";
 
 export function SizingPage() {
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Position Sizing Calculator</h1>
-        <p className="text-sm text-slate-500 mt-1">Calculate contract quantities and risk exposure</p>
-      </header>
+      <PageHeader title="Position Sizing Calculator" subtitle="Calculate contract quantities and risk exposure" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">

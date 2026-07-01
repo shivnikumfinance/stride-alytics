@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Info, AlertCircle } from "lucide-react";
-import { Card, Badge } from "../components/ui";
+import { PageHeader, Card, Badge } from "../components/ui";
 
 export function ExitAlertsPage() {
   const [filter, setFilter] = useState<"all" | "critical" | "warning" | "info">("all");
@@ -17,10 +17,7 @@ export function ExitAlertsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Exit Alerts & Recommendations</h1>
-        <p className="text-sm text-slate-500 mt-1">Real-time exit signals, severity-filtered with suggested actions</p>
-      </header>
+      <PageHeader title="Exit Alerts & Recommendations" subtitle="Real-time exit signals, severity-filtered with suggested actions" />
 
       <Card>
         <div className="flex items-center justify-between mb-4">

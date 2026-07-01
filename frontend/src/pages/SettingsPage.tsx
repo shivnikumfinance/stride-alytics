@@ -1,4 +1,4 @@
-import { Card, Button, Badge } from "../components/ui";
+import { PageHeader, Card, Button, Badge } from "../components/ui";
 import { useAuthStore } from "../store";
 import { useScreenerLimits } from "../hooks/queries";
 
@@ -9,10 +9,7 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500">Manage your account and subscription.</p>
-      </header>
+      <PageHeader title="Settings" subtitle="Manage your account and subscription." />
 
       <Card title="Account">
         {user ? (

@@ -1,4 +1,4 @@
-import { Badge } from "../components/ui";
+import { PageHeader, Badge } from "../components/ui";
 
 export function AdminPage() {
   const users = [
@@ -18,10 +18,7 @@ export function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Admin Panel</h1>
-        <p className="text-sm text-slate-500 mt-1">System health, user management, and audit log</p>
-      </header>
+      <PageHeader title="Admin Panel" subtitle="System health, user management, and audit log" />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-lg p-4">
