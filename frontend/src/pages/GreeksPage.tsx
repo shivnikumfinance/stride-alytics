@@ -3,7 +3,7 @@ import { GreeksForm } from "../components/greeks";
 
 export function GreeksPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Greeks Calculator" subtitle="Black-Scholes pricing and risk sensitivities (Δ, Γ, Θ, ν, ρ)." />
       <GreeksForm />
     </div>

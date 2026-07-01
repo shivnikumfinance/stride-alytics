@@ -19,10 +19,10 @@ interface TableProps<T> {
 
 export function Table<T>({ columns, rows, rowKey, empty, loading, className }: TableProps<T>) {
   if (loading) {
-    return <div className="p-8 text-center text-sm text-gray-500">Loading…</div>;
+    return <div className="p-4 text-center text-sm text-gray-500">Loading…</div>;
   }
   if (rows.length === 0) {
-    return <div className="p-8 text-center text-sm text-gray-500">{empty ?? "No data"}</div>;
+    return <div className="p-4 text-center text-sm text-gray-500">{empty ?? "No data"}</div>;
   }
   return (
     <div className={classNames("overflow-x-auto rounded-lg border border-gray-200 bg-white", className)}>
