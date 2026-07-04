@@ -16,12 +16,17 @@ def weekly_watchlist(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         Weekly watchlist with Strategy Tag column.
     """
+    if df.empty:
+        return df
+
     today = pd.Timestamp.today()
 
     weekly = df[
-        (df["Option Score"] >= 6)
-        & (df["Next Earnings Date"] > today + pd.Timedelta(days=14))
+        (df["Option Score"] >= 6) & (df["Next Earnings Date"] > today + pd.Timedelta(days=14))
     ].copy()
+
+    if weekly.empty:
+        return weekly
 
     def strategy_tag(row):
         iv_rank = row["IV Rank (1y)"]
@@ -48,10 +53,16 @@ def weekly_watchlist(df: pd.DataFrame) -> pd.DataFrame:
 
     weekly["Strategy Tag"] = weekly.apply(strategy_tag, axis=1)
 
+    # Add Date column if missing (use today's date)
+    if "Date" not in weekly.columns and "date" not in weekly.columns:
+        weekly["Date"] = today
+
     return weekly[
         [
             "Ticker",
+            "Date",
             "Price",
+            "Option Score",
             "IV Rank (1y)",
             "IV 30d",
             "Next Earnings Date",
