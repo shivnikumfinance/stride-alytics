@@ -7,6 +7,11 @@ using the local data pipeline.
 
 import streamlit as st
 import pandas as pd
+import sys
+from pathlib import Path
+
+# Add parent directory to path for Streamlit Cloud compatibility
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.utils.load_data import load_local_csv
 from app.screener.compute_option_score import compute_option_score
