@@ -16,7 +16,7 @@ export function ExitAlertsPage() {
   const filteredAlerts = filter === "all" ? alerts : alerts.filter(a => a.severity === filter);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Exit Alerts & Recommendations" subtitle="Real-time exit signals, severity-filtered with suggested actions" />
 
       <Card>
@@ -42,7 +42,7 @@ export function ExitAlertsPage() {
 
         <div className="space-y-3">
           {filteredAlerts.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-8">No alerts matching current filter</p>
+            <p className="text-sm text-slate-500 text-center py-4">No alerts matching current filter</p>
           ) : (
             filteredAlerts.map((alert) => (
               <div

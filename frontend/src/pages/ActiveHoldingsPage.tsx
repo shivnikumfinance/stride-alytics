@@ -73,7 +73,7 @@ export function ActiveHoldingsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Active Trade & Alerts" subtitle="Enriched positions view with per-position alerts, suggested actions & Greeks monitoring" />
 
       <Card bodyClassName="p-0">

@@ -17,7 +17,7 @@ export function AdminPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Admin Panel" subtitle="System health, user management, and audit log" />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -44,7 +44,7 @@ export function AdminPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200">
+        <div className="px-4 py-4 border-b border-slate-200">
           <h3 className="text-sm font-semibold text-slate-900">User Management</h3>
         </div>
         <div className="overflow-x-auto">
@@ -82,7 +82,7 @@ export function AdminPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200">
+        <div className="px-4 py-4 border-b border-slate-200">
           <h3 className="text-sm font-semibold text-slate-900">Audit Log</h3>
         </div>
         <div className="overflow-x-auto">

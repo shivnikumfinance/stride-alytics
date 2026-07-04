@@ -2,7 +2,7 @@ import { PageHeader } from "../components/ui";
 
 export function ScenariosPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Scenario Simulations" subtitle="What-if analysis and stress testing" />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -37,9 +37,9 @@ export function ScenariosPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-lg p-6">
+      <div className="bg-white border border-slate-200 rounded-lg p-4">
         <h3 className="text-sm font-semibold text-slate-900 mb-4">Portfolio Stress Test</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-slate-500 mb-2">Bear Market (-20%)</p>
             <p className="text-2xl font-bold text-green-700">-8.3%</p>

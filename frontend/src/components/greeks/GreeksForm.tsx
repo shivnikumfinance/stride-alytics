@@ -28,7 +28,7 @@ export function GreeksForm() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card title="Inputs" subtitle="Black-Scholes parameters">
         <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">

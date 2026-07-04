@@ -17,7 +17,7 @@ export function StrategyMatrixPage() {
   const filtered = strategies.filter(s => layer === "all" || s.layer === layer);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Strategy Design Matrix" subtitle="Interactive strategy × regime grid — filter by layer and band" />
 
       <Card>

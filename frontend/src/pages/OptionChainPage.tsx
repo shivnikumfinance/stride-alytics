@@ -23,7 +23,7 @@ export function OptionChainPage() {
   const atmIndex = 15; // Middle of the strikes array
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader title="Option Chain" subtitle={`SPY — Jul 17, 2026 (30 DTE) — Underlying: $${underlying.toFixed(2)}`} />
 
       <Card>
