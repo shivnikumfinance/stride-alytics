@@ -30,6 +30,10 @@ def compute_bands(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         DataFrame with added 'Band' column.
     """
+    if df.empty:
+        return df
+
     df = df.copy()
-    df["Band"] = df.apply(assign_band, axis=1)
+    bands = df.apply(assign_band, axis=1)
+    df["Band"] = bands
     return df

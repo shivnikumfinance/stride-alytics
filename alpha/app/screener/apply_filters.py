@@ -15,6 +15,9 @@ def apply_daily_filters(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         Filtered DataFrame with Volatility Bias and IV vs HV columns.
     """
+    if df.empty:
+        return df
+
     today = pd.Timestamp.today()
 
     filtered = df[
@@ -24,6 +27,9 @@ def apply_daily_filters(df: pd.DataFrame) -> pd.DataFrame:
         & (df["Next Earnings Date"] > today + pd.Timedelta(days=14))
         & (df["Short Interest %"] < 15)
     ].copy()
+
+    if filtered.empty:
+        return filtered
 
     def vol_bias(row):
         if row["IV Rank (1y)"] >= 50:
@@ -37,7 +43,7 @@ def apply_daily_filters(df: pd.DataFrame) -> pd.DataFrame:
             return "IV > HV (Selling better)"
         if row["IV 30d"] < row["HV 30d"]:
             return "IV < HV (Buying better)"
-        return "IV \u2248 HV"
+        return "IV ≈ HV"
 
     filtered["Volatility Bias"] = filtered.apply(vol_bias, axis=1)
     filtered["IV vs HV"] = filtered.apply(iv_vs_hv, axis=1)

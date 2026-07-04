@@ -16,6 +16,9 @@ def compute_option_score(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         Sorted by Option Score descending.
     """
+    if df.empty:
+        return df
+
     today = pd.Timestamp.today()
 
     def score_row(row):
@@ -41,5 +44,6 @@ def compute_option_score(df: pd.DataFrame) -> pd.DataFrame:
         return score
 
     df = df.copy()
-    df["Option Score"] = df.apply(score_row, axis=1)
+    scores = df.apply(score_row, axis=1)
+    df["Option Score"] = scores.astype(int)
     return df.sort_values("Option Score", ascending=False)
