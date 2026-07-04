@@ -15,7 +15,27 @@ def load_local_csv(path: str = "raw_screener.csv") -> pd.DataFrame:
     pd.DataFrame
         Cleaned DataFrame with proper types.
     """
-    df = pd.read_csv(path)
+    import os
+
+    # Try multiple locations for the CSV file on Streamlit Cloud
+    possible_paths = [
+        path,
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", path),
+        "/mount/src/stride-alytics/alpha/raw_screener.csv",
+    ]
+
+    df = None
+    for csv_path in possible_paths:
+        try:
+            if os.path.exists(csv_path):
+                df = pd.read_csv(csv_path)
+                break
+        except FileNotFoundError:
+            continue
+
+    if df is None:
+        # Return empty dataframe if file not found
+        return pd.DataFrame()
 
     # Try both en-dash and hyphen variants for Quality Score
     for col in df.columns:
