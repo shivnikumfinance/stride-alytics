@@ -151,7 +151,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.set_page_config(page_title="Option Trading System", layout="wide", page_icon="🎯")
+st.set_page_config(page_title="Option Trading System", layout="wide", page_icon="assets/icon/favicon.ico")
 st.markdown("# StrideAlytics Alpha Dashboard")
 
 # Load data once at startup
