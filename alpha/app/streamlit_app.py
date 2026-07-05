@@ -33,6 +33,15 @@ def get_daily_metrics() -> pd.DataFrame:
     bands = _load_from_supabase("bands")
     if daily.empty:
         return pd.DataFrame()
+    
+    # Normalize date format for merging
+    if "date" in daily.columns:
+        daily["date"] = daily["date"].astype(str).str[:10]
+    if "date" in scores.columns:
+        scores["date"] = scores["date"].astype(str).str[:10]
+    if "date" in bands.columns:
+        bands["date"] = bands["date"].astype(str).str[:10]
+    
     if not scores.empty:
         daily = daily.merge(
             scores[["date", "ticker", "option_score", "trend", "strategy"]],
@@ -54,6 +63,13 @@ def get_option_scores() -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
     bands = _load_from_supabase("bands")
+    
+    # Normalize date format for merging
+    if "date" in df.columns:
+        df["date"] = df["date"].astype(str).str[:10]
+    if "date" in bands.columns:
+        bands["date"] = bands["date"].astype(str).str[:10]
+    
     # Merge with bands to get Band column
     if not bands.empty:
         df = df.merge(bands[["date", "ticker", "band"]], on=["date", "ticker"], how="left")
