@@ -1,13 +1,13 @@
 """
 Alpha — StrideAlytics Option Trading System Pipeline.
 
-Orchestrates: load CSV → score options → compute bands → apply filters →
+Orchestrates: load data (DB or CSV) → score options → compute bands → apply filters →
 generate watchlist → insert into Supabase → push to Google Sheets.
 """
 
 import pandas as pd
 
-from app.utils.load_data import load_local_csv
+from app.utils.load_data import load_from_supabase, load_local_csv
 from app.screener.compute_option_score import compute_option_score
 from app.screener.apply_filters import apply_daily_filters
 from app.screener.weekly_watchlist import weekly_watchlist, compute_strategy_for_all
@@ -23,7 +23,7 @@ from app.sheets.push_to_sheets import push_to_sheet
 
 def run_system() -> None:
     """Run the full daily option screening pipeline."""
-    # Define column names from CSV
+    # Define column names from CSV (used if fallback needed)
     csv_columns = [
         "Ticker",
         "Price",
@@ -44,12 +44,16 @@ def run_system() -> None:
         "Sector",
     ]
 
-    # 1. Load raw data
-    df = load_local_csv()
-
-    # If empty, create sample data for demonstration
+    # 1. Load raw data - PRIORITY: Supabase DB first, then CSV, then sample data
+    print("Loading data from Supabase...")
+    df = load_from_supabase()
+    
     if df.empty:
-        print("Note: raw_screener.csv is empty, using sample data for demonstration...")
+        print("No data in Supabase, trying local CSV...")
+        df = load_local_csv()
+    
+    if df.empty:
+        print("No CSV data found, using sample data for demonstration...")
         df = pd.DataFrame(
             [
                 [
@@ -152,19 +156,26 @@ def run_system() -> None:
         )
         df["Next Earnings Date"] = pd.to_datetime(df["Next Earnings Date"])
 
+    print(f"Loaded {len(df)} rows")
+
     # 2. Score options
+    print("\nScoring options...")
     df_scored = compute_option_score(df)
 
     # 3. Compute bands
+    print("Computing bands...")
     df_bands = compute_bands(df_scored)
 
     # 4. Compute strategy for all tickers (needed for option_scores table)
+    print("Computing strategy tags...")
     df_bands = compute_strategy_for_all(df_bands)
 
     # 5. Apply daily filters
+    print("Applying daily filters...")
     daily = apply_daily_filters(df_bands)
 
     # 6. Generate weekly watchlist
+    print("Generating weekly watchlist...")
     weekly = weekly_watchlist(df_bands)
 
     # 7. Insert into Supabase (clear old data first to avoid duplicates)
