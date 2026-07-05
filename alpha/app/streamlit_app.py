@@ -53,14 +53,22 @@ def get_option_scores() -> pd.DataFrame:
     df = _load_from_supabase("option_scores")
     if df.empty:
         return pd.DataFrame()
+    bands = _load_from_supabase("bands")
+    # Merge with bands to get Band column
+    if not bands.empty:
+        df = df.merge(bands[["date", "ticker", "band"]], on=["date", "ticker"], how="left")
     df = df.rename(columns={
         "option_score": "Option Score",
         "ticker": "Ticker",
         "date": "Date",
         "trend": "Trend",
         "strategy": "Strategy Tag",
+        "band": "Band",
     })
-    return df[["Ticker", "Date", "Option Score", "Trend", "Strategy Tag"]].copy()
+    # Format Date column
+    if "Date" in df.columns:
+        df["Date"] = df["Date"].apply(_format_date)
+    return df[["Ticker", "Date", "Option Score", "Trend", "Strategy Tag", "Band"]].copy()
 
 
 @st.cache_data
@@ -71,6 +79,12 @@ def get_trades() -> pd.DataFrame:
 def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
+    # Normalize date column to string format for consistent merging
+    if "date" in df.columns:
+        df["date"] = df["date"].astype(str).str[:10]  # Take just YYYY-MM-DD part
+    if "next_earnings_date" in df.columns:
+        df["next_earnings_date"] = df["next_earnings_date"].astype(str).str[:10]
+    
     rename_map = {
         "ticker": "Ticker",
         "date": "Date",
@@ -93,6 +107,10 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         "sector": "Sector",
     }
     df = df.rename(columns=rename_map)
+    
+    # Format Date column after rename
+    if "Date" in df.columns:
+        df["Date"] = df["Date"].apply(_format_date)
     
     # Compute Volatility Bias and IV vs HV columns
     if "IV Rank (1y)" in df.columns:
@@ -120,6 +138,23 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         )
     
     return df
+
+
+def _format_date(date_val) -> str:
+    """Format date to MMM-DD-YYYY style (e.g., Jul-07-2026)."""
+    if pd.isna(date_val):
+        return ""
+    try:
+        if isinstance(date_val, str):
+            # Parse string date (YYYY-MM-DD or ISO format)
+            if len(date_val) >= 10:
+                date_val = date_val[:10]  # Take YYYY-MM-DD part
+            date_obj = pd.to_datetime(date_val)
+        else:
+            date_obj = pd.to_datetime(date_val)
+        return date_obj.strftime("%b-%d-%Y")
+    except Exception:
+        return str(date_val)
 
 
 st.markdown(
@@ -170,7 +205,7 @@ with tab2:
     st.subheader("Bands & Option Scores")
     scores = get_option_scores()
     if not scores.empty:
-        score_cols = ["Ticker", "Date", "Option Score", "Trend", "Strategy Tag"]
+        score_cols = ["Ticker", "Date", "Option Score", "Trend", "Strategy Tag", "Band"]
         available = [c for c in score_cols if c in scores.columns]
         st.dataframe(scores[available], width="stretch")
     else:
