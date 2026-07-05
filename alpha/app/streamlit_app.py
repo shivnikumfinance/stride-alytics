@@ -125,9 +125,11 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
     }
     df = df.rename(columns=rename_map)
     
-    # Format Date column after rename
+    # Format Date columns after rename
     if "Date" in df.columns:
         df["Date"] = df["Date"].apply(format_date_mmm_dd_yyyy)
+    if "Next Earnings Date" in df.columns:
+        df["Next Earnings Date"] = df["Next Earnings Date"].apply(format_date_mmm_dd_yyyy)
     
     # Compute Volatility Bias and IV vs HV columns
     if "IV Rank (1y)" in df.columns:
