@@ -52,6 +52,28 @@ def _map_columns(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+# Columns that exist in the daily_metrics Supabase table (from supabase_schema.sql)
+DAILY_METRICS_COLUMNS = [
+    "date",
+    "ticker",
+    "price",
+    "hv_30d",
+    "next_earnings_date",
+    "sector",
+    "option_volume",
+    "max_oi_near_exp",
+    "bid_ask_spread_pct",
+    "iv_30d",
+    "iv_rank_1y",
+    "atr",
+    "revenue_growth_yoy",
+    "debt_equity",
+    "quality_score",
+    "float_shares",
+    "beta",
+]
+
+
 def insert_daily_metrics(df: pd.DataFrame) -> None:
     """
     Insert row-level daily metrics into Supabase.
@@ -65,7 +87,9 @@ def insert_daily_metrics(df: pd.DataFrame) -> None:
         return
     client = get_supabase_client()
     df_mapped = _map_columns(df)
-    rows = df_mapped.to_dict(orient="records")
+    # Only keep columns that exist in the daily_metrics table schema
+    available_cols = [c for c in DAILY_METRICS_COLUMNS if c in df_mapped.columns]
+    rows = df_mapped[available_cols].to_dict(orient="records")
     rows = _convert_timestamps(rows)
     client.table("daily_metrics").insert(rows).execute()
 
