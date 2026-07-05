@@ -28,13 +28,28 @@ def load_local_csv(path: str = "raw_screener.csv") -> pd.DataFrame:
     for csv_path in possible_paths:
         try:
             if os.path.exists(csv_path):
-                df = pd.read_csv(csv_path)
+                # quotechar='"' is pandas default, but be explicit to guard
+                # against malformed CSVs that contain unquoted commas inside
+                # fields (e.g. "Above 20, 50, 200 (Bullish)").
+                df = pd.read_csv(csv_path, quotechar='"', skipinitialspace=True)
                 break
         except FileNotFoundError:
             continue
 
     if df is None:
-        # Return empty dataframe if file not found
+        # Return empty dataframe if file not exist
+        return pd.DataFrame()
+
+    # Defensive: if the Ticker column came in as numeric, the CSV is almost
+    # certainly misparsed (unquoted commas split rows into too many fields
+    # and shifted column values left). Surface this clearly instead of
+    # silently inserting garbage into Supabase.
+    if "Ticker" in df.columns and not pd.api.types.is_string_dtype(df["Ticker"]):
+        print(
+            "[WARNING] CSV 'Ticker' column is not string — the file likely has "
+            "unquoted commas in some field (commonly the Trend column). "
+            "Rejecting malformed data."
+        )
         return pd.DataFrame()
 
     # Try both en-dash and hyphen variants for Quality Score
