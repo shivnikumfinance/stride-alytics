@@ -29,63 +29,40 @@ def _load_from_supabase(table: str) -> pd.DataFrame:
 
 @st.cache_data(ttl=60)
 def get_daily_metrics() -> pd.DataFrame:
+    """Load daily metrics from Supabase - already contains all computed fields."""
     daily = _load_from_supabase("daily_metrics")
-    scores = _load_from_supabase("option_scores")
-    bands = _load_from_supabase("bands")
-    if daily.empty:
-        return pd.DataFrame()
-    
-    # Normalize date format for merging
-    if "date" in daily.columns:
-        daily["date"] = daily["date"].astype(str).str[:10]
-    if "date" in scores.columns:
-        scores["date"] = scores["date"].astype(str).str[:10]
-    if "date" in bands.columns:
-        bands["date"] = bands["date"].astype(str).str[:10]
-    
-    if not scores.empty:
-        daily = daily.merge(
-            scores[["date", "ticker", "option_score", "trend", "strategy"]],
-            on=["date", "ticker"],
-            how="left",
-        )
-    if not bands.empty:
-        daily = daily.merge(
-            bands[["date", "ticker", "band"]],
-            on=["date", "ticker"],
-            how="left",
-        )
     return daily
 
 
 @st.cache_data
 def get_option_scores() -> pd.DataFrame:
-    df = _load_from_supabase("option_scores")
+    """Load option scores - uses daily_metrics which has all computed fields."""
+    df = _load_from_supabase("daily_metrics")
     if df.empty:
         return pd.DataFrame()
-    bands = _load_from_supabase("bands")
     
-    # Normalize date format for merging
+    # Normalize date format for display
     if "date" in df.columns:
         df["date"] = df["date"].astype(str).str[:10]
-    if "date" in bands.columns:
-        bands["date"] = bands["date"].astype(str).str[:10]
     
-    # Merge with bands to get Band column
-    if not bands.empty:
-        df = df.merge(bands[["date", "ticker", "band"]], on=["date", "ticker"], how="left")
+    # Rename to display columns
     df = df.rename(columns={
-        "option_score": "Option Score",
         "ticker": "Ticker",
         "date": "Date",
+        "option_score": "Option Score",
         "trend": "Trend",
         "strategy": "Strategy Tag",
         "band": "Band",
     })
+    
     # Format Date column
     if "Date" in df.columns:
         df["Date"] = df["Date"].apply(format_date_mmm_dd_yyyy)
-    return df[["Ticker", "Date", "Option Score", "Trend", "Strategy Tag", "Band"]].copy()
+    
+    # Return only the columns we need for this tab
+    cols_needed = ["Ticker", "Date", "Option Score", "Trend", "Strategy Tag", "Band"]
+    available = [c for c in cols_needed if c in df.columns]
+    return df[available].copy()
 
 
 @st.cache_data
@@ -96,6 +73,10 @@ def get_trades() -> pd.DataFrame:
 def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
+    
+    # Make a copy to avoid modifying the original DataFrame
+    df = df.copy()
+    
     # Normalize date column to string format for consistent merging
     if "date" in df.columns:
         df["date"] = df["date"].astype(str).str[:10]  # Take just YYYY-MM-DD part
@@ -121,6 +102,7 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         "option_score": "Option Score",
         "band": "Band",
         "trend": "Trend (Above/Below 20/50/200 EMA)",
+        "strategy": "Strategy Tag",
         "sector": "Sector",
     }
     df = df.rename(columns=rename_map)
@@ -144,7 +126,9 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         df["Volatility Bias"] = df["IV Rank (1y)"].apply(vol_bias)
     
     if "IV 30d" in df.columns and "HV 30d" in df.columns:
-        def iv_vs_hv(iv_30d, hv_30d):
+        def iv_vs_hv(row):
+            iv_30d = row.get("IV 30d")
+            hv_30d = row.get("HV 30d")
             if pd.isna(iv_30d) or pd.isna(hv_30d):
                 return "N/A"
             if iv_30d > hv_30d:
@@ -152,9 +136,7 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
             if iv_30d < hv_30d:
                 return "IV < HV (Buying better)"
             return "IV ≈ HV"
-        df["IV vs HV"] = df.apply(
-            lambda row: iv_vs_hv(row["IV 30d"], row["HV 30d"]), axis=1
-        )
+        df["IV vs HV"] = df.apply(iv_vs_hv, axis=1)
     
     return df
 
@@ -186,6 +168,7 @@ with tab1:
             "Price",
             "Option Score",
             "Band",
+            "Strategy Tag",
             "Trend (Above/Below 20/50/200 EMA)",
             "IV 30d",
             "IV Rank (1y)",

@@ -9,28 +9,28 @@ create table if not exists daily_metrics (
     date text not null,
     ticker text not null,
 
-    -- yfinance
+    -- CSV columns (in order)
     price numeric,
-    hv_30d numeric,
-    next_earnings_date text,
-    sector text,
-
-    -- polygon
+    avg_volume_shares numeric,
     option_volume numeric,
     max_oi_near_exp numeric,
     bid_ask_spread_pct numeric,
     iv_30d numeric,
     iv_rank_1y numeric,
+    hv_30d numeric,
     atr numeric,
-
-    -- fmp
+    next_earnings_date text,
+    short_interest_pct numeric,
     revenue_growth_yoy numeric,
     debt_equity numeric,
     quality_score numeric,
+    sector text,
 
-    -- massive (optional)
-    float_shares numeric,
-    beta numeric,
+    -- computed fields
+    option_score numeric,
+    band text,
+    trend text,
+    strategy text,
 
     inserted_at timestamp default now()
 );
@@ -78,12 +78,14 @@ create table if not exists weekly_watchlist (
     id bigint generated always as identity primary key,
     date text not null,
     ticker text not null,
+    sector text,
     price numeric,
     option_score numeric,
+    iv_rank_1y numeric,
+    iv_30d numeric,
+    next_earnings_date text,
     trend text,
     strategy text,
-    iv_rank_1y numeric,
-    next_earnings_date text,
     inserted_at timestamp default now()
 );
 
