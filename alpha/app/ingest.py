@@ -23,6 +23,7 @@ from app.database.supabase_client import get_supabase_client
 from app.data_sources.polygon import fetch_polygon_options
 from app.data_sources.fmp_fundamentals import fetch_fmp_fundamentals
 from app.data_sources.massive import fetch_massive_data_for_tickers
+from app.data_sources.ticker_universe import load_tickers
 
 
 # ─────────────────────────────────────────────
@@ -37,18 +38,6 @@ supabase = get_supabase_client()
 # ─────────────────────────────────────────────
 
 
-def load_tickers() -> list:
-    """
-    Load tickers for ingestion.
-    You can replace this with:
-    - Supabase table
-    - Google Sheets
-    - Local CSV
-    - Hardcoded list
-    """
-
-    # Hardcoded starter universe (replace with your own)
-    return ["AAPL", "MSFT", "GOOGL", "NVDA", "AMZN", "META", "TSLA"]
 
 
 # ─────────────────────────────────────────────
@@ -147,7 +136,13 @@ def run_ingestion_pipeline() -> pd.DataFrame:
     - Return DataFrame
     """
 
-    tickers = load_tickers()
+    tickers = load_tickers(
+        use_sp500=True,
+        use_nasdaq100=True,
+        use_most_active=True,
+        use_custom=True,
+        max_total=2000,
+    )
     print(f"📥 Ingesting data for: {tickers}")
 
     # Fetch data

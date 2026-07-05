@@ -192,11 +192,25 @@ with tab1:
     st.subheader("Screener (Daily Metrics)")
     df = get_daily_metrics()
     if not df.empty:
-        display_cols = ["Ticker", "Price", "Option Score", "Band"]
-        if all(col in df.columns for col in display_cols):
-            st.dataframe(df[display_cols], width="stretch")
-        else:
-            st.dataframe(df, width="stretch")
+        display_cols = [
+            "Ticker",
+            "Price",
+            "Option Score",
+            "Band",
+            "IV 30d",
+            "IV Rank (1y)",
+            "HV 30d",
+            "Option Volume",
+            "Max OI (Near Exp)",
+            "Bid-Ask Spread %",
+            "ATR",
+            "Next Earnings Date",
+            "Short Interest %",
+            "Quality Score (1-5)",
+            "Trend (Above/Below 20/50/200 EMA)",
+        ]
+        available = [c for c in display_cols if c in df.columns]
+        st.dataframe(df[available], width="stretch")
     else:
         st.info("No daily metrics found.")
 
@@ -204,18 +218,30 @@ with tab2:
     st.subheader("Bands & Option Scores")
     scores = get_option_scores()
     if not scores.empty:
-        st.dataframe(scores, width="stretch")
+        score_cols = ["Ticker", "Date", "Option Score", "Band", "Strategy Tag"]
+        available = [c for c in score_cols if c in scores.columns]
+        st.dataframe(scores[available], width="stretch")
     else:
         st.info("No option scores found.")
 
 with tab3:
     st.subheader("Volatility (IV vs HV)")
     if not df.empty:
-        if "IV 30d" in df.columns and "HV 30d" in df.columns:
-            vol_df = df[["Ticker", "Date", "IV 30d", "HV 30d"]]
-            st.dataframe(vol_df, width="stretch")
+        vol_cols = [
+            "Ticker",
+            "Date",
+            "IV 30d",
+            "IV Rank (1y)",
+            "HV 30d",
+            "ATR",
+            "Volatility Bias",
+            "IV vs HV",
+        ]
+        available = [c for c in vol_cols if c in df.columns]
+        if available:
+            st.dataframe(df[available], width="stretch")
         else:
-            st.warning("IV 30d / HV 30d columns missing in daily_metrics.")
+            st.warning("Volatility columns missing in daily_metrics.")
     else:
         st.info("No daily metrics found.")
 
