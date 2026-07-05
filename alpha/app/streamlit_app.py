@@ -2,7 +2,7 @@
 Streamlit dashboard for the Option Trading System.
 
 Displays daily metrics, option scores, volatility data, and trades
-using the local data pipeline.
+from Supabase (real scanned data).
 """
 
 import streamlit as st
@@ -10,193 +10,166 @@ import pandas as pd
 import sys
 from pathlib import Path
 
-# Add parent directory to path for Streamlit Cloud compatibility
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.utils.load_data import load_local_csv
-from app.screener.compute_option_score import compute_option_score
-from app.screener.band_pipeline import compute_bands
+from app.database.supabase_client import get_supabase_client
+from app.utils.date_utils import format_date_mmm_dd_yyyy, normalize_date_for_merge
 
 
-def _get_sample_data() -> pd.DataFrame:
-    """Generate sample data matching the CSV format for testing."""
-    csv_columns = [
-        "Ticker",
-        "Price",
-        "Avg Volume (Shares)",
-        "Option Volume",
-        "Max OI (Near Exp)",
-        "Bid-Ask Spread %",
-        "IV 30d",
-        "IV Rank (1y)",
-        "HV 30d",
-        "ATR",
-        "Next Earnings Date",
-        "Short Interest %",
-        "Revenue Growth (YoY)",
-        "Debt/Equity",
-        "Quality Score (1–5)",
-        "Trend (Above/Below 20/50/200 EMA)",
-    ]
-    sample_df = pd.DataFrame(
-        [
-            [
-                "AAPL",
-                190.50,
-                45000000,
-                5000,
-                1200,
-                3.5,
-                0.35,
-                65,
-                0.25,
-                2.5,
-                "2026-07-28",
-                1.2,
-                0.12,
-                1.3,
-                5,
-                "Above 20, 50, 200 (Bullish)",
-            ],
-            [
-                "MSFT",
-                330.25,
-                25000000,
-                3500,
-                800,
-                2.0,
-                0.28,
-                45,
-                0.22,
-                4.2,
-                "2026-08-05",
-                0.8,
-                0.18,
-                0.4,
-                5,
-                "Above 20, 50, 200 (Bullish)",
-            ],
-            [
-                "GOOGL",
-                140.80,
-                18000000,
-                4200,
-                600,
-                4.5,
-                0.32,
-                55,
-                0.30,
-                3.8,
-                "2026-08-30",
-                1.0,
-                0.08,
-                0.2,
-                4,
-                "Above 20, Below 50, Above 200",
-            ],
-            [
-                "TSLA",
-                250.40,
-                90000000,
-                15000,
-                2500,
-                6.0,
-                0.65,
-                80,
-                0.55,
-                12.0,
-                "2026-08-15",
-                2.5,
-                -0.05,
-                0.8,
-                3,
-                "Below 20, 50, 200 (Bearish)",
-            ],
-            [
-                "NVDA",
-                850.30,
-                45000000,
-                8500,
-                1800,
-                3.0,
-                0.45,
-                70,
-                0.38,
-                15.0,
-                "2026-08-20",
-                1.5,
-                0.55,
-                0.1,
-                5,
-                "Above 20, 50, 200 (Bullish)",
-            ],
-        ],
-        columns=csv_columns,
-    )
-    sample_df["Next Earnings Date"] = pd.to_datetime(sample_df["Next Earnings Date"])
-    sample_df["Date"] = pd.Timestamp.today()
-    return sample_df
+def _load_from_supabase(table: str) -> pd.DataFrame:
+    try:
+        client = get_supabase_client()
+        resp = client.table(table).select("*").execute()
+        data = resp.data or []
+        return pd.DataFrame(data)
+    except Exception as e:
+        st.warning(f"Failed to load {table} from Supabase: {e}")
+        return pd.DataFrame()
 
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def get_daily_metrics() -> pd.DataFrame:
-    """Load and process daily metrics from the data pipeline."""
-    df = load_local_csv()
-    if df.empty:
-        df = _get_sample_data()
-    df_scored = compute_option_score(df)
-    df_bands = compute_bands(df_scored)
-    return df_bands
+    """Load daily metrics from Supabase - already contains all computed fields."""
+    daily = _load_from_supabase("daily_metrics")
+    return daily
 
 
 @st.cache_data
 def get_option_scores() -> pd.DataFrame:
-    """Get option scores from the daily metrics."""
-    df = get_daily_metrics()
+    """Load option scores - uses daily_metrics which has all computed fields."""
+    df = _load_from_supabase("daily_metrics")
     if df.empty:
         return pd.DataFrame()
-    return df[["Ticker", "Date", "Option Score"]].copy()
+    
+    # Normalize date format for display
+    if "date" in df.columns:
+        df["date"] = df["date"].astype(str).str[:10]
+    
+    # Rename to display columns
+    df = df.rename(columns={
+        "ticker": "Ticker",
+        "date": "Date",
+        "option_score": "Option Score",
+        "trend": "Trend",
+        "strategy": "Strategy Tag",
+        "band": "Band",
+    })
+    
+    # Format Date column
+    if "Date" in df.columns:
+        df["Date"] = df["Date"].apply(format_date_mmm_dd_yyyy)
+    
+    # Return only the columns we need for this tab
+    cols_needed = ["Ticker", "Date", "Option Score", "Trend", "Strategy Tag", "Band"]
+    available = [c for c in cols_needed if c in df.columns]
+    return df[available].copy()
 
 
 @st.cache_data
 def get_trades() -> pd.DataFrame:
-    """Return empty trades dataframe (no live data source)."""
     return pd.DataFrame()
 
 
-# Custom CSS for smaller title and reduced top gap
+def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    
+    # Make a copy to avoid modifying the original DataFrame
+    df = df.copy()
+    
+    # Normalize date column to string format for consistent merging
+    if "date" in df.columns:
+        df["date"] = df["date"].astype(str).str[:10]  # Take just YYYY-MM-DD part
+    if "next_earnings_date" in df.columns:
+        df["next_earnings_date"] = df["next_earnings_date"].astype(str).str[:10]
+    
+    rename_map = {
+        "ticker": "Ticker",
+        "date": "Date",
+        "price": "Price",
+        "option_volume": "Option Volume",
+        "max_oi_near_exp": "Max OI (Near Exp)",
+        "bid_ask_spread_pct": "Bid-Ask Spread %",
+        "iv_30d": "IV 30d",
+        "iv_rank_1y": "IV Rank (1y)",
+        "hv_30d": "HV 30d",
+        "atr": "ATR",
+        "next_earnings_date": "Next Earnings Date",
+        "short_interest_pct": "Short Interest %",
+        "revenue_growth_yoy": "Revenue Growth (YoY)",
+        "debt_equity": "Debt/Equity",
+        "quality_score": "Quality Score (1-5)",
+        "option_score": "Option Score",
+        "band": "Band",
+        "trend": "Trend (Above/Below 20/50/200 EMA)",
+        "strategy": "Strategy Tag",
+        "sector": "Sector",
+    }
+    df = df.rename(columns=rename_map)
+    
+    # Format Date columns after rename
+    if "Date" in df.columns:
+        df["Date"] = df["Date"].apply(format_date_mmm_dd_yyyy)
+    if "Next Earnings Date" in df.columns:
+        df["Next Earnings Date"] = df["Next Earnings Date"].apply(format_date_mmm_dd_yyyy)
+    
+    # Compute Volatility Bias and IV vs HV columns
+    if "IV Rank (1y)" in df.columns:
+        def vol_bias(val):
+            if pd.isna(val):
+                return "N/A"
+            if val >= 50:
+                return "Sell Premium"
+            if val <= 30:
+                return "Buy Premium"
+            return "Neutral"
+        df["Volatility Bias"] = df["IV Rank (1y)"].apply(vol_bias)
+    
+    if "IV 30d" in df.columns and "HV 30d" in df.columns:
+        def iv_vs_hv(row):
+            iv_30d = row.get("IV 30d")
+            hv_30d = row.get("HV 30d")
+            if pd.isna(iv_30d) or pd.isna(hv_30d):
+                return "N/A"
+            if iv_30d > hv_30d:
+                return "IV > HV (Selling better)"
+            if iv_30d < hv_30d:
+                return "IV < HV (Buying better)"
+            return "IV ≈ HV"
+        df["IV vs HV"] = df.apply(iv_vs_hv, axis=1)
+    
+    return df
+
+
 st.markdown(
     """
     <style>
-    .block-container {
-        padding-top: 1rem;
-        padding-bottom: 0rem;
-    }
-    h1 {
-        font-size: 1.75rem;
-        margin-top: 0;
-        margin-bottom: 0.5rem;
-    }
+    .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    h1 { font-size: 1.75rem; margin-top: 0; margin-bottom: 0.5rem; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 st.set_page_config(page_title="Option Trading System", layout="wide")
-
 st.markdown("# StrideAlytics Alpha Dashboard")
+
+# Load data once at startup
+raw = get_daily_metrics()
+df = _normalize_daily_metrics(raw)
 
 tab1, tab2, tab3, tab4 = st.tabs(["Screener", "Bands & Scores", "Volatility", "Trades"])
 
 with tab1:
     st.subheader("Screener (Daily Metrics)")
-    df = get_daily_metrics()
     if not df.empty:
         display_cols = [
             "Ticker",
             "Price",
             "Option Score",
             "Band",
+            "Strategy Tag",
+            "Trend (Above/Below 20/50/200 EMA)",
             "IV 30d",
             "IV Rank (1y)",
             "HV 30d",
@@ -207,7 +180,6 @@ with tab1:
             "Next Earnings Date",
             "Short Interest %",
             "Quality Score (1-5)",
-            "Trend (Above/Below 20/50/200 EMA)",
         ]
         available = [c for c in display_cols if c in df.columns]
         st.dataframe(df[available], width="stretch")
@@ -218,7 +190,7 @@ with tab2:
     st.subheader("Bands & Option Scores")
     scores = get_option_scores()
     if not scores.empty:
-        score_cols = ["Ticker", "Date", "Option Score", "Band", "Strategy Tag"]
+        score_cols = ["Ticker", "Date", "Option Score", "Trend", "Strategy Tag", "Band"]
         available = [c for c in score_cols if c in scores.columns]
         st.dataframe(scores[available], width="stretch")
     else:
@@ -226,7 +198,7 @@ with tab2:
 
 with tab3:
     st.subheader("Volatility (IV vs HV)")
-    if not df.empty:
+    if not raw.empty:
         vol_cols = [
             "Ticker",
             "Date",
@@ -234,6 +206,8 @@ with tab3:
             "IV Rank (1y)",
             "HV 30d",
             "ATR",
+            "Next Earnings Date",
+            "Sector",
             "Volatility Bias",
             "IV vs HV",
         ]

@@ -39,7 +39,9 @@ def compute_option_score(df: pd.DataFrame) -> pd.DataFrame:
             score += 1
         if row["Short Interest %"] < 15:
             score += 1
-        if row["Quality Score (1\u20135)"] >= 3:
+        # Handle both hyphen and en-dash variants of Quality Score column
+        quality_score = row.get("Quality Score (1-5)", row.get("Quality Score (1–5)", 0))
+        if quality_score >= 3:
             score += 1
         return score
 

@@ -19,23 +19,46 @@ CSV_TO_DB_COLUMNS = {
     "Short Interest %": "short_interest_pct",
     "Revenue Growth (YoY)": "revenue_growth_yoy",
     "Debt/Equity": "debt_equity",
-    "Quality Score (1–5)": "quality_score",
+    "Quality Score (1-5)": "quality_score",
     "Trend (Above/Below 20/50/200 EMA)": "trend",
+    "Trend": "trend",
     "Band": "band",
     "Sector": "sector",
     "Market Cap": "market_cap",
+    "Strategy Tag": "strategy",
 }
 
 
 def _convert_timestamps(obj):
-    """Recursively convert Timestamp/Datetime objects to ISO format strings."""
+    """Recursively convert Timestamps, NaN, and other values to JSON-compliant types."""
+    import math
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
     elif isinstance(obj, dict):
         return {k: _convert_timestamps(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [_convert_timestamps(item) for item in obj]
     return obj
+
+
+def clear_all_tables() -> None:
+    """
+    Clear all data from the daily_metrics, option_scores, bands, and weekly_watchlist tables.
+    Use this to reset corrupted data in Supabase.
+    """
+    client = get_supabase_client()
+    try:
+        client.table("daily_metrics").delete().neq("ticker", "").execute()
+        client.table("option_scores").delete().neq("ticker", "").execute()
+        client.table("bands").delete().neq("ticker", "").execute()
+        client.table("weekly_watchlist").delete().neq("ticker", "").execute()
+        print("[INFO] All tables cleared successfully")
+    except Exception as e:
+        print(f"[WARNING] Could not clear tables: {e}")
 
 
 def _map_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -52,25 +75,32 @@ def _map_columns(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-# Columns that exist in the daily_metrics Supabase table (from supabase_schema.sql)
+# Columns that exist in the daily_metrics Supabase table (in correct order to match CSV)
 DAILY_METRICS_COLUMNS = [
     "date",
     "ticker",
     "price",
-    "hv_30d",
-    "next_earnings_date",
-    "sector",
+    "avg_volume_shares",
     "option_volume",
     "max_oi_near_exp",
     "bid_ask_spread_pct",
     "iv_30d",
     "iv_rank_1y",
+    "hv_30d",
     "atr",
+    "next_earnings_date",
+    "short_interest_pct",
     "revenue_growth_yoy",
     "debt_equity",
     "quality_score",
+    "sector",
+    "market_cap",
     "float_shares",
     "beta",
+    "option_score",
+    "band",
+    "trend",
+    "strategy",
 ]
 
 
@@ -151,12 +181,14 @@ def insert_weekly_watchlist(df: pd.DataFrame) -> None:
     watch_cols = [
         "date",
         "ticker",
+        "sector",
         "price",
         "option_score",
+        "iv_rank_1y",
+        "iv_30d",
+        "next_earnings_date",
         "trend",
         "strategy",
-        "iv_rank_1y",
-        "next_earnings_date",
     ]
     available_cols = [c for c in watch_cols if c in df_mapped.columns]
     rows = df_mapped[available_cols].to_dict(orient="records")

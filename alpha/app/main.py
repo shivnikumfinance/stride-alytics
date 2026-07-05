@@ -6,10 +6,11 @@ generate watchlist → insert into Supabase → push to Google Sheets.
 """
 
 import pandas as pd
+
 from app.utils.load_data import load_local_csv
 from app.screener.compute_option_score import compute_option_score
 from app.screener.apply_filters import apply_daily_filters
-from app.screener.weekly_watchlist import weekly_watchlist
+from app.screener.weekly_watchlist import weekly_watchlist, compute_strategy_for_all
 from app.screener.band_pipeline import compute_bands
 from app.database.insert_daily import (
     insert_daily_metrics,
@@ -38,8 +39,9 @@ def run_system() -> None:
         "Short Interest %",
         "Revenue Growth (YoY)",
         "Debt/Equity",
-        "Quality Score (1–5)",
+        "Quality Score (1-5)",
         "Trend (Above/Below 20/50/200 EMA)",
+        "Sector",
     ]
 
     # 1. Load raw data
@@ -67,6 +69,7 @@ def run_system() -> None:
                     1.3,
                     5,
                     "Above 20, 50, 200 (Bullish)",
+                    "Technology",
                 ],
                 [
                     "MSFT",
@@ -85,6 +88,7 @@ def run_system() -> None:
                     0.4,
                     5,
                     "Above 20, 50, 200 (Bullish)",
+                    "Technology",
                 ],
                 [
                     "GOOGL",
@@ -103,6 +107,7 @@ def run_system() -> None:
                     0.2,
                     4,
                     "Above 20, Below 50, Above 200",
+                    "Technology",
                 ],
                 [
                     "TSLA",
@@ -121,6 +126,7 @@ def run_system() -> None:
                     0.8,
                     3,
                     "Below 20, 50, 200 (Bearish)",
+                    "Consumer Cyclical",
                 ],
                 [
                     "NVDA",
@@ -139,6 +145,7 @@ def run_system() -> None:
                     0.1,
                     5,
                     "Above 20, 50, 200 (Bullish)",
+                    "Technology",
                 ],
             ],
             columns=csv_columns,
@@ -151,16 +158,31 @@ def run_system() -> None:
     # 3. Compute bands
     df_bands = compute_bands(df_scored)
 
-    # 4. Apply daily filters
+    # 4. Compute strategy for all tickers (needed for option_scores table)
+    df_bands = compute_strategy_for_all(df_bands)
+
+    # 5. Apply daily filters
     daily = apply_daily_filters(df_bands)
 
-    # 5. Generate weekly watchlist
+    # 6. Generate weekly watchlist
     weekly = weekly_watchlist(df_bands)
 
-    # 6. Insert into Supabase (skip if no real data or tables don't exist)
+    # 7. Insert into Supabase (clear old data first to avoid duplicates)
     if not df_bands.empty:
         print("Inserting data into Supabase...")
         try:
+            # Clear existing data for today before inserting
+            today_str = pd.Timestamp.today().strftime("%Y-%m-%d")
+            from app.database.supabase_client import get_supabase_client
+            client = get_supabase_client()
+            try:
+                client.table("daily_metrics").delete().eq("date", today_str).execute()
+                client.table("option_scores").delete().eq("date", today_str).execute()
+                client.table("bands").delete().eq("date", today_str).execute()
+                client.table("weekly_watchlist").delete().eq("date", today_str).execute()
+            except Exception:
+                pass  # Tables may not exist yet
+            
             insert_daily_metrics(df_bands)
             insert_bands(df_bands)
             insert_option_scores(df_bands)
@@ -168,7 +190,7 @@ def run_system() -> None:
         except Exception as e:
             print(f"[WARNING] Supabase insert failed (table may not exist): {e}")
 
-    # 7. Push to Google Sheets (skip if no real data)
+    # 8. Push to Google Sheets (skip if no real data)
     if not df_bands.empty and not daily.empty:
         print("Pushing to Google Sheets...")
         try:

@@ -48,6 +48,31 @@ This prevents broken code, style violations, and test failures from reaching the
 
 ---
 
+## Commit Policy & Approval
+
+**⚠️ IMPORTANT: All commits require explicit confirmation before being pushed to the repository.**
+
+Before committing any changes:
+
+1. **Review all changes** — Ensure you're committing only intended modifications
+2. **Run all checks** — Verify tests, linting, and type checking pass
+3. **Get confirmation** — **All commits must be approved by `@shivn` before pushing to `main` or `develop` branches**
+4. **Push with care** — Only push after receiving explicit approval
+
+**Branching Strategy:**
+- Create feature branches for changes: `git checkout -b feature/your-feature-name`
+- Commits to feature branches are allowed for iteration
+- **Final merge to `main` or `develop` requires approval**
+
+**Emergency Bypass (rare cases only):**
+If you need to bypass this rule in an emergency:
+```bash
+git commit --no-verify -m "emergency fix"
+```
+⚠️ Immediately notify `@shivn` after using emergency bypass.
+
+---
+
 ## Manual Verification Before Committing
 
 Run checks manually anytime without committing:
