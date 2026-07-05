@@ -1,0 +1,41 @@
+name: Daily Option System Run
+
+on:
+  schedule:
+    - cron: "30 12 * * 1-5"  # 12:30 UTC ≈ 8:30 AM ET
+  workflow_dispatch:
+
+jobs:
+  run-option-system:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: |
+          cd alpha && uv sync
+
+      - name: Set environment variables
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          echo "SUPABASE_URL=${SUPABASE_URL}" >> alpha/.env
+          echo "SUPABASE_KEY=${SUPABASE_KEY}" >> alpha/.env
+
+      - name: Run Option System
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          cd alpha && python app/main.py
