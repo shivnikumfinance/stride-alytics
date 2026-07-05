@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.database.supabase_client import get_supabase_client
+from app.utils.date_utils import format_date_mmm_dd_yyyy, normalize_date_for_merge
 
 
 def _load_from_supabase(table: str) -> pd.DataFrame:
@@ -83,7 +84,7 @@ def get_option_scores() -> pd.DataFrame:
     })
     # Format Date column
     if "Date" in df.columns:
-        df["Date"] = df["Date"].apply(_format_date)
+        df["Date"] = df["Date"].apply(format_date_mmm_dd_yyyy)
     return df[["Ticker", "Date", "Option Score", "Trend", "Strategy Tag", "Band"]].copy()
 
 
@@ -126,7 +127,7 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
     
     # Format Date column after rename
     if "Date" in df.columns:
-        df["Date"] = df["Date"].apply(_format_date)
+        df["Date"] = df["Date"].apply(format_date_mmm_dd_yyyy)
     
     # Compute Volatility Bias and IV vs HV columns
     if "IV Rank (1y)" in df.columns:
@@ -154,23 +155,6 @@ def _normalize_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         )
     
     return df
-
-
-def _format_date(date_val) -> str:
-    """Format date to MMM-DD-YYYY style (e.g., Jul-07-2026)."""
-    if pd.isna(date_val):
-        return ""
-    try:
-        if isinstance(date_val, str):
-            # Parse string date (YYYY-MM-DD or ISO format)
-            if len(date_val) >= 10:
-                date_val = date_val[:10]  # Take YYYY-MM-DD part
-            date_obj = pd.to_datetime(date_val)
-        else:
-            date_obj = pd.to_datetime(date_val)
-        return date_obj.strftime("%b-%d-%Y")
-    except Exception:
-        return str(date_val)
 
 
 st.markdown(
