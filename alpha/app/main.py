@@ -40,6 +40,7 @@ def run_system() -> None:
         "Debt/Equity",
         "Quality Score (1–5)",
         "Trend (Above/Below 20/50/200 EMA)",
+        "Sector",
     ]
 
     # 1. Load raw data
@@ -67,6 +68,7 @@ def run_system() -> None:
                     1.3,
                     5,
                     "Above 20, 50, 200 (Bullish)",
+                    "Technology",
                 ],
                 [
                     "MSFT",
@@ -85,6 +87,7 @@ def run_system() -> None:
                     0.4,
                     5,
                     "Above 20, 50, 200 (Bullish)",
+                    "Technology",
                 ],
                 [
                     "GOOGL",
@@ -103,6 +106,7 @@ def run_system() -> None:
                     0.2,
                     4,
                     "Above 20, Below 50, Above 200",
+                    "Technology",
                 ],
                 [
                     "TSLA",
@@ -121,6 +125,7 @@ def run_system() -> None:
                     0.8,
                     3,
                     "Below 20, 50, 200 (Bearish)",
+                    "Consumer Cyclical",
                 ],
                 [
                     "NVDA",
@@ -139,6 +144,7 @@ def run_system() -> None:
                     0.1,
                     5,
                     "Above 20, 50, 200 (Bullish)",
+                    "Technology",
                 ],
             ],
             columns=csv_columns,
