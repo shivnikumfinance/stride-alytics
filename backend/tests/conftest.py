@@ -30,6 +30,14 @@ def dev_headers() -> dict[str, str]:
 
 
 @pytest.fixture(autouse=True)
+def _dev_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests use dev tokens, which only work when ENVIRONMENT=development."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "ENVIRONMENT", "development")
+
+
+@pytest.fixture(autouse=True)
 def _reset_in_memory_store():
     """Ensure each test starts with a fresh in-memory portfolio store."""
     reset_store()

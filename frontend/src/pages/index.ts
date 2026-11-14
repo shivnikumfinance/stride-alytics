@@ -17,4 +17,3 @@ export { SignalLogPage } from "./SignalLogPage";
 export { OptionChainPage } from "./OptionChainPage";
 export { SizingPage } from "./SizingPage";
 export { ScenariosPage } from "./ScenariosPage";
-export { AdminPage } from "./AdminPage";

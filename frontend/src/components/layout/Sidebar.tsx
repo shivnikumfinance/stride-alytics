@@ -13,7 +13,6 @@ import {
   LogOut,
   Ruler,
   Settings,
-  Settings2,
   Sparkles,
   Thermometer,
   TrendingUp,
@@ -24,11 +23,19 @@ import { useAuthStore } from "../../store";
 import { classNames } from "../../utils";
 import { Button } from "../ui";
 
-const navItems = [
+interface NavItem {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  end?: boolean;
+  badge?: string;
+}
+
+const navItems: NavItem[] = [
   { to: "/", label: "Home", icon: Home, end: true },
   { to: "/exit-alerts", label: "Exit Alerts", icon: AlertTriangle },
   { to: "/picks", label: "Weekly Picks", icon: Sparkles },
-  { to: "/active-holdings", label: "Active Holdings", icon: Briefcase, badge: "6" },
+  { to: "/active-holdings", label: "Active Holdings", icon: Briefcase },
   { to: "/strategy-matrix", label: "Strategy Matrix", icon: LayoutDashboard },
   { to: "/watchlist", label: "Watchlist", icon: Eye },
   { to: "/option-chain", label: "Option Chain", icon: List },
@@ -42,7 +49,6 @@ const navItems = [
   { to: "/regime", label: "Regime", icon: Compass },
   { to: "/portfolio", label: "Portfolio", icon: Wallet },
   { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/admin", label: "Admin", icon: Settings2 },
 ];
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {

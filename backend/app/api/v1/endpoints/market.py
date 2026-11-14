@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1.schemas.market import TickerEnvelope
-from app.services.market import fetch_tickers
+from app.services.market import fetch_tickers_with_source
 from app.utils.logger import get_logger
 
 router = APIRouter()
@@ -21,7 +21,8 @@ async def get_market_tickers() -> TickerEnvelope:
     """Return a CORS‑compliant proxy of Yahoo Finance for major index tickers.
 
     On any upstream failure the service falls back to a static snapshot so
-    the frontend dashboard never sees an empty payload.
+    the frontend dashboard never sees an empty payload; ``source`` is then
+    ``"fallback"``.
     """
-    data = await fetch_tickers()
-    return TickerEnvelope(success=True, data=data)
+    data, source = await fetch_tickers_with_source()
+    return TickerEnvelope(success=True, data=data, source=source)

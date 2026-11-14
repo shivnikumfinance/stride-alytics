@@ -21,10 +21,11 @@ interface ScreenerStoreState {
   filters: ScreenerFilters;
   results: ScreenerRow[];
   spot: number | null;
+  source: string | null;
   loading: boolean;
   setFilters: (partial: Partial<ScreenerFilters>) => void;
   resetFilters: () => void;
-  setResults: (results: ScreenerRow[], spot: number) => void;
+  setResults: (results: ScreenerRow[], spot: number, source?: string) => void;
   setLoading: (loading: boolean) => void;
 }
 
@@ -32,10 +33,11 @@ export const useScreenerStore = create<ScreenerStoreState>((set) => ({
   filters: DEFAULT_FILTERS,
   results: [],
   spot: null,
+  source: null,
   loading: false,
 
   setFilters: (partial) => set((s) => ({ filters: { ...s.filters, ...partial } })),
   resetFilters: () => set({ filters: DEFAULT_FILTERS }),
-  setResults: (results, spot) => set({ results, spot }),
+  setResults: (results, spot, source) => set({ results, spot, source: source ?? null }),
   setLoading: (loading) => set({ loading }),
 }));

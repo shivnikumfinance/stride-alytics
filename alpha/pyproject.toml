@@ -27,7 +27,7 @@ dev = [
 # Alpha developer-experience scripts — discoverable as `uv run lint`,
 # `uv run format`, `uv run typecheck`, `uv run test`, `uv run verify`.
 [project.scripts]
-alpha = "app.main:run_system"
+alpha = "app.main:main"
 lint = "scripts.lint:main"
 format = "scripts.format:main"
 typecheck = "scripts.typecheck:main"

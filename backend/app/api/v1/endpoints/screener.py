@@ -17,7 +17,7 @@ log = get_logger(__name__)
 
 
 @router.post("/run", response_model=ScreenerResponse)
-async def run(
+def run(  # plain def: run_screener does blocking network I/O, so FastAPI runs it in a thread
     payload: ScreenerQuery,
     current_user: CurrentUser = Depends(get_current_user),
 ) -> ScreenerResponse:
@@ -43,6 +43,7 @@ async def run(
         spot=result["spot"],
         count=result["count"],
         results=result["results"],
+        source=result["source"],
     )
 
 

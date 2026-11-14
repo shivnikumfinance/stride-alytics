@@ -21,6 +21,8 @@ export interface RawTicker {
 export interface TickerPayload {
   success: boolean;
   data: Record<string, RawTicker>;
+  /** "fallback" = static placeholder values, not live prices. */
+  source?: "live" | "fallback";
 }
 
 /** Client‑side view: same as RawTicker plus a ``timestamp`` set by the service. */

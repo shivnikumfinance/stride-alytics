@@ -1,9 +1,10 @@
-import { PageHeader, Card, Badge } from "../components/ui";
+import { PageHeader, Card, Badge, DemoBanner } from "../components/ui";
 
 export function HeatDashboardPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Heat Dashboard" subtitle="Market health, risk gauges, and trend indicators" />
+      <DemoBanner />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card title="Risk Gauges">

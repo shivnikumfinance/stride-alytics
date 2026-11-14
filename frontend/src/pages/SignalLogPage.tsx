@@ -1,4 +1,4 @@
-import { PageHeader, Badge, Card } from "../components/ui";
+import { PageHeader, Badge, Card, DemoBanner } from "../components/ui";
 
 interface Signal {
   timestamp: string;
@@ -35,7 +35,8 @@ export function SignalLogPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Signal Log" subtitle="Immutable record of rule-based decisions and regime shifts" />
+      <PageHeader title="Signal Log" subtitle="Record of rule-based decisions and regime shifts" />
+      <DemoBanner />
 
       <Card bodyClassName="p-0">
         <div className="overflow-x-auto">

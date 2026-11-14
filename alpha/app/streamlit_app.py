@@ -16,12 +16,43 @@ from app.database.supabase_client import get_supabase_client
 from app.utils.date_utils import format_date_mmm_dd_yyyy, normalize_date_for_merge
 
 
+_PAGE_SIZE = 1000  # Supabase/PostgREST returns at most 1000 rows per request
+
+
 def _load_from_supabase(table: str) -> pd.DataFrame:
+    """Load the most recent day's rows from ``table``.
+
+    Only the latest ``date`` is returned (the tables hold one snapshot per day),
+    and results are paged so the 1000-row API limit never silently truncates them.
+    """
     try:
         client = get_supabase_client()
-        resp = client.table(table).select("*").execute()
-        data = resp.data or []
-        return pd.DataFrame(data)
+
+        latest_resp = (
+            client.table(table).select("date").order("date", desc=True).limit(1).execute()
+        )
+        latest = (latest_resp.data or [{}])[0].get("date")
+        if not latest:
+            return pd.DataFrame()
+        day = str(latest)[:10]
+
+        rows: list[dict] = []
+        start = 0
+        while True:
+            page = (
+                client.table(table)
+                .select("*")
+                .like("date", f"{day}%")
+                .range(start, start + _PAGE_SIZE - 1)
+                .execute()
+                .data
+                or []
+            )
+            rows.extend(page)
+            if len(page) < _PAGE_SIZE:
+                break
+            start += _PAGE_SIZE
+        return pd.DataFrame(rows)
     except Exception as e:
         st.warning(f"Failed to load {table} from Supabase: {e}")
         return pd.DataFrame()
@@ -34,7 +65,7 @@ def get_daily_metrics() -> pd.DataFrame:
     return daily
 
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def get_option_scores() -> pd.DataFrame:
     """Load option scores - uses daily_metrics which has all computed fields."""
     df = _load_from_supabase("daily_metrics")

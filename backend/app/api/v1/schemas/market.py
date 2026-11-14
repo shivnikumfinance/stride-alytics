@@ -5,7 +5,7 @@ Mirrored on the frontend by ``frontend/src/types/market.ts``.
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Literal
 
 from pydantic import BaseModel, Field
 
@@ -26,3 +26,7 @@ class TickerEnvelope(BaseModel):
 
     success: bool = True
     data: Dict[str, TickerData]
+    source: Literal["live", "fallback"] = Field(
+        default="live",
+        description="'fallback' means the values are static placeholders, not live prices",
+    )

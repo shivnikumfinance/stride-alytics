@@ -47,6 +47,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
     TICKERS.map(() => null)
   );
   const [lastRefreshed, setLastRefreshed] = useState<string>("Initializing...");
+  const [isFallback, setIsFallback] = useState(false);
   const refreshCounterRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
     // Start polling on mount
     tickerService.startPolling((data) => {
       setTickers(TICKERS.map((sym) => data.find((d) => d.symbol === sym) || null));
+      setIsFallback(tickerService.lastSource === "fallback");
       updateRefreshTimestamp();
     });
 
@@ -84,6 +86,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
   const handleManualRefresh = async () => {
     const data = await tickerService.fetchAllTickers();
     setTickers(TICKERS.map((sym) => data.find((d) => d.symbol === sym) || null));
+    setIsFallback(tickerService.lastSource === "fallback");
     updateRefreshTimestamp();
   };
 
@@ -109,6 +112,14 @@ export function Header({ onMenu }: { onMenu: () => void }) {
           <Clock />
           <span id="lastRefreshedTime">{lastRefreshed}</span>
         </div>
+        {isFallback && (
+          <span
+            className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"
+            title="Yahoo Finance was unreachable; these index values are static placeholders."
+          >
+            Sample data — not live
+          </span>
+        )}
       </div>
 
       <div className={styles.headerRight}>

@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { PageHeader, Card } from "../components/ui";
+import { PageHeader, Card, DemoBanner } from "../components/ui";
 
 export function WatchlistPage() {
   const watchlist = [
@@ -35,6 +35,7 @@ export function WatchlistPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Watchlist" subtitle="Primary Watchlist — 10 symbols tracked" />
+      <DemoBanner />
 
       <Card bodyClassName="p-0">
         <div className="overflow-x-auto">

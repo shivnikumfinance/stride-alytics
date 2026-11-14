@@ -18,7 +18,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
 from app.config import settings
-from app.services.auth import verify_supabase_jwt
+from app.services.auth import dev_auth_enabled, verify_supabase_jwt
 from app.utils.logger import get_logger
 
 log = get_logger(__name__)
@@ -47,18 +47,21 @@ async def verify_jwt(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Local/dev fallback: accept stub tokens ``dev:<user_id>`` or ``dev-admin-token``.
+    # Local/dev fallback: stub tokens ``dev:<user_id>`` or ``dev-admin-token``.
+    # Only honoured when ENVIRONMENT=development; otherwise they fall through
+    # to normal JWT verification and are rejected.
     token = credentials.credentials
-    if token == "dev-admin-token":
-        log.warning("auth.dev_admin_token_used")
-        return CurrentUser(
-            user_id="00000000-0000-0000-0000-000000000000",
-            email="admin@stridealytics.com",
-        )
-    if token.startswith("dev:"):
-        user_id = token.split(":", 1)[1] or "dev-user"
-        log.warning("auth.dev_token_used", user_id=user_id)
-        return CurrentUser(user_id=user_id)
+    if dev_auth_enabled():
+        if token == "dev-admin-token":
+            log.warning("auth.dev_admin_token_used")
+            return CurrentUser(
+                user_id="00000000-0000-0000-0000-000000000000",
+                email="admin@stridealytics.com",
+            )
+        if token.startswith("dev:"):
+            user_id = token.split(":", 1)[1] or "dev-user"
+            log.warning("auth.dev_token_used", user_id=user_id)
+            return CurrentUser(user_id=user_id)
 
     if not settings.SUPABASE_JWT_SECRET:
         raise HTTPException(

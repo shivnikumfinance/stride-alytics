@@ -14,3 +14,4 @@ class RegimeResponse(BaseModel):
     lookback_days: int
     price_return: float
     as_of: str
+    source: Literal["live", "synthetic"] = "live"

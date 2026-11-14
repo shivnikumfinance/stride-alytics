@@ -19,7 +19,7 @@ log = get_logger(__name__)
 
 
 @router.get("/{symbol}", response_model=RegimeResponse)
-async def get_regime(
+def get_regime(  # plain def: detect_regime does blocking network I/O (runs in a thread)
     symbol: str,
     lookback_days: int = 30,
     current_user: CurrentUser = Depends(get_current_user),
@@ -43,4 +43,5 @@ async def get_regime(
         lookback_days=result.lookback_days,
         price_return=result.price_return,
         as_of=result.as_of,
+        source="live" if result.source == "live" else "synthetic",
     )

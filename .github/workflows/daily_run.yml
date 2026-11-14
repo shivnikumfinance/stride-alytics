@@ -2,12 +2,13 @@ name: Daily Option System Run
 
 on:
   schedule:
-    - cron: "30 12 * * 1-5"  # 12:30 UTC ≈ 8:30 AM ET
+    - cron: "30 12 * * 1-5"  # 12:30 UTC = 8:30 AM EDT / 7:30 AM EST (cron is UTC, not DST-aware)
   workflow_dispatch:
 
 jobs:
   run-option-system:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repo
@@ -23,19 +24,38 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd alpha && uv sync
+          cd alpha && uv sync --frozen
 
-      - name: Set environment variables
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: |
-          echo "SUPABASE_URL=${SUPABASE_URL}" >> alpha/.env
-          echo "SUPABASE_KEY=${SUPABASE_KEY}" >> alpha/.env
-
+      # `uv run` uses the project's virtualenv created by `uv sync`. Plain `python`
+      # would use the runner's interpreter, which has none of the dependencies.
+      # Secrets are passed as environment variables only (never written to disk).
       - name: Run Option System
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_SHEETS_SPREADSHEET_ID: ${{ secrets.GOOGLE_SHEETS_SPREADSHEET_ID }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          cd alpha && python app/main.py
+          cd alpha && uv run python app/main.py
+
+      # Covers failures the Python code cannot report itself (e.g. dependency
+      # install or interpreter start-up problems). Optional: does nothing if no
+      # webhook secret is configured.
+      - name: Alert on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          msg="Daily Option System Run failed: ${RUN_URL}"
+          if [ -n "${SLACK_WEBHOOK_URL}" ]; then
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\": \"${msg}\"}" "${SLACK_WEBHOOK_URL}" || true
+          fi
+          if [ -n "${DISCORD_WEBHOOK_URL}" ]; then
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d "{\"content\": \"${msg}\"}" "${DISCORD_WEBHOOK_URL}" || true
+          fi

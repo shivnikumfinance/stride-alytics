@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: str | None = None
     SUPABASE_SERVICE_ROLE_KEY: str | None = None
     SUPABASE_JWT_SECRET: str | None = None
+    SUPABASE_JWT_AUDIENCE: str = "authenticated"
 
     # --- Email ---
     SENDGRID_API_KEY: str | None = None
@@ -26,7 +27,9 @@ class Settings(BaseSettings):
     SLACK_WEBHOOK: str | None = None
 
     # --- App ---
-    ENVIRONMENT: str = "development"
+    # Defaults to production so dev-only shortcuts (dev auth tokens) are off
+    # unless ENVIRONMENT=development is set explicitly (see .env.example).
+    ENVIRONMENT: str = "production"
 
     # --- CORS ---
     CORS_ORIGINS: str = "*"

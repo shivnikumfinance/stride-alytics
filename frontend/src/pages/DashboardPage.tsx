@@ -1,4 +1,4 @@
-import { Card, Badge, PageHeader } from "../components/ui";
+import { Card, Badge, PageHeader, SampleDataBadge } from "../components/ui";
 import { useScreenerLimits, useRegime } from "../hooks/queries";
 
 export function DashboardPage() {
@@ -35,6 +35,7 @@ export function DashboardPage() {
                   {regime.data.regime}
                 </Badge>
               </div>
+              <SampleDataBadge source={regime.data.source} />
               <div className="flex justify-between">
                 <span className="text-gray-500">Confidence</span>
                 <span className="font-medium">{(regime.data.confidence * 100).toFixed(0)}%</span>

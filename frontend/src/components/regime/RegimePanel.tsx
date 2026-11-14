@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, Input, Badge, Button } from "../ui";
+import { Card, Input, Badge, Button, SampleDataBadge } from "../ui";
 import { useRegime } from "../../hooks/queries";
 import { fmtPct } from "../../utils";
 import type { Regime } from "../../types";
@@ -49,6 +49,7 @@ export function RegimePanel() {
             <span className="text-sm text-gray-600">
               Confidence: <strong>{(q.data.confidence * 100).toFixed(0)}%</strong>
             </span>
+            <SampleDataBadge source={q.data.source} />
           </div>
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>

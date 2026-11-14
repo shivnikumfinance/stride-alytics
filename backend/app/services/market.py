@@ -11,14 +11,12 @@ adapter that delegates here. The reasoning:
 
 from __future__ import annotations
 
-from typing import Any, Final
+from typing import Any, Final, Literal
 
 import httpx
 
 from app.api.v1.schemas.market import TickerData
 from app.utils.logger import get_logger
-
-router = None  # placeholder to keep tooling quiet; not used here
 
 YAHOO_API_URL: Final[str] = "https://query1.finance.yahoo.com/v7/finance/quote"
 
@@ -35,7 +33,9 @@ YAHOO_HEADERS: Final[dict[str, str]] = {
     ),
 }
 
-# Graceful fallback so the dashboard never goes empty in dev / when Yahoo 429s.
+# Static placeholder values used when Yahoo is unreachable. These are NOT live
+# prices: responses that use them are labelled ``source="fallback"`` so the UI
+# can say so.
 MOCK_TICKERS: Final[dict[str, TickerData]] = {
     "SPY": TickerData(symbol="SPY", price="548.32", change="-1.23", changePercent="-0.22"),
     "QQQ": TickerData(symbol="QQQ", price="478.92", change="2.15", changePercent="+0.45"),
@@ -44,6 +44,8 @@ MOCK_TICKERS: Final[dict[str, TickerData]] = {
 }
 
 REQUEST_TIMEOUT_SECONDS: Final[float] = 10.0
+
+TickerSource = Literal["live", "fallback"]
 
 log = get_logger(__name__)
 
@@ -58,13 +60,16 @@ def _to_ticker(quote: dict[str, Any]) -> TickerData:
     )
 
 
-async def fetch_tickers(symbols: tuple[str, ...] = DEFAULT_TICKERS) -> dict[str, TickerData]:
-    """Fetch ticker data for ``symbols``.
+async def fetch_tickers_with_source(
+    symbols: tuple[str, ...] = DEFAULT_TICKERS,
+) -> tuple[dict[str, TickerData], TickerSource]:
+    """Fetch ticker data for ``symbols`` and say where it came from.
 
-    Always returns a non‑empty ``{ SYM: TickerData }`` map — falls back to
-    :data:`MOCK_TICKERS` on any network/HTTP/parse failure so the frontend
-    never receives an empty payload during a Yahoo outage.
+    Always returns a non-empty ``{ SYM: TickerData }`` map. On any
+    network/HTTP/parse failure it returns :data:`MOCK_TICKERS` with source
+    ``"fallback"`` so callers can tell the numbers are not live.
     """
+    fallback: tuple[dict[str, TickerData], TickerSource] = (dict(MOCK_TICKERS), "fallback")
     try:
         params = {"symbols": ",".join(symbols), "fields": YAHOO_FIELDS}
         log.info("market.tickers_fetching", symbols=",".join(symbols))
@@ -81,7 +86,7 @@ async def fetch_tickers(symbols: tuple[str, ...] = DEFAULT_TICKERS) -> dict[str,
 
             if not quotes:
                 log.warning("market.tickers_no_results")
-                return dict(MOCK_TICKERS)
+                return fallback
 
             result: dict[str, TickerData] = {}
             for quote in quotes:
@@ -92,29 +97,35 @@ async def fetch_tickers(symbols: tuple[str, ...] = DEFAULT_TICKERS) -> dict[str,
                     result[ticker.symbol] = ticker
 
             if not result:
-                return dict(MOCK_TICKERS)
+                return fallback
 
             log.info(
                 "market.tickers_served",
                 ticker_count=len(result),
                 symbols=list(result.keys()),
             )
-            return result
+            return result, "live"
 
     except httpx.TimeoutException as exc:
         log.warning("market.tickers_timeout", error=str(exc))
-        return dict(MOCK_TICKERS)
+        return fallback
     except httpx.HTTPError as exc:
         log.error(
             "market.tickers_http_error",
             error=str(exc),
             status_code=getattr(getattr(exc, "response", None), "status_code", "unknown"),
         )
-        return dict(MOCK_TICKERS)
-    except Exception as exc:  # last‑resort fallback so the UI never breaks
+        return fallback
+    except Exception as exc:  # last-resort fallback so the UI never breaks
         log.error(
             "market.tickers_failed",
             error=str(exc),
             error_type=type(exc).__name__,
         )
-        return dict(MOCK_TICKERS)
+        return fallback
+
+
+async def fetch_tickers(symbols: tuple[str, ...] = DEFAULT_TICKERS) -> dict[str, TickerData]:
+    """Like :func:`fetch_tickers_with_source` but returns only the data map."""
+    data, _ = await fetch_tickers_with_source(symbols)
+    return data

@@ -23,6 +23,8 @@ export const tickerService = {
   pollingId: null as ReturnType<typeof setInterval> | null,
   symbols: DEFAULT_TICKERS,
   pollIntervalMs: POLL_INTERVAL_MS,
+  /** "fallback" when the last response held static placeholder values. */
+  lastSource: "live" as "live" | "fallback",
 
   configure(opts: TickerServiceOptions = {}) {
     if (opts.symbols) this.symbols = opts.symbols;
@@ -33,6 +35,7 @@ export const tickerService = {
     try {
       const payload = await marketApi.tickers();
       const tickersData = payload.data ?? {};
+      this.lastSource = payload.source ?? "live";
 
       const results: TickerData[] = [];
       for (const symbol of this.symbols) {

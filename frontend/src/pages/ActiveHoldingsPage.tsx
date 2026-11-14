@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { PageHeader, Card, Badge } from "../components/ui";
+import { PageHeader, Card, Badge, DemoBanner } from "../components/ui";
 
 export function ActiveHoldingsPage() {
   // Mock data - replace with real API call
@@ -75,6 +75,7 @@ export function ActiveHoldingsPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Active Trade & Alerts" subtitle="Enriched positions view with per-position alerts, suggested actions & Greeks monitoring" />
+      <DemoBanner />
 
       <Card bodyClassName="p-0">
         <div className="overflow-x-auto">

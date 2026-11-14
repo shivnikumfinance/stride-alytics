@@ -8,6 +8,7 @@ yfinance is unavailable (e.g. during tests).
 from __future__ import annotations
 
 import math
+import zlib
 from dataclasses import dataclass
 from datetime import date
 
@@ -28,6 +29,8 @@ class RegimeResult:
     as_of: str
     vix: float | None = None
     iv_rank: float | None = None
+    # "live" = real yfinance prices; "synthetic" = generated placeholder series.
+    source: str = "live"
 
 
 def _fetch_history_yfinance(symbol: str, lookback_days: int) -> list[float] | None:
@@ -60,20 +63,24 @@ def _fetch_vix_data() -> float | None:
         return None
 
 
-def _load_history(symbol: str, lookback_days: int) -> list[float]:
-    """Load price history — prefers yfinance, falls back to synthetic."""
+def _load_history(symbol: str, lookback_days: int) -> tuple[list[float], str]:
+    """Load price history — prefers yfinance, falls back to synthetic.
+
+    Returns ``(prices, source)`` where source is ``"live"`` or ``"synthetic"``.
+    """
     real = _fetch_history_yfinance(symbol, lookback_days)
     if real:
         log.info("regime.using_yfinance", symbol=symbol, lookback_days=len(real))
-        return real
+        return real, "live"
 
-    log.info("regime.using_synthetic", symbol=symbol)
-    return _load_synthetic_history(symbol, lookback_days)
+    log.warning("regime.using_synthetic", symbol=symbol)
+    return _load_synthetic_history(symbol, lookback_days), "synthetic"
 
 
 def _load_synthetic_history(symbol: str, lookback_days: int) -> list[float]:
     """Synthetic daily closes. Deterministic per (symbol, lookback)."""
-    seed = (hash((symbol, lookback_days)) & 0xFFFFFFFF) / 1e9
+    # crc32, not hash(): str hashing is randomized per process.
+    seed = zlib.crc32(f"{symbol}:{lookback_days}".encode()) / 1e9
     prices: list[float] = []
     price = 100.0 + 50.0 * math.sin(seed * 6.28)
     drift = 0.0006 * math.cos(seed * 12.0)
@@ -86,7 +93,7 @@ def _load_synthetic_history(symbol: str, lookback_days: int) -> list[float]:
 
 def detect_regime(symbol: str, lookback_days: int = 30) -> RegimeResult:
     """Classify the recent regime for ``symbol`` over the lookback window."""
-    history = _load_history(symbol, lookback_days)
+    history, source = _load_history(symbol, lookback_days)
 
     if len(history) < 2:
         raise ValueError("not enough history to classify regime")
@@ -125,4 +132,5 @@ def detect_regime(symbol: str, lookback_days: int = 30) -> RegimeResult:
         as_of=date.today().isoformat(),
         vix=round(vix, 2) if vix else None,
         iv_rank=None,  # Placeholder — can be calculated from 52-week VIX history
+        source=source,
     )

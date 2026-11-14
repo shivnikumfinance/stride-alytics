@@ -8,7 +8,6 @@ import { useAuthStore } from "./store";
 import {
   ActiveHoldingsPage,
   ActiveTradesPage,
-  AdminPage,
   DashboardPage,
   ExitAlertsPage,
   GreeksPage,
@@ -88,7 +87,6 @@ export default function App() {
               <Route path="scenarios" element={<ScenariosPage />} />
               <Route path="heat-dashboard" element={<HeatDashboardPage />} />
               <Route path="signal-log" element={<SignalLogPage />} />
-              <Route path="admin" element={<AdminPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

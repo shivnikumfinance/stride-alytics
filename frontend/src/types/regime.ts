@@ -9,4 +9,6 @@ export interface RegimeResponse {
   lookback_days: number;
   price_return: number;
   as_of: string;
+  /** "synthetic" = generated placeholder series, not market data. */
+  source?: "live" | "synthetic";
 }

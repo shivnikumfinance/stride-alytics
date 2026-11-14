@@ -44,3 +44,5 @@ class ScreenerResponse(BaseModel):
     spot: float
     count: int
     results: list[ScreenerResultRow]
+    # "synthetic" = random placeholder chain / static spot, not market data.
+    source: Literal["live", "synthetic"] = "live"

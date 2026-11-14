@@ -36,16 +36,20 @@ export function LoginPage() {
           <Button type="submit" className="w-full" loading={loading}>
             Sign in
           </Button>
-          <button
-            type="button"
-            onClick={() => {
-              devAdminLogin();
-              navigate("/", { replace: true });
-            }}
-            className="w-full mt-2 rounded-md border border-gray-300 bg-white py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Continue as Admin (dev)
-          </button>
+          {/* Dev-only shortcut: stripped from production builds, and the backend
+              only accepts the dev token when ENVIRONMENT=development. */}
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={() => {
+                devAdminLogin();
+                navigate("/", { replace: true });
+              }}
+              className="w-full mt-2 rounded-md border border-gray-300 bg-white py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Continue as Admin (dev)
+            </button>
+          )}
         </form>
         <p className="text-sm text-gray-500 mt-4 text-center">
           No account?{" "}

@@ -1,4 +1,4 @@
-import { PageHeader, Card } from "../components/ui";
+import { PageHeader, Card, DemoBanner } from "../components/ui";
 
 export function OptionChainPage() {
   const underlying = 548.32;
@@ -25,6 +25,7 @@ export function OptionChainPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Option Chain" subtitle={`SPY — Jul 17, 2026 (30 DTE) — Underlying: $${underlying.toFixed(2)}`} />
+      <DemoBanner />
 
       <Card>
         <div className="overflow-x-auto">

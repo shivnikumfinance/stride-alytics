@@ -50,7 +50,7 @@ async def add_trade(
     """Append a new trade to the user's portfolio."""
     user_uuid = _resolve_user_uuid(current_user.user_id)
     trade = Trade(
-        id=UUID(int=0),
+        id=uuid.uuid4(),
         user_id=user_uuid,
         portfolio_id=payload.portfolio_id,
         symbol=normalize_symbol(payload.symbol),

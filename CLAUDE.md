@@ -31,7 +31,8 @@ Python modules need Python 3.12 (backend, scheduler) or 3.11+ (alpha) and use uv
 - `uv run python app/main.py`: full pipeline (needs Supabase and API keys)
 - `streamlit run app/streamlit_app.py`: run from `alpha/` so `app.*` imports resolve
 - `uv run lint|format|typecheck|verify`: ruff and black (line length 100), strict mypy
-- `scripts/test.py` runs `pytest tests`, but `alpha/tests/` does not exist
+- `uv run pytest tests -q`: pipeline I/O tests (fake Supabase client, no network)
+- The pipeline fails (non-zero exit + Slack/Discord alert) when there is no real data or a Supabase write fails. Built-in sample rows are used only with `ALLOW_SAMPLE_DATA=1` and are never written.
 
 **backend** (`cd backend`)
 - `uv sync`, `uv run dev` (watcher; `--once` for one run)
@@ -73,6 +74,8 @@ Failures in the insert and Sheets steps only log a warning.
 
 - Alpha (`alpha/app/config.py`): `SUPABASE_URL`, `SUPABASE_KEY`, `POLYGON_API_KEY` and `FMP_API_KEY` are required. `MASSIVE_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_SHEETS_SPREADSHEET_ID` and the Slack/Discord webhook URLs are optional. The alpha README says to copy `alpha/.env.example`, but that file is not tracked.
 - Root and `backend/` `.env.example` cover the backend, frontend and mobile settings.
+- Backend `ENVIRONMENT` defaults to `production`. Dev auth tokens (`dev:<id>`, `dev-admin-token`) and the dev login fallback work only with `ENVIRONMENT=development` (set it in `backend/.env` for local work). Real Supabase JWTs are verified with audience `authenticated` (`SUPABASE_JWT_AUDIENCE`).
+- API responses for market tickers, the screener and regime carry a `source` field; anything other than `live` is placeholder data and the UI labels it.
 
 ## Diagrams
 

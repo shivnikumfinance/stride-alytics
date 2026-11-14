@@ -39,4 +39,6 @@ export interface ScreenerResponse {
   spot: number;
   count: number;
   results: ScreenerRow[];
+  /** "synthetic" = random placeholder chain / static spot, not market data. */
+  source?: "live" | "synthetic";
 }

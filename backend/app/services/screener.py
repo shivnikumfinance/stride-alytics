@@ -1,15 +1,16 @@
 """Screener service — filter options chains by user-supplied criteria.
 
-Phase 1 used in-memory synthetic data. Phase 2 now supports real data from
-yfinance (via the scheduler) cached in the Supabase ``options`` table.
-When the Supabase table is populated, we query from there; otherwise we
-fall back to yfinance for on-the-fly chain generation.
+Data comes from yfinance. When yfinance is unavailable the screener falls back
+to a *synthetic* chain so the UI keeps working in dev; that data is random and
+must never be mistaken for (or stored as) market data, so every result carries
+a ``source`` of ``"live"`` or ``"synthetic"``.
 """
 
 from __future__ import annotations
 
 import math
 import random
+import zlib
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
@@ -43,6 +44,11 @@ class ScreenerFilters:
     limit: int = 50
 
 
+def _stable_seed(text: str) -> int:
+    """Process-independent seed (``hash()`` of a str is randomized per run)."""
+    return zlib.crc32(text.encode())
+
+
 def _get_spot_from_yfinance(symbol: str) -> float | None:
     """Fetch the latest spot price via yfinance."""
     try:
@@ -60,12 +66,32 @@ def _get_spot_from_yfinance(symbol: str) -> float | None:
         return None
 
 
-def _load_chain_from_yfinance(symbol: str) -> list[dict[str, Any]]:
-    """Fetch the option chain from yfinance API."""
+def _chain_row_greeks(
+    spot: float, strike: float, dte: int, iv: float, option_type: str
+) -> dict[str, float]:
+    """Black-Scholes Greeks (yfinance chains do not include them)."""
+    try:
+        g = calculate_greeks(
+            spot=spot,
+            strike=strike,
+            time_to_expiry=max(dte, 0.5) / 365.0,
+            volatility=iv,
+            option_type=option_type,
+        )
+    except ValueError:
+        return {"delta": 0.0, "gamma": 0.0, "theta": 0.0, "vega": 0.0}
+    return {"delta": g.delta, "gamma": g.gamma, "theta": g.theta, "vega": g.vega}
+
+
+def _load_chain_from_yfinance(symbol: str, spot: float) -> list[dict[str, Any]] | None:
+    """Fetch the option chain from yfinance.
+
+    Returns ``None`` if nothing usable could be fetched (callers decide
+    whether to fall back). ``spot`` is used to compute the Greeks.
+    """
     try:
         ticker = yf.Ticker(symbol)
-        options = []
-        # Get available expiration dates
+        options: list[dict[str, Any]] = []
         try:
             expirations = ticker.options
         except Exception:
@@ -73,32 +99,33 @@ def _load_chain_from_yfinance(symbol: str) -> list[dict[str, Any]]:
 
         if not expirations:
             log.warning("screener.no_expirations", symbol=symbol)
-            return _load_chain_synthetic(symbol, _get_fallback_spot(symbol))
+            return None
 
+        today = date.today()
         # Limit to the next 3 expiration cycles for performance
         for expiry_str in expirations[:3]:
             try:
                 opt_chain = ticker.option_chain(expiry_str)
+                dte = (date.fromisoformat(expiry_str) - today).days
 
                 for opt_type, chain_data in [("call", opt_chain.calls), ("put", opt_chain.puts)]:
                     for _, row in chain_data.iterrows():
                         iv = float(row.get("impliedVolatility", 0.3))
                         if math.isnan(iv) or iv <= 0:
                             iv = 0.3
+                        strike = float(row.get("strike", 0))
+                        greeks = _chain_row_greeks(spot, strike, dte, iv, opt_type)
                         options.append(
                             {
                                 "symbol": symbol,
-                                "strike": float(row.get("strike", 0)),
+                                "strike": strike,
                                 "expiry": expiry_str,
                                 "option_type": opt_type,
                                 "bid": float(row.get("bid", 0) or 0),
                                 "ask": float(row.get("ask", 0) or 0),
                                 "last_price": float(row.get("lastPrice", 0) or 0),
                                 "implied_vol": round(iv, 4),
-                                "delta": float(row.get("delta", 0) or 0),
-                                "gamma": float(row.get("gamma", 0) or 0),
-                                "theta": float(row.get("theta", 0) or 0),
-                                "vega": float(row.get("vega", 0) or 0),
+                                **greeks,
                                 "open_interest": int(row.get("openInterest", 0) or 0),
                                 "volume": int(row.get("volume", 0) or 0),
                             }
@@ -109,19 +136,16 @@ def _load_chain_from_yfinance(symbol: str) -> list[dict[str, Any]]:
                 )
                 continue
 
-        if options:
-            return options
-
-        return _load_chain_synthetic(symbol, _get_fallback_spot(symbol))
+        return options or None
 
     except Exception as exc:
         log.warning("screener.yfinance_failed", symbol=symbol, error=str(exc))
-        return _load_chain_synthetic(symbol, _get_fallback_spot(symbol))
+        return None
 
 
 def _load_chain_synthetic(symbol: str, spot: float) -> list[dict[str, Any]]:
-    """Synthetic option chain — fallback when yfinance is unavailable."""
-    rng = random.Random(hash(symbol) & 0xFFFFFFFF)
+    """Synthetic option chain — random placeholder data, NOT market data."""
+    rng = random.Random(_stable_seed(symbol))
     chain: list[dict[str, Any]] = []
     base_date = date.today()
     for d in (7, 14, 30, 60):
@@ -160,7 +184,7 @@ def _load_chain_synthetic(symbol: str, spot: float) -> list[dict[str, Any]]:
 
 
 def _get_fallback_spot(symbol: str) -> float:
-    """Fallback spot prices when yfinance is unavailable."""
+    """Placeholder spot prices when yfinance is unavailable (NOT live prices)."""
     table = {
         "AAPL": 195.0,
         "MSFT": 415.0,
@@ -175,16 +199,24 @@ def _get_fallback_spot(symbol: str) -> float:
     }
     if symbol in table:
         return table[symbol]
-    return round(50 + (hash(symbol) % 400), 2)
+    return round(50 + (_stable_seed(symbol) % 400), 2)
 
 
 async def fetch_and_cache_supabase(symbol: str, supabase_url: str, supabase_key: str) -> bool:
-    """Fetch option chain via yfinance and upsert into Supabase ``options`` table.
+    """Fetch the live option chain via yfinance and upsert into Supabase ``options``.
 
     Called by the scheduler (fetch_market_data.py). Returns True on success.
+    Synthetic data is never cached: if live data is unavailable this returns
+    False without writing anything.
     """
-    chain = _load_chain_from_yfinance(symbol)
+    spot = _get_spot_from_yfinance(symbol)
+    if spot is None or spot <= 0:
+        log.warning("screener.cache_skipped_no_live_spot", symbol=symbol)
+        return False
+
+    chain = _load_chain_from_yfinance(symbol, spot)
     if not chain:
+        log.warning("screener.cache_skipped_no_live_chain", symbol=symbol)
         return False
 
     headers = {
@@ -222,35 +254,38 @@ async def fetch_and_cache_supabase(symbol: str, supabase_url: str, supabase_key:
     return True
 
 
-def _load_chain(symbol: str, spot: float) -> list[dict[str, Any]]:
-    """Load option chain — prefers yfinance, falls back to synthetic."""
-    symbol = normalize_symbol(symbol)
-    try:
-        chain = _load_chain_from_yfinance(symbol)
-        if chain:
-            log.info("screener.using_yfinance", symbol=symbol, contracts=len(chain))
-            return chain
-    except Exception as exc:
-        log.warning("screener.yfinance_fallback", symbol=symbol, error=str(exc))
-
-    return _load_chain_synthetic(symbol, spot)
-
-
-def _get_spot(symbol: str) -> float:
-    """Get the latest spot price — prefers yfinance, falls back to static table."""
+def _get_spot(symbol: str) -> tuple[float, bool]:
+    """Return ``(spot, is_live)``; falls back to a static placeholder table."""
     symbol = normalize_symbol(symbol)
     spot = _get_spot_from_yfinance(symbol)
     if spot and spot > 0:
         log.info("screener.spot_from_yfinance", symbol=symbol, spot=spot)
-        return spot
-    return _get_fallback_spot(symbol)
+        return spot, True
+    log.warning("screener.spot_fallback", symbol=symbol)
+    return _get_fallback_spot(symbol), False
+
+
+def _load_chain(symbol: str, spot: float) -> tuple[list[dict[str, Any]], bool]:
+    """Return ``(chain, is_live)``; falls back to a synthetic chain."""
+    symbol = normalize_symbol(symbol)
+    chain = _load_chain_from_yfinance(symbol, spot)
+    if chain:
+        log.info("screener.using_yfinance", symbol=symbol, contracts=len(chain))
+        return chain, True
+    log.warning("screener.using_synthetic_chain", symbol=symbol)
+    return _load_chain_synthetic(symbol, spot), False
 
 
 def run_screener(filters: ScreenerFilters) -> dict[str, Any]:
-    """Execute the screener and return a structured response payload."""
+    """Execute the screener and return a structured response payload.
+
+    ``source`` is ``"live"`` only when both the spot price and the chain came
+    from yfinance; otherwise ``"synthetic"``.
+    """
     symbol = normalize_symbol(filters.symbol)
-    spot = _get_spot(symbol)
-    chain = _load_chain(symbol, spot)
+    spot, spot_live = _get_spot(symbol)
+    chain, chain_live = _load_chain(symbol, spot)
+    source = "live" if (spot_live and chain_live) else "synthetic"
 
     today = date.today()
     results: list[dict[str, Any]] = []
@@ -282,6 +317,7 @@ def run_screener(filters: ScreenerFilters) -> dict[str, Any]:
         "screener.run",
         symbol=symbol,
         spot=spot,
+        source=source,
         matched=len(results),
         returned=len(truncated),
     )
@@ -291,4 +327,5 @@ def run_screener(filters: ScreenerFilters) -> dict[str, Any]:
         "spot": spot,
         "count": len(truncated),
         "results": truncated,
+        "source": source,
     }

@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.middleware.auth import CurrentUser, get_current_user
 from app.api.v1.schemas.auth import LoginRequest, SignupRequest, TokenResponse
 from app.config import settings
+from app.services.auth import dev_auth_enabled
 from app.utils.logger import get_logger
 
 router = APIRouter()
@@ -38,6 +39,17 @@ def _dev_token(user_id: str, email: str) -> TokenResponse:
         user_id=user_id,
         email=email,
     )
+
+
+def _dev_fallback(email: str) -> TokenResponse:
+    """Issue a dev token when Supabase isn't configured (development only)."""
+    if not dev_auth_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication is not configured",
+        )
+    user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
+    return _dev_token(user_id=user_id, email=email)
 
 
 async def _supabase_auth_request(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -101,9 +113,7 @@ async def login(payload: LoginRequest) -> TokenResponse:
                 detail="Authentication service unavailable",
             )
 
-    # Dev fallback
-    user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, payload.email))
-    return _dev_token(user_id=user_id, email=payload.email)
+    return _dev_fallback(payload.email)
 
 
 @router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -132,9 +142,7 @@ async def signup(payload: SignupRequest) -> TokenResponse:
                 detail="Registration service unavailable",
             )
 
-    # Dev fallback
-    user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, payload.email))
-    return _dev_token(user_id=user_id, email=payload.email)
+    return _dev_fallback(payload.email)
 
 
 @router.post("/refresh", response_model=TokenResponse)

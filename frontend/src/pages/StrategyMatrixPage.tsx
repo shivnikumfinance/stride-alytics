@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PageHeader, Card, Badge } from "../components/ui";
+import { PageHeader, Card, Badge, DemoBanner } from "../components/ui";
 
 export function StrategyMatrixPage() {
   const [layer, setLayer] = useState("all");
@@ -19,6 +19,7 @@ export function StrategyMatrixPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Strategy Design Matrix" subtitle="Interactive strategy × regime grid — filter by layer and band" />
+      <DemoBanner />
 
       <Card>
         <div className="flex items-center justify-between mb-4">

@@ -1,6 +1,6 @@
 import { useRunScreener } from "../../hooks/queries";
 import { useScreenerStore } from "../../store";
-import { Badge, Card, Table } from "../ui";
+import { Badge, Card, SampleDataBadge, Table } from "../ui";
 import { fmtIv, fmtNum, fmtUsd } from "../../utils";
 import type { ScreenerRow } from "../../types";
 
@@ -27,6 +27,7 @@ const columns = [
 export function ResultsTable() {
   const results = useScreenerStore((s) => s.results);
   const spot = useScreenerStore((s) => s.spot);
+  const source = useScreenerStore((s) => s.source);
   const setResults = useScreenerStore((s) => s.setResults);
   const setLoading = useScreenerStore((s) => s.setLoading);
   const loading = useScreenerStore((s) => s.loading);
@@ -41,7 +42,7 @@ export function ResultsTable() {
     setLoading(true);
     try {
       const data = await mutation.mutateAsync(filters);
-      setResults(data.results, data.spot);
+      setResults(data.results, data.spot, data.source);
     } finally {
       setLoading(false);
     }
@@ -52,13 +53,16 @@ export function ResultsTable() {
       title={spot ? `${filters.symbol} (spot $${spot.toFixed(2)})` : "Results"}
       subtitle={results.length ? `${results.length} contracts` : "Run a search to see results"}
       actions={
-        <button
-          type="button"
-          onClick={run}
-          className="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
-        >
-          Run
-        </button>
+        <div className="flex items-center gap-2">
+          <SampleDataBadge source={source ?? undefined} />
+          <button
+            type="button"
+            onClick={run}
+            className="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+          >
+            Run
+          </button>
+        </div>
       }
     >
       <Table<ScreenerRow>

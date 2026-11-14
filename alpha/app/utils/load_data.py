@@ -102,6 +102,8 @@ def load_local_csv(path: str = "raw_screener.csv") -> pd.DataFrame:
                 # against malformed CSVs that contain unquoted commas inside
                 # fields (e.g. "Above 20, 50, 200 (Bullish)").
                 df = pd.read_csv(csv_path, quotechar='"', skipinitialspace=True)
+                # Remember where it came from so callers can warn about stale files.
+                df.attrs["source_path"] = csv_path
                 break
         except FileNotFoundError:
             continue

@@ -11,6 +11,14 @@ import {
 import { fmtDate, fmtUsd, fmtPct } from "../../utils";
 import type { TradeOut, TradeType, Direction } from "../../types";
 
+/** Today's date in the user's local timezone as YYYY-MM-DD (toISOString would use UTC). */
+function todayLocal(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 export function PortfolioView() {
   const { data: portfoliosData } = usePortfolios();
   const portfolios = portfoliosData?.data ?? [];
@@ -151,7 +159,7 @@ function NewTradeCard({ portfolioId }: { portfolioId: string }) {
             direction,
             entry_price: Number(entryPrice),
             quantity: Number(quantity),
-            entry_date: new Date().toISOString().slice(0, 10),
+            entry_date: todayLocal(),
             notes: notes || null,
           });
         }}
@@ -184,6 +192,22 @@ function NewTradeCard({ portfolioId }: { portfolioId: string }) {
 
 function TradesList({ trades, portfolioId }: { trades: TradeOut[]; portfolioId: string }) {
   const close = useCloseTrade(portfolioId);
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const [exitPrice, setExitPrice] = useState("");
+
+  const cancelClose = () => {
+    setClosingId(null);
+    setExitPrice("");
+  };
+  const confirmClose = (tradeId: string) => {
+    const price = Number(exitPrice);
+    if (!Number.isFinite(price) || price <= 0) return;
+    close.mutate(
+      { tradeId, body: { exit_price: price, exit_date: todayLocal() } },
+      { onSuccess: cancelClose },
+    );
+  };
+
   return (
     <Card title="Trades" subtitle={`${trades.length} total`}>
       <Table
@@ -210,23 +234,53 @@ function TradesList({ trades, portfolioId }: { trades: TradeOut[]; portfolioId: 
           {
             key: "action",
             header: "",
-            render: (t) =>
-              t.open ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() =>
-                    close.mutate({
-                      tradeId: t.trade_id,
-                      body: { exit_price: Number((t.entry_price * 1.1).toFixed(2)), exit_date: new Date().toISOString().slice(0, 10) },
-                    })
-                  }
-                >
-                  Close
-                </Button>
-              ) : (
-                <Badge tone="gray">Closed</Badge>
-              ),
+            render: (t) => {
+              if (!t.open) return <Badge tone="gray">Closed</Badge>;
+              if (closingId !== t.trade_id) {
+                return (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setClosingId(t.trade_id);
+                      setExitPrice("");
+                    }}
+                  >
+                    Close
+                  </Button>
+                );
+              }
+              return (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    autoFocus
+                    aria-label="Exit price"
+                    placeholder="Exit price"
+                    value={exitPrice}
+                    onChange={(e) => setExitPrice(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") confirmClose(t.trade_id);
+                      if (e.key === "Escape") cancelClose();
+                    }}
+                    className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    loading={close.isPending}
+                    disabled={!(Number(exitPrice) > 0)}
+                    onClick={() => confirmClose(t.trade_id)}
+                  >
+                    Confirm
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={cancelClose}>
+                    Cancel
+                  </Button>
+                </div>
+              );
+            },
           },
         ]}
         rows={trades}

@@ -1,5 +1,7 @@
-import pandas as pd
+import math
 from datetime import date, datetime
+
+import pandas as pd
 
 from .supabase_client import get_supabase_client
 
@@ -28,20 +30,30 @@ CSV_TO_DB_COLUMNS = {
     "Strategy Tag": "strategy",
 }
 
+# Tables written by the daily pipeline. Every one has a TEXT ``date`` column
+# holding ``YYYY-MM-DD``.
+DAILY_TABLES = ("daily_metrics", "option_scores", "bands", "weekly_watchlist")
+
+
+def today_str() -> str:
+    """Today's date as ``YYYY-MM-DD`` (the format stored in every ``date`` column)."""
+    return pd.Timestamp.today().strftime("%Y-%m-%d")
+
 
 def _convert_timestamps(obj):
-    """Recursively convert Timestamps, NaN, and other values to JSON-compliant types."""
-    import math
+    """Recursively convert Timestamps, NaN/NaT and other values to JSON-compliant types."""
+    if isinstance(obj, dict):
+        return {k: _convert_timestamps(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_convert_timestamps(item) for item in obj]
+    # NaN / NaT / None -> null. (pd.NaT is a datetime subclass, so check this first,
+    # otherwise it would be stored as the string "NaT".)
+    if obj is None or (not isinstance(obj, (str, bytes)) and pd.isna(obj)):
+        return None
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
-    elif isinstance(obj, float):
-        if math.isnan(obj) or math.isinf(obj):
-            return None
-        return obj
-    elif isinstance(obj, dict):
-        return {k: _convert_timestamps(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [_convert_timestamps(item) for item in obj]
+    if isinstance(obj, float) and math.isinf(obj):
+        return None
     return obj
 
 
@@ -61,17 +73,26 @@ def clear_all_tables() -> None:
         print(f"[WARNING] Could not clear tables: {e}")
 
 
-def _map_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Map CSV column names to snake_case for Supabase."""
+def _map_columns(df: pd.DataFrame, day: str | None = None) -> pd.DataFrame:
+    """Map CSV column names to snake_case for Supabase and normalise ``date``.
+
+    ``date`` is always ``YYYY-MM-DD``. If ``day`` is given it overrides any
+    existing value so every table is written (and later deleted) under the
+    same key.
+    """
     result = df.copy()
     for csv_col, db_col in CSV_TO_DB_COLUMNS.items():
         if csv_col in result.columns:
             result = result.rename(columns={csv_col: db_col})
-    # Add date column if missing
-    if "date" not in result.columns and "Date" in df.columns:
-        result["date"] = df["Date"]
-    elif "date" not in result.columns:
-        result["date"] = pd.Timestamp.today().isoformat()
+
+    if day is not None:
+        result["date"] = day
+    elif "date" in result.columns:
+        result["date"] = result["date"].astype(str).str[:10]
+    elif "Date" in df.columns:
+        result["date"] = df["Date"].astype(str).str[:10]
+    else:
+        result["date"] = today_str()
     return result
 
 
@@ -103,97 +124,94 @@ DAILY_METRICS_COLUMNS = [
     "strategy",
 ]
 
+OPTION_SCORE_COLUMNS = ["date", "ticker", "option_score", "trend", "strategy"]
+
+WATCHLIST_COLUMNS = [
+    "date",
+    "ticker",
+    "sector",
+    "price",
+    "option_score",
+    "iv_rank_1y",
+    "iv_30d",
+    "next_earnings_date",
+    "trend",
+    "strategy",
+]
+
+
+def _rows(df: pd.DataFrame, columns: list[str], day: str | None = None) -> list[dict]:
+    """Build JSON-safe insert rows for the given columns (those that exist)."""
+    if df.empty:
+        return []
+    mapped = _map_columns(df, day)
+    available = [c for c in columns if c in mapped.columns]
+    return _convert_timestamps(mapped[available].to_dict(orient="records"))
+
+
+def _band_rows(df: pd.DataFrame, day: str | None = None) -> list[dict]:
+    if df.empty or "Band" not in df.columns:
+        return []
+    return _rows(df, ["date", "ticker", "band"], day)
+
+
+def replace_day(df_bands: pd.DataFrame, weekly: pd.DataFrame, day: str | None = None) -> dict:
+    """Replace one day's rows in all four daily tables.
+
+    All payloads are built *before* anything is deleted, so a mapping/serialisation
+    problem can never leave the day empty. Deletes use ``date LIKE 'YYYY-MM-DD%'`` so
+    legacy rows that were stored with a time component are cleaned up too. Any
+    Supabase error is raised (never swallowed).
+
+    The Supabase REST API has no multi-table transaction, so a network failure
+    between the deletes and the inserts can still leave a partial day; the caller
+    should treat an exception as "re-run needed" (``main`` alerts and exits non-zero).
+    """
+    day = day or today_str()
+    payload = {
+        "daily_metrics": _rows(df_bands, DAILY_METRICS_COLUMNS, day),
+        "option_scores": _rows(df_bands, OPTION_SCORE_COLUMNS, day),
+        "bands": _band_rows(df_bands, day),
+        "weekly_watchlist": _rows(weekly, WATCHLIST_COLUMNS, day),
+    }
+
+    client = get_supabase_client()
+    for table in DAILY_TABLES:
+        client.table(table).delete().like("date", f"{day}%").execute()
+    for table in DAILY_TABLES:
+        rows = payload[table]
+        if rows:
+            client.table(table).insert(rows).execute()
+
+    return {table: len(rows) for table, rows in payload.items()}
+
 
 def insert_daily_metrics(df: pd.DataFrame) -> None:
-    """
-    Insert row-level daily metrics into Supabase.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame containing daily metrics (all columns).
-    """
-    if df.empty:
-        return
-    client = get_supabase_client()
-    df_mapped = _map_columns(df)
-    # Only keep columns that exist in the daily_metrics table schema
-    available_cols = [c for c in DAILY_METRICS_COLUMNS if c in df_mapped.columns]
-    rows = df_mapped[available_cols].to_dict(orient="records")
-    rows = _convert_timestamps(rows)
-    client.table("daily_metrics").insert(rows).execute()
+    """Insert row-level daily metrics into Supabase."""
+    rows = _rows(df, DAILY_METRICS_COLUMNS)
+    if rows:
+        get_supabase_client().table("daily_metrics").insert(rows).execute()
 
 
 def insert_option_scores(df: pd.DataFrame) -> None:
-    """
-    Insert ticker-level option scores into Supabase.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame containing at least 'Ticker' and 'Option Score' columns.
-    """
-    if df.empty:
-        return
-    client = get_supabase_client()
-    df_mapped = _map_columns(df)
-    # Select the columns needed for option_scores
-    score_cols = ["date", "ticker", "option_score", "trend", "strategy"]
-    available_cols = [c for c in score_cols if c in df_mapped.columns]
-    rows = df_mapped[available_cols].to_dict(orient="records")
-    rows = _convert_timestamps(rows)
-    client.table("option_scores").insert(rows).execute()
+    """Insert ticker-level option scores into Supabase."""
+    rows = _rows(df, OPTION_SCORE_COLUMNS)
+    if rows:
+        get_supabase_client().table("option_scores").insert(rows).execute()
 
 
 def insert_bands(df: pd.DataFrame) -> None:
-    """
-    Insert band classifications into Supabase.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame containing 'Ticker' and 'Band' columns.
-    """
-    if df.empty:
-        return
-    if "Band" not in df.columns:
-        return
-    client = get_supabase_client()
-    df_mapped = _map_columns(df)
-    rows = df_mapped[["date", "ticker", "band"]].to_dict(orient="records")
-    rows = _convert_timestamps(rows)
-    client.table("bands").insert(rows).execute()
+    """Insert band classifications into Supabase (needs a 'Band' column)."""
+    rows = _band_rows(df)
+    if rows:
+        get_supabase_client().table("bands").insert(rows).execute()
 
 
 def insert_weekly_watchlist(df: pd.DataFrame) -> None:
-    """
-    Insert weekly watchlist into Supabase.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with weekly watchlist columns.
-    """
-    if df.empty:
-        return
-    client = get_supabase_client()
-    df_mapped = _map_columns(df)
-    watch_cols = [
-        "date",
-        "ticker",
-        "sector",
-        "price",
-        "option_score",
-        "iv_rank_1y",
-        "iv_30d",
-        "next_earnings_date",
-        "trend",
-        "strategy",
-    ]
-    available_cols = [c for c in watch_cols if c in df_mapped.columns]
-    rows = df_mapped[available_cols].to_dict(orient="records")
-    rows = _convert_timestamps(rows)
-    client.table("weekly_watchlist").insert(rows).execute()
+    """Insert weekly watchlist into Supabase."""
+    rows = _rows(df, WATCHLIST_COLUMNS)
+    if rows:
+        get_supabase_client().table("weekly_watchlist").insert(rows).execute()
 
 
 def insert_trades(df: pd.DataFrame) -> None:
@@ -206,10 +224,6 @@ def insert_trades(df: pd.DataFrame) -> None:
         DataFrame with trades columns: date, ticker, strategy, entry_strikes,
         expiry, credit_debit, reason, exit_plan.
     """
-    if df.empty:
-        return
-    client = get_supabase_client()
-    df_mapped = _map_columns(df)
     trade_cols = [
         "date",
         "ticker",
@@ -220,7 +234,6 @@ def insert_trades(df: pd.DataFrame) -> None:
         "reason",
         "exit_plan",
     ]
-    available_cols = [c for c in trade_cols if c in df_mapped.columns]
-    rows = df_mapped[available_cols].to_dict(orient="records")
-    rows = _convert_timestamps(rows)
-    client.table("trades").insert(rows).execute()
+    rows = _rows(df, trade_cols)
+    if rows:
+        get_supabase_client().table("trades").insert(rows).execute()

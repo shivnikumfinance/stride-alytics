@@ -72,6 +72,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
 
   devAdminLogin: () => {
+    if (!import.meta.env.DEV) return; // never available in production builds
     tokenStore.set("dev-admin-token");
     set({ user: adminUser, token: "dev-admin-token", loading: false, error: null });
   },
