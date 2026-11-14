@@ -1,21 +1,48 @@
 # Pending items
 
 Priority: **P1** = do next, **P2** = soon, **P3** = when convenient.
-Delete an item when it is done and validated (see [README](README.md)).
+Delete an item when it is done and validated (see [README](README.md)). Last updated: 2026-11-14.
+
+## Board
+
+**Who** says what is needed: **you** = needs your accounts, secrets or a decision; **me** = can be done in the repo without secrets.
+
+| # | Item | Priority | Who | State |
+|---|------|----------|-----|-------|
+| 1 | Commit the work | P1 | you | Nothing is committed (Phases 1 to 4 plus fixes) |
+| 2 | Apply migrations 006 to 010 to Supabase | P1 | you | Verified on local PostgreSQL 16; not on Supabase |
+| 3 | Persistence on real PostgreSQL; `DATABASE_URL` on Render | P1 | you | Smoke test 11/11 and the full suite pass locally |
+| 4 | Verify the daily workflow on GitHub | P1 | you | Needs repo secrets |
+| 5 | Real Supabase login end to end | P1 | you | Unit-tested only |
+| 19 | Gate and option data on a weekday, market hours | P1 | you + me | Saturday run done; weekday run open |
+| 25 | Decide the open-interest rule and the stale-earnings fail-safe | P1 | you | Findings recorded |
+| 6 | Real data ingestion for alpha | P2 | you + me | Decision needed (small universe or paid API) |
+| 7 | Clean up old duplicate rows in Supabase | P2 | you | Needs the database |
+| 8 | Protect the Streamlit dashboard | P2 | you | Needs hosting access |
+| 10 | Session renewal (refresh token) | P2 | me | Test it with item 5 |
+| 11 | `CORS_ORIGINS` on Render; Yahoo ticker source | P2 | you + me | Code fixes done |
+| 17 | Close the doc-vs-code gaps | P2 | you + me | See [DOC-CODE-GAPS.md](DOC-CODE-GAPS.md) |
+| 18 | Alpha and backend table-name collisions | P2 | you | Decision needed |
+| 20 | Confirm the Phase 2 rule assumptions | P2 | you | Checklist below |
+| 21 | Rule thresholds as Settings (FR-830) | P2 | me | After items 20, 23, 24 are confirmed |
+| 23 | Confirm Phase 3 behaviour (alerts, P&L x100) | P2 | you | Checklist below |
+| 24 | Confirm Phase 4 behaviour (limits, matrix, EV) | P2 | you | Checklist below |
+| 22 | Band usage endpoint shape | P3 | you | Decision |
+| 12 to 16 | Spec mismatches, alpha robustness, tests, leftovers, hygiene | P3 | me + you | Partly done |
 
 ---
 
 ## P1
 
 ### 1. Commit the current work
-- Several changes are uncommitted: scope docs, `subscription_plan` removal (migration 006), auth/trade fixes, JWT audience, data-source labelling, alpha pipeline, workflow, mock-page banners, `AdminPage` deletion.
-- Suggested commits: docs scope · plan removal · security + trade bugs · labelling · alpha + workflow · frontend demo banners.
+- All work is uncommitted: the scope docs, `subscription_plan` removal (migration 006), security and trade fixes, labelling, the alpha pipeline and workflows, then **Phase 1** (persistence and logs, migration 007), **Phase 2** (trading core, migration 008), **Phase 3** (alerts and Home hub, migration 009), **Phase 4** (analytics, migration 010), the PostgreSQL validation tooling, the live-data fixes, auth hardening and alpha scoring.
+- Suggested commits (one branch, in this order): docs and scope · plan removal · security and trade fixes · labelling and alpha pipeline · Phase 1 · Phase 2 · Phase 3 · Phase 4 · validation tooling · live-data fixes and hardening. Commit messages were drafted in the conversation.
 - Done when: committed on a branch and CI is green.
 
 ### 2. Apply migrations 006 to 010 to Supabase
 - **Verified on a local throwaway PostgreSQL 16 (2026-11-14):** migrations 001 to 010 apply in order with no errors, the `_down` files for 010 to 006 roll back cleanly and 006 to 010 re-apply, and the whole backend suite (373 tests) passes against the migration-built schema. A minimal stand-in for Supabase's `auth.uid()` and roles was used, so this is **not** yet a test on Supabase itself.
-- `006_drop_subscription_plan.sql`, `007_persistence_logs.sql`, `008_market_regime.sql` and `009_alert_acks.sql` and `010_scenarios.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
-- **None of them has been applied anywhere yet**, including 008 (`market_regime`) 009 (`alert_acks`) and 010 (`scenarios`). Try all five on a throwaway Supabase project first (see item 3), including each `_down` file once.
+- `006_drop_subscription_plan.sql`, `007_persistence_logs.sql`, `008_market_regime.sql`, `009_alert_acks.sql` and `010_scenarios.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
+- **None of them has been applied anywhere yet**, including 008 (`market_regime`), 009 (`alert_acks`) and 010 (`scenarios`). Try all five on a throwaway Supabase project first (see item 3), including each `_down` file once.
 - Done when: all five are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
 
 ### 3. Validate persistence on real PostgreSQL
