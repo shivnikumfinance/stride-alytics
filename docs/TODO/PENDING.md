@@ -14,7 +14,7 @@ Delete an item when it is done and validated (see [README](README.md)).
 
 ### 2. Apply migrations 006, 007 and 008 to Supabase
 - `006_drop_subscription_plan.sql`, `007_persistence_logs.sql` and `008_market_regime.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
-- Try them on a throwaway project first (see item 3).
+- **None of them has been applied anywhere yet**, including 008 (`market_regime`). Try all three on a throwaway Supabase project first (see item 3), including each `_down` file once.
 - Done when: all three are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
 
 ### 3. Validate persistence on real PostgreSQL
@@ -82,15 +82,29 @@ Delete an item when it is done and validated (see [README](README.md)).
 ### 19. Check the gate against real market data
 - The gate's data comes from yfinance (market cap, earnings date, bid/ask, open interest) and is tested with fakes only. Real fields can be missing or stale, and because missing data **blocks** the trade, a poor feed would block legitimate entries.
 - Try 10–15 real symbols (large caps, ETFs like SPY, a small cap) through "Check gate". If too many say "could not verify", consider a better data source (a paid data API is allowed; record it in `../BUSINESS/03-FINANCIAL-MODEL.md`).
+- Also check: yfinance's `calendar` earnings date, `marketCap` for ETFs, and bid/ask/open interest after hours (they are often 0 or missing when the market is closed, which would block every option trade).
 - Done when: typical symbols pass or fail for the right reasons (Validation V15).
 
 ### 20. Confirm the rule assumptions
-- Several documented rules had no numbers; defaults were chosen and listed in `../BUSINESS/05-IMPLEMENTATION-STATUS.md` ("Phase 2 assumptions"): market "down" = SPY below its 200-day average, regime floor 25, the regime sub-score formulas, the halved risk budget in a DEFENSIVE regime, band caps as capital at risk, FR-670 sizing taken literally.
-- Done when: you have reviewed them and either accepted them or asked for changes.
+- The docs gave no numbers for several rules, so defaults were chosen. They are listed in `../BUSINESS/05-IMPLEMENTATION-STATUS.md` ("Phase 2 assumptions"). Confirm or change each:
+  - [ ] **Market "down"** (BR-010): SPY closes below its 200-day average.
+  - [ ] **Regime floor** (BR-015): a score below 25 blocks all new entries; 25–40 (DEFENSIVE) still allows Base-layer trades.
+  - [ ] **Regime sub-score formulas**: trend 0–100 (50 above the 200-day, +30 above the 50-day, +20 if the 50-day is over the 200-day); VIX 100 at 12 or lower down to 0 at 40 or higher; IV rank = percentile of today's VIX within its last year; weights 40/30/30.
+  - [ ] **Halved risk budget** in a DEFENSIVE (or UNKNOWN) regime, with the Growth layer locked.
+  - [ ] **Band caps** measured as capital at risk (`risk_amount`) as a share of account size; warn at 80% of the cap, block at the cap.
+  - [ ] **FR-670 sizing** taken literally (Risk / Credit, sized by premium), next to a safer max-loss mode.
+  - [ ] **Back-dated entries** (more than 1 day old) skip the gate.
+- Done when: each box is ticked (accepted) or a change has been made.
 
 ### 21. Rule thresholds are constants, not settings
 - The gate's thresholds (spread 10%, open interest 500, market cap $2B/$10B, earnings 14 days, regime floor 25) live in `backend/app/domain/gate.py`. FR-830 asks for configurable thresholds.
+- Changing one today means editing code and redeploying; there is no audit trail for the change except git.
 - Done when: they are exposed in Settings (with audit), or the docs say they are fixed.
+
+### 22. Band usage endpoint differs from the plan
+- The plan said `GET /portfolio/{id}/bands`; it was built as `GET /portfolio/bands` because the band caps apply to the whole account, not to one portfolio. The Sizing page and the status docs use the account-wide version.
+- Decide: keep it account-wide (then nothing to do), or also offer a per-portfolio view.
+- Done when: the choice is confirmed, or a per-portfolio endpoint exists.
 
 ## P3
 

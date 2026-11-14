@@ -96,3 +96,5 @@ uv run ruff check . && uv run black --check .
 - Settings: change band caps / risk % / regime weights; the Sizing page and your live regime score follow.
 - Sizing: a Growth trade while the regime is DEFENSIVE is refused; Base is allowed with a halved budget.
 - GitHub: run "Generate Market Regime" manually with `SUPABASE_URL`, `SUPABASE_KEY` and `SLACK_WEBHOOK` set: it writes today's row, and a state change posts to Slack.
+- Run "Check gate" once **during** market hours and once **after hours**: after hours, bid/ask and open interest are often 0 or missing, which blocks option trades with "could not verify". Note which behaviour you get.
+- `GET /portfolio/bands` (the account-wide band usage on the Sizing page) shows exposure rising after you add an open trade with a band and capital at risk.
