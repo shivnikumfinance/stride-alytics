@@ -1,6 +1,7 @@
 """SQLAlchemy ORM models — import everything from here."""
 
 from app.models.logs import AuditLog, ImmutableRecordError, SignalLog
+from app.models.market_regime import MarketRegime
 from app.models.option import Option
 from app.models.portfolio import Portfolio
 from app.models.trade import Trade
@@ -19,5 +20,6 @@ __all__ = [
     "SymbolFlag",
     "SignalLog",
     "AuditLog",
+    "MarketRegime",
     "ImmutableRecordError",
 ]

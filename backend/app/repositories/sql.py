@@ -22,7 +22,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app import models as m
-from app.services.portfolio import Portfolio, Trade
+from app.domain.regime_score import RegimeScore
+from app.services.portfolio import Portfolio, Trade, calculate_pnl
 
 
 class InvalidInput(ValueError):
@@ -639,3 +640,96 @@ class Repo:
             self._audit(user_id, "disclaimer.accept", "settings", user_id, None, None)
         await self.s.commit()
         return self.settings_dict(row)
+
+    # ------------------------------------------------- account state for the rules
+
+    async def realized_pnl(self, user_id: UUID) -> float:
+        """Total P&L of closed trades (equity = account size + this)."""
+        rows = (
+            await self.s.scalars(
+                select(m.Trade).where(m.Trade.user_id == user_id, m.Trade.exit_price.is_not(None))
+            )
+        ).all()
+        return round(sum(calculate_pnl(_to_trade(r)) for r in rows), 2)
+
+    async def open_band_exposure(self, user_id: UUID) -> dict[str, float]:
+        """Capital at risk per band across open trades (``risk_amount`` is the capital basis)."""
+        rows = (
+            await self.s.execute(
+                select(m.Trade.band, func.sum(m.Trade.risk_amount))
+                .where(
+                    m.Trade.user_id == user_id,
+                    m.Trade.exit_price.is_(None),
+                    m.Trade.band.is_not(None),
+                    m.Trade.risk_amount.is_not(None),
+                )
+                .group_by(m.Trade.band)
+            )
+        ).all()
+        return {band: float(total or 0) for band, total in rows}
+
+    # ----------------------------------------------------------- regime history
+
+    @staticmethod
+    def _regime_dict(row: m.MarketRegime) -> dict[str, Any]:
+        return {
+            "as_of": row.as_of.isoformat(),
+            "score": _num(row.score),
+            "state": row.state,
+            "components": row.components,
+            "weights": row.weights,
+            "vix": _num(row.vix),
+            "iv_rank": _num(row.iv_rank),
+            "market_down": row.market_down,
+            "source": row.source,
+        }
+
+    async def save_regime(self, regime: RegimeScore) -> str | None:
+        """Upsert today's shared regime row. Returns the last known state before this update (or None).
+
+        Only live scores are stored; an unavailable score never overwrites history.
+        """
+        if regime.score is None or regime.source != "live":
+            return None
+        as_of = date.fromisoformat(regime.as_of)
+        previous = await self.s.scalar(
+            select(m.MarketRegime)
+            .where(m.MarketRegime.as_of < as_of)
+            .order_by(m.MarketRegime.as_of.desc())
+            .limit(1)
+        )
+        row = await self.s.get(m.MarketRegime, as_of)
+        # The last state we knew about: today's stored row if there is one, otherwise the previous
+        # day's. Comparing against today's row means a change is reported once, not on every request.
+        prior_state = row.state if row is not None else (previous.state if previous else None)
+        values = dict(
+            score=regime.score,
+            state=regime.state,
+            components=regime.components,
+            weights=regime.weights,
+            vix=regime.vix,
+            iv_rank=regime.iv_rank,
+            market_down=regime.market_down,
+            source=regime.source,
+        )
+        if row is None:
+            self.s.add(m.MarketRegime(as_of=as_of, **values))
+        else:
+            for key, value in values.items():
+                setattr(row, key, value)
+        await self.s.commit()
+        return prior_state
+
+    async def latest_regime(self) -> dict[str, Any] | None:
+        row = await self.s.scalar(
+            select(m.MarketRegime).order_by(m.MarketRegime.as_of.desc()).limit(1)
+        )
+        return None if row is None else self._regime_dict(row)
+
+    async def regime_history(self, limit: int = 90) -> list[dict[str, Any]]:
+        rows = (
+            await self.s.scalars(
+                select(m.MarketRegime).order_by(m.MarketRegime.as_of.desc()).limit(limit)
+            )
+        ).all()
+        return [self._regime_dict(r) for r in rows]

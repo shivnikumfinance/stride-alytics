@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import Literal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.api.deps import Ctx, get_ctx, to_csv
+from app.api.v1.endpoints.gate import is_backdated
 from app.api.v1.schemas.portfolio import TradeClose, TradeCreate, TradeNotes, TradeOut, TradePage
 from app.repositories.sql import InvalidInput
 from app.services.portfolio import Trade, trade_breakdown
+from app.services.symbol_data import SymbolDataProvider, get_symbol_data_provider
+from app.services.trading import entry_gate, load_account, log_gate_decision
 from app.utils.logger import get_logger
 from app.utils.validators import normalize_symbol
 
@@ -102,13 +106,66 @@ async def list_trades(portfolio_id: UUID, ctx: Ctx = Depends(get_ctx)) -> list[T
 
 
 @router.post("", response_model=TradeOut, status_code=status.HTTP_201_CREATED)
-async def add_trade(payload: TradeCreate, ctx: Ctx = Depends(get_ctx)) -> TradeOut:
-    """Append a new trade to one of the user's portfolios."""
+async def add_trade(
+    payload: TradeCreate,
+    ctx: Ctx = Depends(get_ctx),
+    provider: SymbolDataProvider = Depends(get_symbol_data_provider),
+) -> TradeOut:
+    """Append a new trade to one of the user's portfolios.
+
+    New entries pass through the Do-Not-Trade gate (unless switched off in Settings). A blocked
+    entry is refused with 409 and every reason, and the decision is written to the signal log.
+    Back-dated entries are record-keeping and are not gated.
+    """
+    symbol = normalize_symbol(payload.symbol)
+    settings = await ctx.repo.get_settings(ctx.user_id)
+    if settings["enforce_gate"]:
+        if is_backdated(payload.entry_date):
+            await ctx.repo.log_signal(
+                ctx.user_id,
+                kind="gate",
+                decision="info",
+                symbol=symbol,
+                message="Gate skipped: back-dated entry (record-keeping).",
+                details={"entry_date": payload.entry_date.isoformat()},
+            )
+        else:
+            account = await load_account(ctx)
+            result = await entry_gate(
+                ctx,
+                account,
+                provider,
+                symbol=symbol,
+                trade_type=payload.trade_type,
+                layer=payload.layer,
+                strike=payload.strike,
+                expiry=payload.expiry,
+            )
+            await log_gate_decision(
+                ctx,
+                symbol,
+                result,
+                {
+                    "trade_type": payload.trade_type,
+                    "layer": payload.layer,
+                    "strike": payload.strike,
+                    "expiry": payload.expiry.isoformat() if payload.expiry else None,
+                },
+            )
+            if not result.clear:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "message": "Trade blocked by Do-Not-Trade rules",
+                        "reasons": [asdict(r) for r in result.reasons],
+                    },
+                )
+
     trade = Trade(
         id=uuid4(),
         user_id=ctx.user_id,
         portfolio_id=payload.portfolio_id,
-        symbol=normalize_symbol(payload.symbol),
+        symbol=symbol,
         trade_type=payload.trade_type,
         direction=payload.direction,
         entry_price=payload.entry_price,

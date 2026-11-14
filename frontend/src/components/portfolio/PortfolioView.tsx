@@ -1,25 +1,19 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { downloadFile } from "../../api/download";
-import { Card, Input, Select, Button, Table, Textarea, Badge } from "../ui";
+import { Card, Input, Button, Table, Textarea, Badge } from "../ui";
 import {
   usePortfolios,
   useCreatePortfolio,
   usePortfolioSummary,
   useTrades,
-  useAddTrade,
   useCloseTrade,
 } from "../../hooks/queries";
 import { fmtDate, fmtUsd, fmtPct } from "../../utils";
-import type { TradeOut, TradeType, Direction } from "../../types";
-
-/** Today's date in the user's local timezone as YYYY-MM-DD (toISOString would use UTC). */
-function todayLocal(): string {
-  const d = new Date();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${mm}-${dd}`;
-}
+import { todayLocal } from "../../utils/date";
+import { GateBanner } from "../gate";
+import { NewTradeCard } from "./NewTradeCard";
+import type { TradeOut } from "../../types";
 
 export function PortfolioView() {
   const { data: portfoliosData } = usePortfolios();
@@ -31,6 +25,7 @@ export function PortfolioView() {
 
   return (
     <div className="space-y-4">
+      <GateBanner />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PortfoliosList
           portfolios={portfolios.map((p) => ({ id: p.id, name: p.name }))}
@@ -134,58 +129,6 @@ function NewPortfolioCard() {
         <Textarea label="Description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
         <Button type="submit" loading={create.isPending} className="w-full">
           Create portfolio
-        </Button>
-      </form>
-    </Card>
-  );
-}
-
-function NewTradeCard({ portfolioId }: { portfolioId: string }) {
-  const [symbol, setSymbol] = useState("AAPL");
-  const [tradeType, setTradeType] = useState<"call" | "put" | "stock">("call");
-  const [direction, setDirection] = useState<"long" | "short">("long");
-  const [entryPrice, setEntryPrice] = useState(1.0);
-  const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState("");
-  const add = useAddTrade(portfolioId);
-
-  return (
-    <Card title="Add trade">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          add.mutate({
-            portfolio_id: portfolioId,
-            symbol,
-            trade_type: tradeType,
-            direction,
-            entry_price: Number(entryPrice),
-            quantity: Number(quantity),
-            entry_date: todayLocal(),
-            notes: notes || null,
-          });
-        }}
-        className="space-y-3"
-      >
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Symbol" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} required />
-          <Select label="Type" value={tradeType} onChange={(e) => setTradeType(e.target.value as TradeType)}>
-            <option value="call">Call</option>
-            <option value="put">Put</option>
-            <option value="stock">Stock</option>
-          </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Select label="Direction" value={direction} onChange={(e) => setDirection(e.target.value as Direction)}>
-            <option value="long">Long</option>
-            <option value="short">Short</option>
-          </Select>
-          <Input label="Quantity" type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
-        </div>
-        <Input label="Entry price" type="number" step="0.01" value={entryPrice} onChange={(e) => setEntryPrice(Number(e.target.value))} />
-        <Textarea label="Notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-        <Button type="submit" loading={add.isPending} className="w-full">
-          Add trade
         </Button>
       </form>
     </Card>

@@ -4,6 +4,15 @@ import client from "./client";
 import type { TickerPayload } from "../types/market";
 import type {
   AuditLogEntry,
+  BandUsage,
+  GateCheckRequest,
+  GateData,
+  MasterGate,
+  RegimeHistoryRow,
+  RegimeScoreData,
+  SizingRequest,
+  SizingResult,
+  SymbolFlag,
   GreeksInputs,
   GreeksResult,
   LogFilters,
@@ -51,6 +60,9 @@ export const screenerApi = {
 // --- Regime ---
 
 export const regimeApi = {
+  score: () => client.get<Envelope<RegimeScoreData>>("/regime/score").then((r) => r.data.data),
+  history: (limit = 30) =>
+    client.get<Envelope<RegimeHistoryRow[]>>("/regime/history", { params: { limit } }).then((r) => r.data.data),
   get: (symbol: string, lookbackDays = 30) =>
     client.get<RegimeResponse>(`/regime/${encodeURIComponent(symbol)}`, { params: { lookback_days: lookbackDays } }).then((r) => r.data),
 };
@@ -64,6 +76,7 @@ export const portfolioApi = {
   update: (id: string, body: { name?: string; description?: string | null }) =>
     client.patch<PortfolioSummary>(`/portfolio/${id}`, body).then((r) => r.data),
   remove: (id: string) => client.delete(`/portfolio/${id}`).then(() => undefined),
+  bands: () => client.get<Envelope<BandUsage[]>>("/portfolio/bands").then((r) => r.data.data),
 };
 
 // --- Trades ---
@@ -107,6 +120,31 @@ export const settingsApi = {
     client.put<Envelope<UserSettings>>("/settings", body).then((r) => r.data.data),
   acceptDisclaimer: () =>
     client.post<Envelope<UserSettings>>("/settings/disclaimer").then((r) => r.data.data),
+};
+
+// --- Gate, sizing, symbol flags ---
+
+export const gateApi = {
+  master: () => client.get<Envelope<MasterGate>>("/gate").then((r) => r.data.data),
+  check: (body: GateCheckRequest) =>
+    client.post<Envelope<GateData>>("/gate/check", body).then((r) => r.data.data),
+};
+
+export const sizingApi = {
+  calculate: (body: SizingRequest) =>
+    client.post<Envelope<SizingResult>>("/sizing/calculate", body).then((r) => r.data.data),
+};
+
+export const symbolsApi = {
+  flags: () =>
+    client.get<Envelope<Record<string, SymbolFlag>>>("/symbols/flags").then((r) => r.data.data),
+  setFlag: (symbol: string, news_flag: boolean, note?: string | null) =>
+    client
+      .put<Envelope<{ symbol: string } & SymbolFlag>>(`/symbols/${encodeURIComponent(symbol)}/flag`, {
+        news_flag,
+        note: note ?? null,
+      })
+      .then((r) => r.data.data),
 };
 
 // --- Logs (append-only, read-only from the UI) ---

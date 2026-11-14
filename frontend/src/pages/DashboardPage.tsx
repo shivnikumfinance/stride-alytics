@@ -1,4 +1,5 @@
 import { Card, Badge, PageHeader, SampleDataBadge } from "../components/ui";
+import { GateBanner } from "../components/gate";
 import { useScreenerLimits, useRegime } from "../hooks/queries";
 
 export function DashboardPage() {
@@ -8,6 +9,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Dashboard" subtitle="Market snapshot and quick access to all tools." />
+      <GateBanner />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card title="Account" subtitle="Limits">

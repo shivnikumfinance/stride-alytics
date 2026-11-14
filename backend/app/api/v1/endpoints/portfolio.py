@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.api.deps import Ctx, get_ctx
 from app.api.v1.schemas.portfolio import PortfolioCreate, PortfolioSummary, PortfolioUpdate
+from app.domain.sizing import band_status
 from app.services.portfolio import summary as portfolio_summary_fn
 from app.utils.logger import get_logger
 
@@ -37,6 +38,19 @@ async def create_portfolio(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     log.info("portfolio.created", user_id=str(ctx.user_id), name=payload.name)
     return PortfolioSummary(**portfolio_summary_fn(portfolio))
+
+
+@router.get("/bands")
+async def band_usage(ctx: Ctx = Depends(get_ctx)) -> dict[str, Any]:
+    """Capital committed per band across open trades vs. each band's cap (FR-640)."""
+    settings = await ctx.repo.get_settings(ctx.user_id)
+    exposure = await ctx.repo.open_band_exposure(ctx.user_id)
+    rows = band_status(
+        account_size=settings["account_size"],
+        band_caps=settings["band_caps"],
+        exposure_by_band=exposure,
+    )
+    return {"success": True, "data": rows}
 
 
 @router.get("/{portfolio_id}", response_model=PortfolioSummary)

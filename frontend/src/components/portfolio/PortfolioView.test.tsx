@@ -8,10 +8,12 @@ import { PortfolioView } from "./PortfolioView";
 vi.mock("../../api/endpoints", () => ({
   portfolioApi: { list: vi.fn(), summary: vi.fn(), create: vi.fn() },
   tradesApi: { list: vi.fn(), create: vi.fn(), close: vi.fn() },
+  gateApi: { master: vi.fn(), check: vi.fn() },
+  sizingApi: { calculate: vi.fn() },
 }));
 vi.mock("../../api/download", () => ({ downloadFile: vi.fn().mockResolvedValue(undefined) }));
 
-import { portfolioApi, tradesApi } from "../../api/endpoints";
+import { gateApi, portfolioApi, tradesApi } from "../../api/endpoints";
 
 const openTrade = {
   trade_id: "t1",
@@ -49,6 +51,19 @@ describe("PortfolioView close-trade flow", () => {
       win_rate: 0,
       winners: 0,
       losers: 0,
+    });
+    vi.mocked(gateApi.master).mockResolvedValue({
+      clear: true,
+      status: "CLEAR TO TRADE",
+      reasons: [],
+      checked: [],
+      not_evaluated: [],
+      regime: { score: 80, state: "GROWTH", components: {}, weights: {}, missing: [], market_down: false, vix: 15, iv_rank: 50, as_of: "2026-06-01", source: "live" },
+      equity: 100000,
+      min_equity: 0,
+      enforce_gate: true,
+      layer_split: { base: 40, growth: 60 },
+      growth_locked: false,
     });
     vi.mocked(tradesApi.list).mockResolvedValue([openTrade]);
     vi.mocked(tradesApi.close).mockResolvedValue({ ...openTrade, exit_price: 3.25, open: false });

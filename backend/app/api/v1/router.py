@@ -14,6 +14,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     auth,
+    gate,
     greeks,
     logs,
     market,
@@ -21,6 +22,8 @@ from app.api.v1.endpoints import (
     regime,
     screener,
     settings,
+    sizing,
+    symbols,
     trades,
     watchlists,
 )
@@ -37,6 +40,9 @@ router.include_router(trades.router, prefix="/trades", tags=["trades"])
 router.include_router(watchlists.router, prefix="/watchlists", tags=["watchlists"])
 router.include_router(settings.router, prefix="/settings", tags=["settings"])
 router.include_router(logs.router, prefix="/logs", tags=["logs"])
+router.include_router(gate.router, prefix="/gate", tags=["gate"])
+router.include_router(sizing.router, prefix="/sizing", tags=["sizing"])
+router.include_router(symbols.router, prefix="/symbols", tags=["symbols"])
 
 
 @router.get("/health", tags=["health"])

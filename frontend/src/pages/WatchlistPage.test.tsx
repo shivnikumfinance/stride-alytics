@@ -14,10 +14,11 @@ vi.mock("../api/endpoints", () => ({
     removeSymbol: vi.fn(),
   },
   marketApi: { tickers: vi.fn() },
+  symbolsApi: { flags: vi.fn(), setFlag: vi.fn() },
 }));
 vi.mock("../api/download", () => ({ downloadFile: vi.fn().mockResolvedValue(undefined) }));
 
-import { marketApi, watchlistApi } from "../api/endpoints";
+import { marketApi, symbolsApi, watchlistApi } from "../api/endpoints";
 
 const list = { id: "w1", name: "Core", symbols: ["AAPL", "MSFT"], created_at: null };
 
@@ -28,6 +29,8 @@ describe("WatchlistPage", () => {
     vi.mocked(watchlistApi.addSymbol).mockResolvedValue({ ...list, symbols: [...list.symbols, "NVDA"] });
     vi.mocked(watchlistApi.removeSymbol).mockResolvedValue({ ...list, symbols: ["MSFT"] });
     vi.mocked(watchlistApi.create).mockResolvedValue({ id: "w2", name: "Swing", symbols: [], created_at: null });
+    vi.mocked(symbolsApi.flags).mockResolvedValue({ MSFT: { news_flag: true, note: null } });
+    vi.mocked(symbolsApi.setFlag).mockResolvedValue({ symbol: "AAPL", news_flag: true, note: null });
     vi.mocked(marketApi.tickers).mockResolvedValue({
       success: true,
       source: "live",
@@ -75,5 +78,19 @@ describe("WatchlistPage", () => {
     await user.type(screen.getByLabelText("New watchlist"), "Swing");
     await user.click(screen.getByRole("button", { name: "Create" }));
     await waitFor(() => expect(watchlistApi.create).toHaveBeenCalledWith("Swing", undefined));
+  });
+
+  it("shows and toggles the news flag that blocks a symbol", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<WatchlistPage />);
+    await screen.findByText("MSFT");
+
+    // MSFT is already flagged and says so; AAPL is not.
+    expect(await screen.findByLabelText("News flag MSFT")).toBeChecked();
+    expect(screen.getByText("blocked")).toBeInTheDocument();
+    expect(screen.getByLabelText("News flag AAPL")).not.toBeChecked();
+
+    await user.click(screen.getByLabelText("News flag AAPL"));
+    await waitFor(() => expect(symbolsApi.setFlag).toHaveBeenCalledWith("AAPL", true));
   });
 });

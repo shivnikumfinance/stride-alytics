@@ -212,14 +212,20 @@ All under `/api/v1` unless noted. "Auth" = Bearer token required.
 | `GET/POST /portfolio`, `GET/PATCH/DELETE /portfolio/{id}` | yes | Persisted. DELETE only for an empty portfolio (409 otherwise) |
 | `GET /trades` | yes | All trades; `status=open|closed`, `symbol`, `portfolio_id`, `sort` (`entry_date`, `symbol`, `created_at`, `-` = desc), `limit` (1–200), `offset`; returns `{ data, total, limit, offset }` |
 | `GET /trades/export.csv[?portfolio_id=]` | yes | CSV download; text cells are neutralised against formula injection |
-| `GET /trades/{portfolio_id}`, `POST /trades`, `PATCH /trades/{id}` (notes only), `POST /trades/{id}/close` | yes | Close is 409 if already closed, 422 if exit date is before entry. Prices and dates are never edited |
+| `GET /trades/{portfolio_id}`, `POST /trades`, `PATCH /trades/{id}` (notes only), `POST /trades/{id}/close` | yes | `POST /trades` runs the Do-Not-Trade gate and answers **409** with `error.details.reasons` when blocked (nothing is saved, every reason is logged). Close is 409 if already closed, 422 if exit date is before entry. Prices and dates are never edited |
 | `GET/POST /watchlists`, `GET/DELETE /watchlists/{id}`, `POST /watchlists/{id}/symbols`, `DELETE /watchlists/{id}/symbols/{symbol}`, `GET /watchlists/{id}/export.csv` | yes | Per-user lists; symbols upper-cased and de-duplicated |
 | `GET/PUT /settings`, `POST /settings/disclaimer` | yes | Partial update; band caps and regime weights are validated; changes are audit-logged |
+| `GET /gate` | yes | Master gate: `status` (`CLEAR TO TRADE` / `BLOCKED`), `reasons`, `regime`, `equity`, `layer_split`, `growth_locked`, `not_evaluated` |
+| `POST /gate/check` | yes | Dry run of the full entry gate for a candidate trade; writes nothing to the logs. Back-dated entries return `skipped: true` |
+| `POST /sizing/calculate` | yes | Quantity and risk from Settings, the regime and band use; `credit` or `max_loss_per_contract` |
+| `GET /regime/score`, `GET /regime/history` | yes | 0–100 score with your weights (`source`: `live`, `stored`, `unavailable`); stored daily history (default weights) |
+| `GET /portfolio/bands` | yes | Capital at risk per band vs its cap, with `ok` / `near` / `over` |
+| `GET /symbols/flags`, `PUT /symbols/{symbol}/flag` | yes | Manual NewsFlag; while set, new trades in the symbol are blocked (BR-021) |
 | `GET /logs/signals`, `GET /logs/audit` | yes | Read-only, filterable (`start`, `end`, `symbol`, `rule_id`, `decision`, `entity`, `action`), paginated. No write methods exist (405) |
 
 All data endpoints are scoped to the calling user; another user's records behave as "not found" (404). Every trade, portfolio, watchlist and settings change writes an `audit_events` row in the same transaction.
 
-**Not implemented (documented elsewhere):** `GET /auth/profile`, `GET /screener`, `GET /screener/{id}`, `POST /screener/search`, `GET /picks`, the gate/sizing/regime-score/alerts/risk endpoints (planned), rate limiting.
+**Not implemented (documented elsewhere):** `GET /auth/profile`, `GET /screener`, `GET /screener/{id}`, `POST /screener/search`, `GET /picks`, the alerts, portfolio-risk, scenario and strategy-matrix endpoints (planned), rate limiting.
 
 **The `source` field.** `/market/tickers` returns `"live"` or `"fallback"`; `/screener/run` and `/regime/{symbol}` return `"live"` or `"synthetic"`. Anything other than `"live"` is placeholder data and the UI must label it.
 

@@ -522,3 +522,9 @@ Migration `007_persistence_logs.sql` (down file included) added what the backend
 **Name collisions.** The alpha pipeline's `supabase_schema.sql` also defines tables named `trades` and `audit_log` with different columns. If both are created in one Supabase project they clash. The new audit table is therefore called `audit_events`; the `trades` clash predates this migration (see `docs/TODO/PENDING.md`).
 
 **Dev/test database.** The backend uses PostgreSQL when `DATABASE_URL` is set and an in-memory SQLite database otherwise (data is lost on restart; a warning is logged). The ORM models define the schema for SQLite; the `.sql` migrations are the source of truth for PostgreSQL, so keep the two in step.
+
+## 16. Market regime history (migration 008)
+
+`008_market_regime.sql` (down file included) adds `market_regime`: one row per day (`as_of` primary key) with the 0–100 `score`, `state` (DEFENSIVE / NORMAL / GROWTH / UNKNOWN), the sub-score `components`, the `weights` used, `vix`, `iv_rank`, `market_down` and `source`.
+
+It is shared by all users and always stored with the **default weights**, so the history is comparable day to day; your own weights only change the score shown to you live. Everyone can read it (RLS read policy); there are no client write policies, so only the backend (database role) and the scheduler (service role) write it. An unavailable score is never stored.

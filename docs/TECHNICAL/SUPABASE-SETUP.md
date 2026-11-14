@@ -81,6 +81,7 @@ node scripts/load-secrets.mjs local
    - `005_extended_features.sql`
    - `006_drop_subscription_plan.sql`
    - `007_persistence_logs.sql`
+   - `008_market_regime.sql`
 3. Run each one in sequence
 
 ### Option B: Via psql CLI
@@ -93,6 +94,7 @@ psql "$DATABASE_URL" -f database/migrations/004_indexes_views_functions.sql
 psql "$DATABASE_URL" -f database/migrations/005_extended_features.sql
 psql "$DATABASE_URL" -f database/migrations/006_drop_subscription_plan.sql
 psql "$DATABASE_URL" -f database/migrations/007_persistence_logs.sql
+psql "$DATABASE_URL" -f database/migrations/008_market_regime.sql
 ```
 
 ### Option C: Via migration scripts

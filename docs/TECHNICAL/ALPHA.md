@@ -119,6 +119,8 @@ Each criterion adds 1 point to the score (max 9):
 
 ---
 
+> **Alpha's filters are a quality screen; the backend gate is the hard stop.** Alpha scores a bid-ask spread under 8% and keeps only tickers that pass its daily filters. The backend Do-Not-Trade gate (`backend/app/domain/gate.py`) independently blocks a trade when the spread of the actual contract is above 10% (BR-017), open interest is below 500, market cap is below $2B, earnings are within 14 days, a news flag is set, and more. A ticker can pass alpha and still be blocked at entry.
+
 ## Daily Filters (`apply_filters.py`)
 
 Tickers must pass ALL of:

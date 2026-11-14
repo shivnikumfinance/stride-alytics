@@ -27,17 +27,16 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={
-                "success": False,
-                "error": {
-                    "type": "http_error",
-                    "status": exc.status_code,
-                    "message": exc.detail,
-                },
-            },
-        )
+        error: dict[str, Any] = {"type": "http_error", "status": exc.status_code}
+        if isinstance(exc.detail, dict):
+            # Structured detail, e.g. {"message": ..., "reasons": [...]} for a blocked trade.
+            detail = dict(exc.detail)
+            error["message"] = detail.pop("message", "Request failed")
+            if detail:
+                error["details"] = jsonable_encoder(detail)
+        else:
+            error["message"] = exc.detail
+        return JSONResponse(status_code=exc.status_code, content={"success": False, "error": error})
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:

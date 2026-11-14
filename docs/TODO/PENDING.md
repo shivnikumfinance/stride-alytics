@@ -12,10 +12,10 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Suggested commits: docs scope · plan removal · security + trade bugs · labelling · alpha + workflow · frontend demo banners.
 - Done when: committed on a branch and CI is green.
 
-### 2. Apply migrations 006 and 007 to Supabase
-- `006_drop_subscription_plan.sql` and `007_persistence_logs.sql` (each with a `_down` file) are written but **not applied**. Apply 006 first, then 007, with `database/scripts/apply_migrations.{sh,ps1}`.
+### 2. Apply migrations 006, 007 and 008 to Supabase
+- `006_drop_subscription_plan.sql`, `007_persistence_logs.sql` and `008_market_regime.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
 - Try them on a throwaway project first (see item 3).
-- Done when: both are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
+- Done when: all three are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
 
 ### 3. Validate persistence on real PostgreSQL
 - Code is done (Phase 1): portfolios, trades, watchlists, settings and the append-only logs are stored through `backend/app/repositories/sql.py`; unit tests run on SQLite.
@@ -79,12 +79,24 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Decide: separate Supabase projects/schemas for alpha and the backend, or rename alpha's tables (for example `alpha_trades`). Alpha's pipeline does not write `trades` today.
 - Done when: both schemas can coexist (or are kept apart) and this is documented in `ALPHA.md`.
 
+### 19. Check the gate against real market data
+- The gate's data comes from yfinance (market cap, earnings date, bid/ask, open interest) and is tested with fakes only. Real fields can be missing or stale, and because missing data **blocks** the trade, a poor feed would block legitimate entries.
+- Try 10–15 real symbols (large caps, ETFs like SPY, a small cap) through "Check gate". If too many say "could not verify", consider a better data source (a paid data API is allowed; record it in `../BUSINESS/03-FINANCIAL-MODEL.md`).
+- Done when: typical symbols pass or fail for the right reasons (Validation V15).
+
+### 20. Confirm the rule assumptions
+- Several documented rules had no numbers; defaults were chosen and listed in `../BUSINESS/05-IMPLEMENTATION-STATUS.md` ("Phase 2 assumptions"): market "down" = SPY below its 200-day average, regime floor 25, the regime sub-score formulas, the halved risk budget in a DEFENSIVE regime, band caps as capital at risk, FR-670 sizing taken literally.
+- Done when: you have reviewed them and either accepted them or asked for changes.
+
+### 21. Rule thresholds are constants, not settings
+- The gate's thresholds (spread 10%, open interest 500, market cap $2B/$10B, earnings 14 days, regime floor 25) live in `backend/app/domain/gate.py`. FR-830 asks for configurable thresholds.
+- Done when: they are exposed in Settings (with audit), or the docs say they are fixed.
+
 ## P3
 
 ### 12. Spec and implementation mismatches
-- The backend regime engine (bull/bear/ranging from a 30-day return) does not implement the documented 0–100 score (VIX, SPY 50/200 MA, IV Rank → DEFENSIVE/NORMAL/GROWTH).
+- The older `/regime/{symbol}` endpoint (bull/bear/ranging from a 30-day return) still exists next to the new 0–100 score (`/regime/score`); decide whether to keep or remove it.
 - Alpha bands A–E are quality tiers by score; the docs define them as capital-allocation buckets with 30/25/20/15/10% caps.
-- Alpha filters use a spread limit of 8%; DNT rule BR-017 says 10%.
 - `alpha/app/business_logic.py` is dead code that treats spread as a fraction (`< 0.08`) while the real screener uses percent (`< 8`). Delete it or make it the single implementation.
 - Done when: docs and code agree, or the docs are updated to match.
 

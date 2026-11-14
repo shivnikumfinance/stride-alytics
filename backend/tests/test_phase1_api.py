@@ -270,7 +270,10 @@ def test_changes_appear_in_the_audit_log_and_logs_are_read_only(client: TestClie
     assert {r["entity"] for r in filtered["data"]} == {"trade"}
     assert client.get("/api/v1/logs/audit", headers=BOB).json()["total"] == 0  # isolation
 
-    assert client.get("/api/v1/logs/signals", headers=ALICE).json()["total"] == 0
+    # The back-dated trade was not gated, and that decision is itself on record.
+    signals = client.get("/api/v1/logs/signals", headers=ALICE).json()
+    assert signals["total"] == 1 and signals["data"][0]["decision"] == "info"
+    assert "back-dated" in signals["data"][0]["message"]
     assert client.get("/api/v1/logs/signals?decision=nope", headers=ALICE).status_code == 422
 
     # No way to alter history over HTTP.

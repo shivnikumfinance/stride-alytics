@@ -86,3 +86,13 @@ uv run ruff check . && uv run black --check .
 
 ### V14. CI (new)
 - Push a branch: all jobs (backend, alpha, frontend, database, scheduler) are green. Introduce a failing backend test on a scratch branch to confirm the job now turns red.
+
+### V15. Phase 2: gate, regime and sizing with real data (new)
+- Apply migration 008, then open the Regime page: a score appears (not "unavailable"), the history table gains today's row, and a second refresh does not duplicate it.
+- Dashboard shows CLEAR TO TRADE or BLOCKED with reasons that match the market (SPY above or below its 200-day average).
+- "Check gate" on 10–15 real symbols (for example AAPL, MSFT, SPY, a small cap with weak options): each result's reasons match what you see on the broker (spread, open interest, earnings date, market cap). Note any symbol where data is "could not verify".
+- Add a trade dated today that the gate blocks: you get a 409, every reason is shown, no trade appears, and the Signal log has one "blocked" row per reason. Fix the cause (or clear a news flag) and add it again: it saves and the log shows "allowed".
+- Tick "News flag" on a symbol, then try to add it: blocked with BR-021; untick: allowed.
+- Settings: change band caps / risk % / regime weights; the Sizing page and your live regime score follow.
+- Sizing: a Growth trade while the regime is DEFENSIVE is refused; Base is allowed with a halved budget.
+- GitHub: run "Generate Market Regime" manually with `SUPABASE_URL`, `SUPABASE_KEY` and `SLACK_WEBHOOK` set: it writes today's row, and a state change posts to Slack.

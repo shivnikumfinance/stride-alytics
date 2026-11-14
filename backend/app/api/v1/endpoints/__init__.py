@@ -7,6 +7,7 @@ in ``app.api.v1.router``.
 
 from app.api.v1.endpoints import (
     auth,
+    gate,
     greeks,
     logs,
     market,
@@ -14,12 +15,15 @@ from app.api.v1.endpoints import (
     regime,
     screener,
     settings,
+    sizing,
+    symbols,
     trades,
     watchlists,
 )
 
 __all__ = [
     "auth",
+    "gate",
     "greeks",
     "logs",
     "market",
@@ -27,6 +31,8 @@ __all__ = [
     "regime",
     "screener",
     "settings",
+    "sizing",
+    "symbols",
     "trades",
     "watchlists",
 ]

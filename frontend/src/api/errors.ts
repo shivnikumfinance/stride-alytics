@@ -23,6 +23,8 @@
 
 import axios from "axios";
 
+import type { GateReason } from "../types/trading";
+
 /**
  * Convert any thrown value into a human-readable message.
  *
@@ -59,4 +61,15 @@ export function withApiErrorLogging(
   return (err) => {
     console.error(`[${context}]`, extractErrorMessage(err, fallback));
   };
+}
+
+/**
+ * Pull the Do-Not-Trade reasons out of a blocked-trade response
+ * (`409 { error: { message, details: { reasons: [...] } } }`). Empty for any other error.
+ */
+export function extractGateReasons(err: unknown): GateReason[] {
+  if (!axios.isAxiosError(err)) return [];
+  const body = err.response?.data as { error?: { details?: { reasons?: GateReason[] } } } | undefined;
+  const reasons = body?.error?.details?.reasons;
+  return Array.isArray(reasons) ? reasons : [];
 }

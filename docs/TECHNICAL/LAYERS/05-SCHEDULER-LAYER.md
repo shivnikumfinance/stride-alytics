@@ -38,6 +38,7 @@ The **Scheduler Layer** automates recurring tasks like data collection, analysis
 ├── fetch-market-data.yml       # Market data collection, Mon–Fri 20:00 UTC
 ├── calculate-greeks.yml        # Greeks calculation, Mon–Fri 21:00 UTC
 ├── generate-weekly-picks.yml   # Weekly picks, Sunday 23:00 UTC
+├── generate-regime.yml         # Daily regime score, Mon–Fri 21:30 UTC (Slack alert on a state change)
 ├── health-check.yml            # Health monitoring, every 6 hours
 ├── database-backup.yml         # Encrypted pg_dump, weekly (Sunday 06:00 UTC)
 ├── ci.yml                      # Lint/test on push and PR

@@ -10,6 +10,8 @@ import {
   useDeleteWatchlist,
   useQuotes,
   useRemoveSymbol,
+  useSetSymbolFlag,
+  useSymbolFlags,
   useWatchlists,
 } from "../hooks/queries";
 import type { RawTicker } from "../types/market";
@@ -31,6 +33,8 @@ export function WatchlistPage() {
   const addSymbol = useAddSymbol();
   const removeSymbol = useRemoveSymbol();
   const quotes = useQuotes(selected?.symbols ?? []);
+  const flags = useSymbolFlags();
+  const setFlag = useSetSymbolFlag();
 
   const rows: Row[] = (selected?.symbols ?? []).map((symbol) => ({
     symbol,
@@ -39,7 +43,10 @@ export function WatchlistPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Watchlist" subtitle="Your symbol lists. Quotes refresh every minute." />
+      <PageHeader
+        title="Watchlist"
+        subtitle="Your symbol lists. Quotes refresh every minute. Tick News flag to block new trades in a symbol."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card title="Watchlists" className="lg:col-span-1">
@@ -169,6 +176,22 @@ export function WatchlistPage() {
                         </span>
                       );
                     },
+                  },
+                  {
+                    key: "news",
+                    header: "News flag",
+                    align: "center",
+                    render: (r) => (
+                      <label className="inline-flex items-center gap-1 text-xs" title="While set, new trades in this symbol are blocked (BR-021)">
+                        <input
+                          type="checkbox"
+                          aria-label={`News flag ${r.symbol}`}
+                          checked={Boolean(flags.data?.[r.symbol]?.news_flag)}
+                          onChange={(e) => setFlag.mutate({ symbol: r.symbol, news_flag: e.target.checked })}
+                        />
+                        {flags.data?.[r.symbol]?.news_flag && <span className="text-red-700 font-medium">blocked</span>}
+                      </label>
+                    ),
                   },
                   {
                     key: "remove",

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   authApi,
+  gateApi,
   greeksApi,
   logsApi,
   marketApi,
@@ -11,17 +12,28 @@ import {
   regimeApi,
   screenerApi,
   settingsApi,
+  sizingApi,
+  symbolsApi,
   tradesApi,
   watchlistApi,
 } from "../api/endpoints";
 import { withApiErrorLogging } from "../api/errors";
 import type {
+  BandUsage,
+  GateCheckRequest,
+  GateData,
   GreeksInputs,
   LogFilters,
   PortfolioCreate,
+  MasterGate,
   PortfolioSummary,
+  RegimeHistoryRow,
+  RegimeScoreData,
   ScreenerFilters,
   SettingsUpdate,
+  SizingRequest,
+  SizingResult,
+  SymbolFlag,
   TradeClose,
   TradeCreate,
   TradeOut,
@@ -115,8 +127,12 @@ export const useAddTrade = (portfolioId?: string) => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trades", portfolioId] });
       qc.invalidateQueries({ queryKey: ["portfolio"] });
+      qc.invalidateQueries({ queryKey: ["gate"] });
+      qc.invalidateQueries({ queryKey: ["logs"] });
     },
-    onError: withApiErrorLogging("trades.create", "Could not add trade"),
+    onError: (err: unknown) => {
+      withApiErrorLogging("trades.create", "Could not add trade")(err);
+    },
   });
 };
 
@@ -207,3 +223,62 @@ export const useSignalLog = (filters: LogFilters = {}) =>
 
 export const useAuditLog = (filters: LogFilters = {}) =>
   useQuery({ queryKey: ["logs", "audit", filters], queryFn: () => logsApi.audit(filters) });
+
+// --- Gate, regime score, sizing, bands, flags ---
+
+/** The master gate (CLEAR TO TRADE / BLOCKED). Re-checked every 5 minutes. */
+export const useMasterGate = () =>
+  useQuery<MasterGate>({
+    queryKey: ["gate"],
+    queryFn: () => gateApi.master(),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: 1,
+  });
+
+export const useGateCheck = () =>
+  useMutation<GateData, Error, GateCheckRequest>({
+    mutationFn: (body) => gateApi.check(body),
+    onError: withApiErrorLogging("gate.check", "Could not check the gate"),
+  });
+
+export const useRegimeScore = () =>
+  useQuery<RegimeScoreData>({
+    queryKey: ["regime", "score"],
+    queryFn: () => regimeApi.score(),
+    staleTime: 5 * 60_000,
+  });
+
+export const useRegimeHistory = (limit = 30) =>
+  useQuery<RegimeHistoryRow[]>({
+    queryKey: ["regime", "history", limit],
+    queryFn: () => regimeApi.history(limit),
+  });
+
+export const useSizing = () =>
+  useMutation<SizingResult, Error, SizingRequest>({
+    mutationFn: (body) => sizingApi.calculate(body),
+    onError: withApiErrorLogging("sizing.calculate", "Could not calculate the size"),
+  });
+
+export const useBands = () =>
+  useQuery<BandUsage[]>({ queryKey: ["portfolio", "bands"], queryFn: () => portfolioApi.bands() });
+
+export const useSymbolFlags = () =>
+  useQuery<Record<string, SymbolFlag>>({
+    queryKey: ["symbol-flags"],
+    queryFn: () => symbolsApi.flags(),
+  });
+
+export const useSetSymbolFlag = () => {
+  const qc = useQueryClient();
+  return useMutation<unknown, Error, { symbol: string; news_flag: boolean }>({
+    mutationFn: ({ symbol, news_flag }) => symbolsApi.setFlag(symbol, news_flag),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["symbol-flags"] });
+      qc.invalidateQueries({ queryKey: ["gate"] });
+      qc.invalidateQueries({ queryKey: ["logs"] });
+    },
+    onError: withApiErrorLogging("symbols.flag", "Could not update the flag"),
+  });
+};
