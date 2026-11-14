@@ -9,6 +9,7 @@ from sqlalchemy import DECIMAL, Date, TIMESTAMP, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.models._types import utcnow
 
 
 class Option(Base):
@@ -32,5 +33,5 @@ class Option(Base):
     open_interest: Mapped[int | None] = mapped_column(nullable=True)
     volume: Mapped[int | None] = mapped_column(nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False
+        TIMESTAMP(timezone=True), default=utcnow, server_default=text("now()"), nullable=False
     )

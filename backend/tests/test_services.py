@@ -20,7 +20,7 @@ import pytest
 from app.services.greeks import calculate_greeks, calculate_greeks_dict, calculate_option_price
 from app.services.regime import detect_regime
 from app.services.portfolio import (
-    PortfolioStore,
+    Portfolio,
     Trade,
     calculate_pnl,
     portfolio_summary,
@@ -204,31 +204,17 @@ class TestPortfolio:
         t = self._make_trade(exit_price=None)
         assert calculate_pnl(t) == 0.0
 
-    def test_store_crud(self):
-        store = PortfolioStore()
+    def test_summary_counts_open_closed_and_winners(self):
         user = uuid4()
-        p = store.create_portfolio(user, "Test", "desc")
-        t = self._make_trade(user_id=user, portfolio_id=p.id)
-        store.add_trade(t)
+        p = Portfolio(id=uuid4(), user_id=user, name="Test", description="desc")
+        p.trades.append(self._make_trade(user_id=user, portfolio_id=p.id))  # closed winner
+        p.trades.append(self._make_trade(user_id=user, portfolio_id=p.id, exit_price=None))
 
         s = portfolio_summary(p)
-        assert s["total_trades"] == 1
+        assert s["total_trades"] == 2
+        assert s["open_trades"] == 1
         assert s["closed_trades"] == 1
         assert s["winners"] == 1
-
-    def test_duplicate_portfolio_name_rejected(self):
-        store = PortfolioStore()
-        user = uuid4()
-        store.create_portfolio(user, "X")
-        with pytest.raises(ValueError):
-            store.create_portfolio(user, "X")
-
-    def test_other_user_cannot_see_portfolio(self):
-        store = PortfolioStore()
-        u1, u2 = uuid4(), uuid4()
-        p = store.create_portfolio(u1, "Private")
-        with pytest.raises(KeyError):
-            store.get_portfolio(u2, p.id)
 
     def test_trade_breakdown_shape(self):
         t = self._make_trade()

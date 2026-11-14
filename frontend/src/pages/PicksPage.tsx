@@ -12,7 +12,7 @@ export function PicksPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Weekly Picks" subtitle="Weekly ideas (placeholder until the picks API is connected)." />
+      <PageHeader title="Weekly Picks" subtitle="Weekly ideas (placeholder until the picks API is connected; the weekly job runs Sundays 23:00 UTC)." />
       <DemoBanner />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {sample.map((p) => (

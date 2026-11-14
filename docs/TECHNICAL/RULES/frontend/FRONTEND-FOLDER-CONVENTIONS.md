@@ -24,7 +24,7 @@ frontend/
 │   ├── components/              # UI components, grouped by feature
 │   │   ├── ui/                  # Reusable atoms (Button, Card, Modal)
 │   │   ├── layout/              # Header, Sidebar, AppLayout
-│   │   ├── charts/              # Tremor wrappers
+│   │   ├── charts/              # chart wrappers (not built yet; no chart library installed)
 │   │   └── tables/              # Data tables
 │   │
 │   ├── pages/                   # Route-level components

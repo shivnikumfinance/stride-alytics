@@ -5,20 +5,28 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   authApi,
   greeksApi,
+  logsApi,
+  marketApi,
   portfolioApi,
   regimeApi,
   screenerApi,
+  settingsApi,
   tradesApi,
+  watchlistApi,
 } from "../api/endpoints";
 import { withApiErrorLogging } from "../api/errors";
 import type {
   GreeksInputs,
+  LogFilters,
   PortfolioCreate,
   PortfolioSummary,
   ScreenerFilters,
+  SettingsUpdate,
   TradeClose,
   TradeCreate,
   TradeOut,
+  UserSettings,
+  Watchlist,
 } from "../types";
 
 // --- Auth ---
@@ -123,3 +131,79 @@ export const useCloseTrade = (portfolioId?: string) => {
     onError: withApiErrorLogging("trades.close", "Could not close trade"),
   });
 };
+
+// --- Watchlists ---
+
+export const useWatchlists = () =>
+  useQuery<Watchlist[]>({ queryKey: ["watchlists"], queryFn: () => watchlistApi.list() });
+
+export const useCreateWatchlist = () => {
+  const qc = useQueryClient();
+  return useMutation<Watchlist, Error, { name: string; symbols?: string[] }>({
+    mutationFn: ({ name, symbols }) => watchlistApi.create(name, symbols),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlists"] }),
+    onError: withApiErrorLogging("watchlist.create", "Could not create watchlist"),
+  });
+};
+
+export const useDeleteWatchlist = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (id) => watchlistApi.remove(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlists"] }),
+    onError: withApiErrorLogging("watchlist.delete", "Could not delete watchlist"),
+  });
+};
+
+export const useAddSymbol = () => {
+  const qc = useQueryClient();
+  return useMutation<Watchlist, Error, { id: string; symbol: string }>({
+    mutationFn: ({ id, symbol }) => watchlistApi.addSymbol(id, symbol),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlists"] }),
+    onError: withApiErrorLogging("watchlist.add_symbol", "Could not add symbol"),
+  });
+};
+
+export const useRemoveSymbol = () => {
+  const qc = useQueryClient();
+  return useMutation<Watchlist, Error, { id: string; symbol: string }>({
+    mutationFn: ({ id, symbol }) => watchlistApi.removeSymbol(id, symbol),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlists"] }),
+    onError: withApiErrorLogging("watchlist.remove_symbol", "Could not remove symbol"),
+  });
+};
+
+/** Quotes for a watchlist's symbols (refetched every 60 s while the page is open). */
+export const useQuotes = (symbols: readonly string[]) =>
+  useQuery({
+    queryKey: ["quotes", [...symbols].sort().join(",")],
+    queryFn: () => marketApi.tickers(symbols),
+    enabled: symbols.length > 0,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+// --- Settings ---
+
+export const useSettings = () =>
+  useQuery<UserSettings>({ queryKey: ["settings"], queryFn: () => settingsApi.get() });
+
+export const useUpdateSettings = () => {
+  const qc = useQueryClient();
+  return useMutation<UserSettings, Error, SettingsUpdate>({
+    mutationFn: (body) => settingsApi.update(body),
+    onSuccess: (data) => {
+      qc.setQueryData(["settings"], data);
+      qc.invalidateQueries({ queryKey: ["logs"] });
+    },
+    onError: withApiErrorLogging("settings.update", "Could not save settings"),
+  });
+};
+
+// --- Logs ---
+
+export const useSignalLog = (filters: LogFilters = {}) =>
+  useQuery({ queryKey: ["logs", "signals", filters], queryFn: () => logsApi.signals(filters) });
+
+export const useAuditLog = (filters: LogFilters = {}) =>
+  useQuery({ queryKey: ["logs", "audit", filters], queryFn: () => logsApi.audit(filters) });

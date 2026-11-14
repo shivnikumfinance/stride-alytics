@@ -6,7 +6,7 @@
 
 ---
 
-## 1. Frontend (React + Vite + Tremor)
+## 1. Frontend (React + Vite + Tailwind)
 
 ### Core Framework & Build
 ```
@@ -18,8 +18,8 @@ TypeScript                     5.1.0        - Type safety
 ### UI & Styling
 ```
 TailwindCSS                    3.3.0        - Utility-first CSS framework
-shadcn/ui                      Latest       - Accessible component library
-Tremor                         Latest       - Advanced charting & dashboards
+(not used) custom components in src/components/ui
+(not installed) charting library — none chosen yet
 Lucide Icons                   Latest       - Icon set
 ```
 
@@ -44,7 +44,7 @@ history                       5.3.0         - Browser history management
 
 ### Charts & Visualization
 ```
-Recharts                       (Tremor uses)  - Charting library
+Recharts                       (candidate)  - Charting library, not installed
 react-big-calendar            Latest         - Calendar component
 ```
 
@@ -98,7 +98,7 @@ Vercel CLI                    Latest         - Deployment tool
     "react-hook-form": "^7.45.0",
     "react-router-dom": "^6.14.0",
     "recharts": "^2.8.0",
-    "shadcn-ui": "^latest",
+    "lucide-react": "^0.475.0",
     "tailwindcss": "^3.3.0",
     "tremor": "^latest",
     "zod": "^3.22.0",
@@ -464,7 +464,7 @@ Axios                         1.4.0         - HTTP client (shared)
 |----------|------|---------|---------|
 | **Web Frontend** | React | 18.2 | UI Framework |
 | | Vite | 4.4 | Build Tool |
-| | Tremor | Latest | Charting |
+| | (none yet) | — | Charting not built |
 | | TailwindCSS | 3.3 | Styling |
 | **Mobile** | React Native | 0.73 | Mobile Framework |
 | | Expo | 50.0 | Development Platform |

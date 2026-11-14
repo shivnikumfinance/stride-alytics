@@ -17,8 +17,9 @@ Welcome to the **StrideAlytics Documentation** – your comprehensive guide to t
 |----------|---------|
 | **01-BUSINESS-REQUIREMENTS.md** | Product vision, strategic objectives, user personas, and platform capabilities |
 | **02-BUSINESS-RULES.md** | Business rules, authorization, governance, and decision frameworks |
-| **03-FINANCIAL-MODEL.md** | Revenue model, pricing strategy, cost assumptions, and break-even analysis |
+| **03-FINANCIAL-MODEL.md** | Free-tier cost model and a place to record any paid API or service |
 | **04-APPLICATION-REQUIREMENTS.md** | Functional requirements, data specs, UI/UX expectations, and acceptance criteria |
+| **05-IMPLEMENTATION-STATUS.md** | Which requirements are built, partial, scheduled or out of scope |
 
 **For:** Product managers, stakeholders, business analysts, and developers needing business context.
 
@@ -39,9 +40,9 @@ Welcome to the **StrideAlytics Documentation** – your comprehensive guide to t
 #### Layer-Specific Architecture (LAYERS/ subfolder)
 | Layer | File | Tech Stack |
 |-------|------|-----------|
-| 🎨 Frontend | **01-FRONTEND-LAYER.md** | React 18 + Vite + Tremor + TailwindCSS |
+| 🎨 Frontend | **01-FRONTEND-LAYER.md** | React 19 + Vite + TailwindCSS 4 |
 | 📱 Mobile | **02-MOBILE-LAYER.md** | React Native + Expo + NativeWind |
-| ⚙️ Backend | **03-BACKEND-LAYER.md** | FastAPI + Uvicorn + Python 3.10+ |
+| ⚙️ Backend | **03-BACKEND-LAYER.md** | FastAPI + Uvicorn + Python 3.12 |
 | 🗄️ Database | **04-DATABASE-LAYER.md** | PostgreSQL 15+ + Supabase Auth |
 | ⏰ Scheduler | **05-SCHEDULER-LAYER.md** | GitHub Actions + Python CRON |
 | 🚀 Deployment | **06-DEPLOYMENT-LAYER.md** | Vercel, Render, Supabase |

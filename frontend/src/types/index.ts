@@ -22,3 +22,6 @@ export * from "./regime";
 export * from "./portfolio";
 export * from "./trades";
 export * from "./market";
+export * from "./watchlist";
+export * from "./settings";
+export * from "./logs";

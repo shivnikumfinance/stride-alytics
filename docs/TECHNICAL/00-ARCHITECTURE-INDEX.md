@@ -21,7 +21,7 @@ Each layer represents a distinct part of the system. Read them in sequence or ju
 
 | Layer | File | Purpose |
 |-------|------|---------|
-| 🎨 **Frontend** | [01-FRONTEND-LAYER](./LAYERS/01-FRONTEND-LAYER.md) | React + Vite + Tremor web application |
+| 🎨 **Frontend** | [01-FRONTEND-LAYER](./LAYERS/01-FRONTEND-LAYER.md) | React + Vite + Tailwind web application |
 | 📱 **Mobile** | [02-MOBILE-LAYER](./LAYERS/02-MOBILE-LAYER.md) | React Native + Expo mobile application |
 | ⚙️ **Backend** | [03-BACKEND-LAYER](./LAYERS/03-BACKEND-LAYER.md) | FastAPI Python backend services |
 | 🗄️ **Database** | [04-DATABASE-LAYER](./LAYERS/04-DATABASE-LAYER.md) | Supabase PostgreSQL + auth |

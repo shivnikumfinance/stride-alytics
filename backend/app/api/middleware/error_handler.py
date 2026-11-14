@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import Any
+
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -10,6 +14,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.utils.logger import get_logger
 
 log = get_logger(__name__)
+
+
+def _json_safe_errors(errors: Sequence[Any]) -> list[Any]:
+    """Pydantic v2 puts the raised exception object in ``ctx`` for custom validators,
+    which is not JSON serializable (it caused a 500 instead of a 422)."""
+    return jsonable_encoder(errors, custom_encoder={Exception: str})
 
 
 def install_exception_handlers(app: FastAPI) -> None:
@@ -31,7 +41,8 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-        log.warning("request.validation_error", errors=exc.errors())
+        details = _json_safe_errors(exc.errors())
+        log.warning("request.validation_error", errors=details)
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={
@@ -40,7 +51,7 @@ def install_exception_handlers(app: FastAPI) -> None:
                     "type": "validation_error",
                     "status": 422,
                     "message": "Request payload failed validation",
-                    "details": exc.errors(),
+                    "details": details,
                 },
             },
         )

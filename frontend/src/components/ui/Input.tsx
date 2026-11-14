@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { forwardRef, useId, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { classNames } from "../../utils";
 
 interface FieldProps {
@@ -15,7 +15,8 @@ const baseInput =
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & FieldProps>(
   function Input({ label, hint, error, className, id, ...rest }, ref) {
-    const inputId = id ?? rest.name;
+    const generatedId = useId();
+    const inputId = id ?? rest.name ?? generatedId;
     return (
       <div className={className}>
         {label && (
@@ -33,7 +34,8 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & FieldProps>(
   function Select({ label, hint, error, className, id, children, ...rest }, ref) {
-    const inputId = id ?? rest.name;
+    const generatedId = useId();
+    const inputId = id ?? rest.name ?? generatedId;
     return (
       <div className={className}>
         {label && (
@@ -53,7 +55,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement> & FieldProps>(
   function Textarea({ label, hint, error, className, id, ...rest }, ref) {
-    const inputId = id ?? rest.name;
+    const generatedId = useId();
+    const inputId = id ?? rest.name ?? generatedId;
     return (
       <div className={className}>
         {label && (

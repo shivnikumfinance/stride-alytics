@@ -6,6 +6,7 @@ Working list for what is still open. Last updated: 2026-11-14.
 |------|---------|
 | [PENDING.md](PENDING.md) | Open work items, ordered by priority |
 | [VALIDATION.md](VALIDATION.md) | Checks to run and confirm before an item can be closed |
+| [DOC-CODE-GAPS.md](DOC-CODE-GAPS.md) | Where the docs and the code disagree (missing features, stale facts) |
 
 ## Rules
 

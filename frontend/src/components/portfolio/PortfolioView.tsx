@@ -1,4 +1,6 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { downloadFile } from "../../api/download";
 import { Card, Input, Select, Button, Table, Textarea, Badge } from "../ui";
 import {
   usePortfolios,
@@ -209,7 +211,23 @@ function TradesList({ trades, portfolioId }: { trades: TradeOut[]; portfolioId: 
   };
 
   return (
-    <Card title="Trades" subtitle={`${trades.length} total`}>
+    <Card
+      title="Trades"
+      subtitle={`${trades.length} total`}
+      actions={
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() =>
+            downloadFile(`/trades/export.csv?portfolio_id=${portfolioId}`, "trades.csv").catch(() =>
+              toast.error("Could not export trades"),
+            )
+          }
+        >
+          Export CSV
+        </Button>
+      }
+    >
       <Table
         columns={[
           { key: "symbol", header: "Symbol" },

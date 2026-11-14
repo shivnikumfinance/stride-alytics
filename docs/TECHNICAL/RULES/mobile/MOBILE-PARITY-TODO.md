@@ -46,7 +46,7 @@ before mobile parity is complete.
 | Token store | `localStorage` (`stride_token`) | `expo-secure-store` |
 | Routing | `react-router-dom` (`BrowserRouter`) | `expo-router` (file‑based in `app/`) |
 | Styling | Tailwind utility classes | NativeWind (Tailwind for RN) |
-| Charts | Tremor | `victory-native` (per [02-MOBILE-LAYER.md](../../LAYERS/02-MOBILE-LAYER.md)) |
+| Charts | (none yet) | `victory-native` (per [02-MOBILE-LAYER.md](../../LAYERS/02-MOBILE-LAYER.md)) |
 | Layout components | `src/components/layout/` | `src/components/layout/` (same name) + SafeAreaView wrappers |
 | HTTP base URL | `new URL("/api/v1/", API_BASE)` | Same; URL builder may move to `mobile/src/api/client.ts` |
 

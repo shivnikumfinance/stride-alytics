@@ -18,7 +18,7 @@
                     ┌────────────────┐
                     │  Web App       │
                     │  (Vercel)      │
-                    │  React+Tremor  │
+                    │  React + Tailwind  │
                     └────────┬───────┘
                              │
                              │
@@ -49,7 +49,7 @@
 
 ```mermaid
 flowchart TD
-    A["🎨 Web App (React + Tremor)<br/>Vercel"]
+    A["🎨 Web App (React + Tailwind)<br/>Vercel"]
     B["📱 Mobile App (React Native + Expo)<br/>EAS Build"]
     C["⚙️ Backend API (FastAPI)<br/>Render"]
     D["🗄️ Database (Supabase PostgreSQL)<br/>Auth + JWT"]
@@ -189,7 +189,7 @@ User Interface Layer
 │
 Components Layer
 ├─ UI Components (Buttons, Cards, Modals, Tables)
-├─ Chart Components (Tremor Charts, Custom Visualizations)
+├─ Chart Components (planned; no chart library installed yet)
 ├─ Layout Components (Sidebar, Navbar, Shell)
 │
 State Management Layer (Zustand Stores)

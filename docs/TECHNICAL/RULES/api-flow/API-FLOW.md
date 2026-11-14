@@ -168,7 +168,7 @@ Errors come from the global `error_handler` middleware (`app/api/middleware/erro
 {
   "success": false,
   "error": {
-    "type": "VALIDATION_ERROR",
+    "type": "validation_error",
     "status": 422,
     "message": "Invalid parameters",
     "details": { "symbol": "Symbol is required" }
@@ -194,6 +194,40 @@ Errors come from the global `error_handler` middleware (`app/api/middleware/erro
 | `503` | Upstream outage, maintenance |
 
 ---
+
+### Implemented endpoints (current)
+
+All under `/api/v1` unless noted. "Auth" = Bearer token required.
+
+| Method + path | Auth | Notes |
+|---|---|---|
+| `GET /health` (root) and `GET /api/v1/health` | no | Liveness probe (Render health check uses `/health`) |
+| `POST /auth/login`, `POST /auth/signup` | no | Proxy to Supabase Auth; 503 if auth is not configured outside development |
+| `POST /auth/refresh` | no | Refresh token currently passed as a query parameter (to be moved to the body) |
+| `GET /auth/me` | yes | `{ success, data: { user_id, email, issued_at } }` |
+| `GET /market/tickers[?symbols=A,B]` | no | `{ success, data, source }`; up to 25 symbols, defaults to the index tickers |
+| `POST /screener/run`, `GET /screener/limits` | yes | Results capped at `SCREENER_MAX_RESULTS`; response has `source` |
+| `POST /greeks/calculate` | yes | Black-Scholes |
+| `GET /regime/{symbol}` | yes | bull/bear/ranging; response has `source` |
+| `GET/POST /portfolio`, `GET/PATCH/DELETE /portfolio/{id}` | yes | Persisted. DELETE only for an empty portfolio (409 otherwise) |
+| `GET /trades` | yes | All trades; `status=open|closed`, `symbol`, `portfolio_id`, `sort` (`entry_date`, `symbol`, `created_at`, `-` = desc), `limit` (1–200), `offset`; returns `{ data, total, limit, offset }` |
+| `GET /trades/export.csv[?portfolio_id=]` | yes | CSV download; text cells are neutralised against formula injection |
+| `GET /trades/{portfolio_id}`, `POST /trades`, `PATCH /trades/{id}` (notes only), `POST /trades/{id}/close` | yes | Close is 409 if already closed, 422 if exit date is before entry. Prices and dates are never edited |
+| `GET/POST /watchlists`, `GET/DELETE /watchlists/{id}`, `POST /watchlists/{id}/symbols`, `DELETE /watchlists/{id}/symbols/{symbol}`, `GET /watchlists/{id}/export.csv` | yes | Per-user lists; symbols upper-cased and de-duplicated |
+| `GET/PUT /settings`, `POST /settings/disclaimer` | yes | Partial update; band caps and regime weights are validated; changes are audit-logged |
+| `GET /logs/signals`, `GET /logs/audit` | yes | Read-only, filterable (`start`, `end`, `symbol`, `rule_id`, `decision`, `entity`, `action`), paginated. No write methods exist (405) |
+
+All data endpoints are scoped to the calling user; another user's records behave as "not found" (404). Every trade, portfolio, watchlist and settings change writes an `audit_events` row in the same transaction.
+
+**Not implemented (documented elsewhere):** `GET /auth/profile`, `GET /screener`, `GET /screener/{id}`, `POST /screener/search`, `GET /picks`, the gate/sizing/regime-score/alerts/risk endpoints (planned), rate limiting.
+
+**The `source` field.** `/market/tickers` returns `"live"` or `"fallback"`; `/screener/run` and `/regime/{symbol}` return `"live"` or `"synthetic"`. Anything other than `"live"` is placeholder data and the UI must label it.
+
+**Error types** are `http_error`, `validation_error` and `internal_error`.
+
+**Response shape.** Only some endpoints use the `{ success, data }` envelope; screener, regime, greeks, portfolio summary and trades return the bare model.
+
+**Dev tokens.** `dev:<id>` and `dev-admin-token` are accepted only when `ENVIRONMENT=development`. Real Supabase JWTs are verified with audience `SUPABASE_JWT_AUDIENCE` (default `authenticated`).
 
 ## 10. Authentication flow
 
@@ -242,6 +276,8 @@ Until that endpoint ships, expired tokens force a re-login.
 ---
 
 ## 11. Pagination & filtering
+
+> **Status: partly implemented.** `GET /trades` and the log endpoints use `limit`/`offset` pagination with `total`, filtering and `sort` as described in the endpoint table (§9). The `page`/`per_page` style and `POST /screener/search` below are design only.
 
 ### Pagination
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -12,9 +13,11 @@ if str(BACKEND_DIR) not in sys.path:
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
 
+import app.models  # noqa: E402,F401  (registers every model on Base.metadata)
+from app import database  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services import reset_store  # noqa: E402
 
 
 @pytest.fixture
@@ -38,8 +41,16 @@ def _dev_environment(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _reset_in_memory_store():
-    """Ensure each test starts with a fresh in-memory portfolio store."""
-    reset_store()
+def _fresh_database(tmp_path: Path):
+    """Every test gets its own empty SQLite database (a temp file: no cross-test leakage,
+    and no event-loop sharing between the fixture and the TestClient)."""
+    db_file = tmp_path / "test.db"
+    database.sanitize_for_sqlite(database.Base.metadata)
+    sync_engine = create_engine(f"sqlite:///{db_file}")
+    database.Base.metadata.create_all(sync_engine)
+    sync_engine.dispose()
+
+    database.configure_engine(f"sqlite+aiosqlite:///{db_file}")
     yield
-    reset_store()
+    if database.engine is not None:
+        asyncio.run(database.engine.dispose())

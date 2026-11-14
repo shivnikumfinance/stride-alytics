@@ -12,16 +12,16 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Suggested commits: docs scope · plan removal · security + trade bugs · labelling · alpha + workflow · frontend demo banners.
 - Done when: committed on a branch and CI is green.
 
-### 2. Apply migration 006 to Supabase
-- `database/migrations/006_drop_subscription_plan.sql` (down file included) is written but **not applied**.
-- Apply with `database/scripts/apply_migrations.{sh,ps1}`; the backend and frontend no longer use the column.
-- Done when: column is gone in Supabase and login/portfolio still work (see Validation V3).
+### 2. Apply migrations 006 and 007 to Supabase
+- `006_drop_subscription_plan.sql` and `007_persistence_logs.sql` (each with a `_down` file) are written but **not applied**. Apply 006 first, then 007, with `database/scripts/apply_migrations.{sh,ps1}`.
+- Try them on a throwaway project first (see item 3).
+- Done when: both are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
 
-### 3. DB-backed portfolios and trades
-- Endpoints use only the in-memory store (`backend/app/services/portfolio.py`), so data is lost on every Render restart. The `*_db` helpers there are never called.
-- Plan: use the SQLAlchemy models (`backend/app/models/`) so tests run on SQLite; keep in-memory only when `DATABASE_URL` is unset; upsert a `public.users` row per user first (foreign key); reject closing an already-closed trade; share one `_resolve_user_uuid`.
-- Decide the test target first: local Postgres, throwaway Supabase project, or the real database.
-- Done when: a trade survives a backend restart and the unit tests pass on SQLite.
+### 3. Validate persistence on real PostgreSQL
+- Code is done (Phase 1): portfolios, trades, watchlists, settings and the append-only logs are stored through `backend/app/repositories/sql.py`; unit tests run on SQLite.
+- **Render must have `DATABASE_URL` set.** Without it the backend silently uses in-memory SQLite and loses everything on restart (a warning is logged).
+- Run `backend/scripts/smoke_db.py --disposable` against a throwaway Supabase project with migrations 007 applied; it proves the Postgres triggers make `signal_log` / `audit_events` append-only (SQLite cannot).
+- Done when: the smoke test passes, and a trade survives a backend restart on the deployed API (Validation V2, V13).
 
 ### 4. Verify the daily workflow on GitHub
 - `daily_run.yml` was fixed (`uv run`, secrets as env vars, failure alert) but never run from here.
@@ -69,6 +69,16 @@ Delete an item when it is done and validated (see [README](README.md)).
 - `market.py` uses Yahoo's v7 quote endpoint, which likely needs a crumb and so always returns the fallback values; switch the source or accept the label.
 - Done when: each is fixed or consciously accepted and noted here.
 
+### 17. Close the doc-vs-code gaps
+- See [DOC-CODE-GAPS.md](DOC-CODE-GAPS.md). The stale facts were fixed; what remains is documented-but-unbuilt functionality (DNT gate, regime score, sizing, exit alerts, audit logs, watchlists, home hub).
+- For each row decide: build it, or change the doc to match; then delete the row.
+- Done when: `DOC-CODE-GAPS.md` is empty.
+
+### 18. Table-name collisions between alpha and backend
+- `alpha/app/supabase_schema.sql` defines `trades` and `audit_log` with different columns than the backend's `trades` (migration 002). In one Supabase project whichever is created first wins and the other silently breaks. The new backend audit table was named `audit_events` to avoid the second clash.
+- Decide: separate Supabase projects/schemas for alpha and the backend, or rename alpha's tables (for example `alpha_trades`). Alpha's pipeline does not write `trades` today.
+- Done when: both schemas can coexist (or are kept apart) and this is documented in `ALPHA.md`.
+
 ## P3
 
 ### 12. Spec and implementation mismatches
@@ -82,11 +92,12 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Missing values count silently as zero in `compute_option_score` (NaN compares false; `None` raises).
 - Google Sheets push: ranges are capped at A–Z and 500 rows; `USER_ENTERED` can turn text from external data into formulas.
 - `app/secrets_loader.py` is never called.
-- `alpha/.env.example` is referenced by the README but does not exist.
+- `alpha/.env.example` exists locally but is not tracked in git, while the README tells people to copy it. Commit it (without secrets) or fix the README.
 - Done when: bad inputs are rejected or reported, not scored as zero.
 
 ### 14. Test coverage
-- Frontend has no tests.
+- Frontend has 17 unit tests (Phase 1: close-trade flow, watchlist, settings validation); pages added later still need them.
+- CI now fails on test failures (it used to swallow them with `|| echo`); confirm the first run on GitHub is green.
 - `mypy` is blocked by a Windows Application Control policy on this machine; run it in CI or another environment.
 - No backend test hits real Supabase.
 - Done when: key flows (login, add/close trade, screener) have frontend tests and mypy runs somewhere.
@@ -94,7 +105,7 @@ Delete an item when it is done and validated (see [README](README.md)).
 ### 15. Leftovers from the plan and mobile removal
 - `mobile/` still references `subscription_plan` (auth store, settings screen); deferred, but it will not match the API.
 - Doc bodies still contain optional paid examples (`render.yaml` with `plan: standard`, the ~$84 cost table, SendGrid scripts) under a scope banner.
-- The real `backend/render.yaml`, `vercel.json` and other workflows (health-check cron every 30 minutes) are not reviewed for free-tier limits.
+- `backend/render.yaml` uses `plan: starter` (a paid Render plan, about $7/month, no sleep). Decide: keep it, or switch to `free` (sleeps when idle). `APP_ENV` in that file is not used by the code (`ENVIRONMENT` is). `vercel.json` and the other workflows (`fetch-market-data`, `calculate-greeks`, `generate-weekly-picks`) are not yet reviewed for free-tier minute use.
 - Existing Supabase auth users may still carry a `subscription_plan` in their metadata (ignored, harmless).
 - Done when: configs match the free-tier defaults in `../BUSINESS/03-FINANCIAL-MODEL.md`.
 

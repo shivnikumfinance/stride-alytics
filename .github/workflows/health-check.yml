@@ -2,7 +2,9 @@ name: Health Checks
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Every 5 minutes
+    # Every 6 hours (~120 runs/month). Every 5 minutes (~8,640 runs/month) would
+    # exceed the 2,000 free Actions minutes on a private repo.
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:

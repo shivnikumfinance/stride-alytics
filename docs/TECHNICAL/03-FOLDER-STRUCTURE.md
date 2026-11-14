@@ -10,7 +10,7 @@
 
 ```
 stridealytics/
-├── frontend/                          # Web App (React + Vite + Tremor)
+├── frontend/                          # Web App (React + Vite + Tailwind)
 ├── mobile/                            # Mobile App (React Native + Expo)
 ├── backend/                           # Backend API (FastAPI)
 ├── database/                          # Database (Supabase migrations)
@@ -22,14 +22,14 @@ stridealytics/
 
 ---
 
-## 1. Frontend (React + Vite + Tremor)
+## 1. Frontend (React + Vite + Tailwind)
 
 ```
 frontend/
 │
 ├── src/
 │   ├── components/
-│   │   ├── ui/                        # shadcn/ui components
+│   │   ├── ui/                        # UI components (custom, Tailwind)
 │   │   │   ├── button.jsx
 │   │   │   ├── card.jsx
 │   │   │   ├── modal.jsx
@@ -37,7 +37,7 @@ frontend/
 │   │   │   ├── table.jsx
 │   │   │   └── ...more components
 │   │   │
-│   │   ├── charts/                    # Tremor chart wrappers
+│   │   ├── charts/                    # chart wrappers (not built yet; no chart library installed)
 │   │   │   ├── LineChartWrapper.jsx
 │   │   │   ├── BarChartWrapper.jsx
 │   │   │   ├── AreaChartWrapper.jsx

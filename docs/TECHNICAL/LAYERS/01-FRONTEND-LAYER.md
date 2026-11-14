@@ -1,6 +1,6 @@
 # StrideAlytics — Frontend Layer
 
-**React + Vite + Tremor web application architecture**
+**React + Vite + Tailwind web application architecture**
 
 ---
 
@@ -9,12 +9,12 @@
 The **Frontend Layer** is the primary user interface for StrideAlytics, built with modern React patterns and visual design libraries optimized for financial analytics dashboards.
 
 **Key Characteristics:**
-- ✅ Modern React 18 with hooks and functional components
+- ✅ Modern React 19 with hooks and functional components
 - ✅ Server-side rendering ready (optional)
 - ✅ Type-safe with TypeScript (optional)
 - ✅ Component-driven architecture
 - ✅ Responsive design with TailwindCSS
-- ✅ Advanced charting with Tremor
+- 🔄 Charting (planned; no chart library installed yet)
 - ✅ Client-side state management (Zustand)
 - ✅ Data fetching with React Query
 - ✅ Fast build tool (Vite)
@@ -27,9 +27,9 @@ The **Frontend Layer** is the primary user interface for StrideAlytics, built wi
 |------|---------|---------|
 | **React** | UI library | 18+ |
 | **Vite** | Build tool | 4+ |
-| **Tremor** | Dashboard charts | Latest |
+| **Charts** | Not built yet (no chart library installed) | — |
 | **TailwindCSS** | Styling | 3+ |
-| **shadcn/ui** | UI components | Latest |
+| **Custom UI components** | `src/components/ui` (Tailwind) | — |
 | **Zustand** | State management | Latest |
 | **React Query** | Data fetching & caching | Latest |
 | **Axios** | HTTP client | Latest |

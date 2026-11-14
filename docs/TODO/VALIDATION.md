@@ -31,9 +31,9 @@ uv run ruff check . && uv run black --check .
 
 ### V2. Trades (Pending 3)
 - Add two trades, close the second: only the second shows as closed, with the exit price you typed.
-- Restart the backend: the trades are still there (after DB-backed trades are done).
+- Restart the backend (with `DATABASE_URL` set): the trades are still there. (Without `DATABASE_URL` the backend uses in-memory SQLite and loses them.)
 
-### V3. Migration 006 (Pending 2)
+### V3. Migrations 006 and 007 (Pending 2)
 - Apply `006_drop_subscription_plan.sql` on a copy or the dev project first.
 - `\d users` no longer lists `subscription_plan`; login, portfolios and trades still work.
 - Apply `006_drop_subscription_plan_down.sql` once to confirm it restores the column, then re-apply the up migration.
@@ -66,3 +66,23 @@ uv run ruff check . && uv run black --check .
 ### V10. Frontend session (Pending 10)
 - Reload the browser: the sidebar still shows your email and Settings shows your account.
 - Leave the app open past token expiry: you are not silently logged out (or you are sent to login cleanly).
+
+### V11. Backup workflow (new)
+- Add repo secrets `BACKUP_DATABASE_URL` and `BACKUP_PASSPHRASE`, then Actions → "Database Backup" → Run workflow.
+- The job is green and a `db-backup` artifact with a `.sql.gz.gpg` file appears.
+- **Restore test (once):** download it, then `gpg --decrypt <file> | gunzip | psql "<throwaway database URL>"` recreates your tables and rows.
+- If the install step fails on the runner (PGDG repo, `postgresql-client-17`), adjust the step; the workflow has not been run yet.
+
+### V12. Health endpoint and schedule (new)
+- `GET https://<your-api>/health` returns 200 without a token; Render shows the service as healthy.
+- `health-check.yml` is scheduled every 6 hours (Actions → Health Checks → Run workflow works).
+
+### V13. Phase 1 on real PostgreSQL (new)
+- Throwaway Supabase project: apply migrations 001–007 (and the 007 down file once, then 007 again).
+- `cd backend && SMOKE_DB_URL=<throwaway url> uv run python scripts/smoke_db.py --disposable` prints all checks as PASS, including "UPDATE/DELETE/TRUNCATE on audit_events and signal_log is rejected". (Not yet run: SQLite cannot test the triggers.)
+- Deployed API: `DATABASE_URL` is set on Render; add a portfolio and a trade, restart the service, and confirm they are still there.
+- A second account cannot see the first account's portfolios, trades, watchlists, settings or logs.
+- The Watchlist, Settings and Signal & Audit Log pages work with a real login; Export CSV downloads open correctly in a spreadsheet (a cell starting with `=` shows as text).
+
+### V14. CI (new)
+- Push a branch: all jobs (backend, alpha, frontend, database, scheduler) are green. Introduce a failing backend test on a scratch branch to confirm the job now turns red.

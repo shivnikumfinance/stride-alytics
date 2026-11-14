@@ -11,7 +11,7 @@ from app.api.middleware.error_handler import install_exception_handlers
 from app.api.middleware.logging import AccessLogMiddleware
 from app.api.v1.router import router as api_v1_router
 from app.config import settings
-from app.database import verify_db_connection
+from app.database import init_db, verify_db_connection
 from app.utils.logger import configure_logging, get_logger
 
 configure_logging(level="DEBUG" if settings.DEBUG else "INFO")
@@ -22,6 +22,7 @@ log = get_logger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Verify connectivity on boot; nothing else to clean up."""
     log.info("app.startup", app=settings.APP_NAME, debug=settings.DEBUG)
+    await init_db()  # Postgres via DATABASE_URL, else an in-memory SQLite fallback
     if settings.DATABASE_URL:
         await verify_db_connection()
     yield
@@ -48,6 +49,12 @@ install_exception_handlers(app)
 
 # --- Routers ---
 app.include_router(api_v1_router)
+
+
+@app.get("/health", tags=["health"])
+async def health() -> dict[str, Any]:
+    """Liveness probe for the platform health check (also at ``/api/v1/health``)."""
+    return {"success": True, "data": {"status": "ok"}}
 
 
 @app.get("/", tags=["root"])

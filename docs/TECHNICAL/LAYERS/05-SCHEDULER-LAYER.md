@@ -4,7 +4,8 @@
 
 > **SCOPE NOTE (2026-11-14):** Personal use on free tiers. Practical adjustments to the examples below:
 > - **Cron is UTC.** `30 13 * * MON-FRI` is 9:30 ET only during daylight saving time (8:30 ET in winter). Scheduled runs can also start late.
-> - **Health check:** `*/30 * * * *` is roughly 1,440 minutes a month on a private repo, most of the 2,000-minute free budget. Run it every few hours, or use a free uptime monitor.
+> - **Health check:** now every 6 hours. Every 30 minutes would be roughly 1,440 minutes a month on a private repo, most of the 2,000-minute free budget.
+> - **Missing scripts:** `send_picks_email.py`, `report_metrics.py` and `cost_monitor.py` shown below do not exist (email and Datadog are optional and deferred).
 > - **Keys:** scheduler scripts write through RLS, so they need the Supabase **service-role** key (as a GitHub secret), not the anon key.
 > - **Email:** `send_picks_email.py` and SendGrid are **DEFERRED**; use the Slack/Discord webhooks for notifications.
 > - **Data volume:** store only screened candidates and aggregates, and prune old rows, to stay under Supabase's ~500 MB.
@@ -33,16 +34,19 @@ The **Scheduler Layer** automates recurring tasks like data collection, analysis
 
 ```
 .github/workflows/
-├── fetch-market-data.yml       # Daily market data collection
-├── calculate-greeks.yml        # Daily Greeks calculation
-├── generate-regime.yml         # Weekly regime analysis
-├── generate-picks.yml          # Weekly picks generation
-├── health-check.yml            # Hourly health monitoring
-├── deploy-frontend.yml         # Frontend deployment
-├── deploy-backend.yml          # Backend deployment
-├── deploy-mobile.yml           # Mobile app build
-├── run-tests.yml               # Test suite
-└── database-backup.yml         # Database backups
+├── daily_run.yml               # Alpha pipeline, Mon–Fri 12:30 UTC
+├── fetch-market-data.yml       # Market data collection, Mon–Fri 20:00 UTC
+├── calculate-greeks.yml        # Greeks calculation, Mon–Fri 21:00 UTC
+├── generate-weekly-picks.yml   # Weekly picks, Sunday 23:00 UTC
+├── health-check.yml            # Health monitoring, every 6 hours
+├── database-backup.yml         # Encrypted pg_dump, weekly (Sunday 06:00 UTC)
+├── ci.yml                      # Lint/test on push and PR
+├── backend-ci-cd.yml           # Backend deploy
+├── frontend-ci-cd.yml          # Frontend deploy
+├── database-migrate.yml        # Apply migrations
+├── mobile-build.yml            # Mobile build (deferred)
+├── build-check.yml
+└── reusable-python-task.yml
 ```
 
 ---
@@ -57,8 +61,8 @@ name: Fetch Market Data
 
 on:
   schedule:
-    # Every day at 9:30 AM ET (market open)
-    - cron: '30 13 * * MON-FRI'
+    # Mon–Fri 20:00 UTC (cron is UTC and not DST-aware)
+    - cron: '0 20 * * 1-5'
   workflow_dispatch: # Manual trigger
 
 jobs:
@@ -105,8 +109,8 @@ name: Calculate Greeks
 
 on:
   schedule:
-    # Every day at 4:00 PM ET (market close)
-    - cron: '00 20 * * MON-FRI'
+    # Mon–Fri 21:00 UTC
+    - cron: '0 21 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -139,8 +143,8 @@ name: Generate Weekly Picks
 
 on:
   schedule:
-    # Every Friday at 5:00 PM ET
-    - cron: '00 21 * * FRI'
+    # Sundays 23:00 UTC
+    - cron: '0 23 * * 0'
   workflow_dispatch:
 
 jobs:
@@ -176,8 +180,8 @@ name: Health Check
 
 on:
   schedule:
-    # Every 30 minutes
-    - cron: '*/30 * * * *'
+    # Every 6 hours (~120 runs/month; every 5-30 minutes would exhaust the free Actions minutes)
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:

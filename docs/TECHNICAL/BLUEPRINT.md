@@ -378,10 +378,10 @@ stridealytics/
 ### Technology Stack
 
 ```
-Framework:        React 18.2.0 with TypeScript
+Framework:        React 19 with TypeScript
 Build Tool:       Vite 4.4.0
 Styling:          TailwindCSS 3.3.0
-Components:       shadcn/ui + Tremor
+Components:       custom components (src/components/ui) + lucide-react
 State:            Zustand 4.4.0
 Data Fetching:    @tanstack/react-query 4.32.0
 Forms:            react-hook-form 7.45.0 + Zod 3.22.0

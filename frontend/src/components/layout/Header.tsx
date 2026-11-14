@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Clock, Menu, Search, RefreshCw, Bell, Settings, Download } from "lucide-react";
+import toast from "react-hot-toast";
 import { classNames } from "../../utils";
+import { downloadFile } from "../../api/download";
 import { tickerService } from "../../api/services/ticker.service";
 import type { TickerData } from "../../types/market";
 import styles from "./Header.module.css";
@@ -148,9 +150,17 @@ export function Header({ onMenu }: { onMenu: () => void }) {
         </div>
 
         {/* Export Button */}
-        <button className={styles.headerExportBtn} title="Export Holdings CSV">
+        <button
+          className={styles.headerExportBtn}
+          title="Download all trades as CSV"
+          onClick={() =>
+            downloadFile("/trades/export.csv", "trades.csv").catch(() =>
+              toast.error("Could not export trades"),
+            )
+          }
+        >
           <Download />
-          <span>Export Holdings CSV</span>
+          <span>Export trades CSV</span>
         </button>
       </div>
     </header>

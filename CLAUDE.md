@@ -39,11 +39,12 @@ Python modules need Python 3.12 (backend, scheduler) or 3.11+ (alpha) and use uv
 - `uv run lint|format|typecheck|test|verify`
 - All tests: `uv run pytest tests -q`
 - One test: `uv run pytest tests/test_services.py::test_name -q`
+- Tests run on a per-test SQLite file (no Postgres needed). `scripts/smoke_db.py --disposable` (with `SMOKE_DB_URL`) checks the real Postgres triggers against a throwaway database only.
 
 **frontend** (`cd frontend`)
 - `npm ci`, `npm run dev`
 - `npm run verify` (type-check plus lint), `npm run build`
-- `npm test` (vitest); one file: `npx vitest run <file>`
+- `npm test` (vitest + Testing Library, jsdom); one file: `npx vitest run <file>`
 
 Setup: `scripts/setup-dev.sh` or `scripts/setup-dev.ps1` installs dependencies and husky hooks.
 
@@ -67,6 +68,8 @@ Setup: `scripts/setup-dev.sh` or `scripts/setup-dev.ps1` installs dependencies a
 Failures in the insert and Sheets steps only log a warning.
 
 `app/ingest.py` merges yfinance, Polygon, FMP and Massive through `data_sources/`. `alpha/app/streamlit_app.py` reads Supabase tables with `st.cache_data`. The root `requirements.txt` mirrors alpha's dependencies for Streamlit Cloud.
+
+**Persistence** (`backend/app`): endpoints use `Repo` (`repositories/sql.py`) through `get_ctx` in `api/deps.py`, which resolves the user, creates their `public.users` row on first sight and scopes every query to them. PostgreSQL is used when `DATABASE_URL` is set; otherwise an in-memory SQLite fallback starts (data lost on restart, warning logged). The ORM models define the SQLite schema and the `.sql` files in `database/migrations/` are the PostgreSQL source of truth, so change both together. `signal_log` and `audit_events` are append-only (DB trigger + `ImmutableRecordError`); every trade, portfolio, watchlist and settings change writes an audit row in the same transaction. Alpha's `trades` / `audit_log` tables have different columns than the backend's (see `docs/TODO/PENDING.md`).
 
 **Platform**: the frontend (axios in `src/api/client.ts`, TanStack Query hooks, zustand stores) calls the backend `/api/v1` routes. The backend layers are endpoints → services → models/database, on Supabase Postgres via async SQLAlchemy, with JWT auth. The `scheduler/` scripts write to Supabase on GitHub Actions cron.
 

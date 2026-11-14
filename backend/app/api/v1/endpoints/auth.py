@@ -104,7 +104,9 @@ async def login(payload: LoginRequest) -> TokenResponse:
                 user_id=supabase_data.get("user", {}).get("id", ""),
                 email=supabase_data.get("user", {}).get("email", payload.email),
             )
-        except HTTPException:
+        except HTTPException as exc:
+            # Failed-login logging (docs: App-reqs §5.1). The password is never logged.
+            log.warning("auth.login_failed", email=payload.email, status=exc.status_code)
             raise
         except Exception as exc:
             log.error("auth.login_error", error=str(exc))

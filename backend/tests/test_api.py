@@ -144,6 +144,12 @@ def test_portfolio_create_and_summary(client: TestClient, dev_headers) -> None:
     assert any(p["name"] == "API Test" for p in data)
 
 
+def test_health_endpoints_need_no_auth(client: TestClient) -> None:
+    for path in ("/health", "/api/v1/health"):
+        r = client.get(path)
+        assert r.status_code == 200, path
+
+
 # --- Dev-token gating -------------------------------------------------------
 
 

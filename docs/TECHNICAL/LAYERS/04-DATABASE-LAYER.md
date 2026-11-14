@@ -501,3 +501,24 @@ postgresql://postgres:[password]@db.[instance].supabase.co:5432/postgres
 ---
 
 **Version:** A | **Last Updated:** 2026-06-15
+
+---
+
+## 15. Persistence and logs (migration 007)
+
+Migration `007_persistence_logs.sql` (down file included) added what the backend needs to store user data durably.
+
+| Table / change | Purpose |
+|---|---|
+| `trades` + `strike`, `expiry`, `strategy`, `layer`, `band`, `risk_amount`, `credit` | Contract detail needed for DTE, Greeks, risk and band caps |
+| `user_settings` + `account_size`, `base_risk_pct`, `growth_risk_pct`, `min_equity`, `band_caps`, `regime_weights`, `widget_toggles`, `enforce_gate`, `disclaimer_accepted_at` | Risk budget, guardrails and rule configuration |
+| `watchlists`, `watchlist_items` | User symbol lists (RLS: owner only) |
+| `symbol_flags` | Manual per-symbol NewsFlag used by DNT rule BR-021 |
+| `signal_log` | Rule/gate decisions, including blocked signals (BR-061) |
+| `audit_events` | Who changed what, with before/after (BR-060/062) |
+
+**Append-only logs.** `signal_log` and `audit_events` are protected in two layers: RLS gives the owner only SELECT and INSERT (no UPDATE/DELETE policies), and a trigger (`prevent_log_mutation`) raises on UPDATE, DELETE and TRUNCATE for every role. They deliberately have no foreign key to `users`, so deleting a user neither deletes nor is blocked by history. The application adds a third guard (`ImmutableRecordError`).
+
+**Name collisions.** The alpha pipeline's `supabase_schema.sql` also defines tables named `trades` and `audit_log` with different columns. If both are created in one Supabase project they clash. The new audit table is therefore called `audit_events`; the `trades` clash predates this migration (see `docs/TODO/PENDING.md`).
+
+**Dev/test database.** The backend uses PostgreSQL when `DATABASE_URL` is set and an in-memory SQLite database otherwise (data is lost on restart; a warning is logged). The ORM models define the schema for SQLite; the `.sql` migrations are the source of truth for PostgreSQL, so keep the two in step.

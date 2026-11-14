@@ -23,7 +23,7 @@ StrideAlytics is a **production-ready, multi-platform analytics system** designe
 ## 2. Platform Components
 
 ### 2.1 Web Application
-**Tech Stack:** React 18 + Vite + Tremor + TailwindCSS + shadcn/ui  
+**Tech Stack:** React 19 + Vite + TailwindCSS 4 + custom UI components  
 **Deployment:** Vercel  
 **Purpose:** Main dashboard for traders and analysts
 
@@ -47,7 +47,7 @@ StrideAlytics is a **production-ready, multi-platform analytics system** designe
 - Biometric authentication
 
 ### 2.3 Backend API
-**Tech Stack:** FastAPI + Uvicorn + Python 3.10+  
+**Tech Stack:** FastAPI + Uvicorn + Python 3.12  
 **Deployment:** Render  
 **Purpose:** Core business logic, data processing, external integrations
 
@@ -139,7 +139,7 @@ StrideAlytics is a **production-ready, multi-platform analytics system** designe
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Frontend** | React 18, Vite, Tremor, TailwindCSS, shadcn/ui | Web UI dashboard |
+| **Frontend** | React 19, Vite, TailwindCSS 4, custom UI components | Web UI dashboard |
 | **Mobile** | React Native, Expo, NativeWind | Mobile UI application |
 | **Backend** | FastAPI, Uvicorn, Pydantic | REST API, business logic |
 | **Database** | PostgreSQL (Supabase), Migrations | Data persistence |
@@ -199,7 +199,7 @@ Trigger Notifications (optional)
 | Trade Log | Frontend/Mobile + Backend | ✅ Core |
 | Real-time Updates | WebSocket (optional) | 🔄 Optional |
 | Push Notifications | Mobile + Backend | 🔄 Optional |
-| Advanced Charting | Tremor + Frontend | ✅ Core |
+| Advanced Charting | Frontend (not built yet) | 🔄 Planned |
 | Data Export | Backend + Frontend | 🔄 Optional |
 
 ---
