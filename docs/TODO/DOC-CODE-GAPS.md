@@ -1,6 +1,6 @@
 # Docs vs code — remaining gaps
 
-Last updated 2026-11-14 (after Phase 4 and the live-data fixes). Compared on 2026-11-14 (docs in `docs/BUSINESS` and `docs/TECHNICAL` against `backend/`, `alpha/`, `frontend/`, `database/`, `scheduler/` and `.github/workflows/`).
+Last updated 2026-11-14 (after Phase 4, the live-data fixes and the commit and push of the branch; no row was added or removed by that). Compared on 2026-11-14 (docs in `docs/BUSINESS` and `docs/TECHNICAL` against `backend/`, `alpha/`, `frontend/`, `database/`, `scheduler/` and `.github/workflows/`).
 Mobile and PRO/billing are out of scope and not listed.
 
 Rows for features built in **Phase 4** (portfolio risk, scenarios, EV ranking, strategy matrix, option chain, heat dashboard, charts) were removed on 2026-11-14.

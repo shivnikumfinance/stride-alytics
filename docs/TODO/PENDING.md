@@ -9,7 +9,7 @@ Delete an item when it is done and validated (see [README](README.md)). Last upd
 
 | # | Item | Priority | Who | State |
 |---|------|----------|-----|-------|
-| 1 | Commit the work | P1 | you | Nothing is committed (Phases 1 to 4 plus fixes) |
+| 1 | Open a PR to `develop` and get CI green | P1 | you | Committed and pushed to `feature/main-implementation`; CI not yet seen |
 | 2 | Apply migrations 006 to 010 to Supabase | P1 | you | Verified on local PostgreSQL 16; not on Supabase |
 | 3 | Persistence on real PostgreSQL; `DATABASE_URL` on Render | P1 | you | Smoke test 11/11 and the full suite pass locally |
 | 4 | Verify the daily workflow on GitHub | P1 | you | Needs repo secrets |
@@ -28,16 +28,17 @@ Delete an item when it is done and validated (see [README](README.md)). Last upd
 | 23 | Confirm Phase 3 behaviour (alerts, P&L x100) | P2 | you | Checklist below |
 | 24 | Confirm Phase 4 behaviour (limits, matrix, EV) | P2 | you | Checklist below |
 | 22 | Band usage endpoint shape | P3 | you | Decision |
-| 12 to 16 | Spec mismatches, alpha robustness, tests, leftovers, hygiene | P3 | me + you | Partly done |
+| 12 to 16 | Spec mismatches, alpha robustness and lint, tests, leftovers, hygiene (incl. the unexplained file revert) | P3 | me + you | Partly done |
 
 ---
 
 ## P1
 
-### 1. Commit the current work
-- All work is uncommitted: the scope docs, `subscription_plan` removal (migration 006), security and trade fixes, labelling, the alpha pipeline and workflows, then **Phase 1** (persistence and logs, migration 007), **Phase 2** (trading core, migration 008), **Phase 3** (alerts and Home hub, migration 009), **Phase 4** (analytics, migration 010), the PostgreSQL validation tooling, the live-data fixes, auth hardening and alpha scoring.
-- Suggested commits (one branch, in this order): docs and scope · plan removal · security and trade fixes · labelling and alpha pipeline · Phase 1 · Phase 2 · Phase 3 · Phase 4 · validation tooling · live-data fixes and hardening. Commit messages were drafted in the conversation.
-- Done when: committed on a branch and CI is green.
+### 1. Open a pull request and get CI green
+- All work (scope docs, plan removal, security and trade fixes, Phases 1 to 4, PostgreSQL validation tooling, live-data fixes, auth hardening, alpha scoring) is committed and pushed on `feature/main-implementation` (origin is up to date as of 2026-11-14).
+- Next: open a PR into `develop` (the main branch) and let `.github/workflows/ci.yml` run. CI now fails on test failures, so the first run is the real check of the backend, alpha and frontend suites on Linux.
+- Watch for: the pre-commit hook (backend black auto-fix aborts the commit once), and alpha's linters, which already fail on older files and are not covered by the hooks (`ruff` 7 errors, `black` 18 files).
+- Done when: the PR's CI is green and it is merged.
 
 ### 2. Apply migrations 006 to 010 to Supabase
 - **Verified on a local throwaway PostgreSQL 16 (2026-11-14):** migrations 001 to 010 apply in order with no errors, the `_down` files for 010 to 006 roll back cleanly and 006 to 010 re-apply, and the whole backend suite (373 tests) passes against the migration-built schema. A minimal stand-in for Supabase's `auth.uid()` and roles was used, so this is **not** yet a test on Supabase itself.
@@ -176,6 +177,7 @@ Delete an item when it is done and validated (see [README](README.md)). Last upd
 - Frontend has 113 unit tests, backend 382, alpha 21 (Active Holdings, Active Trades and the auth store are now covered). The Greeks, Screener and Portfolio pages are still thin.
 - CI now fails on test failures (it used to swallow them with `|| echo`); confirm the first run on GitHub is green.
 - `mypy` is blocked by a Windows Application Control policy on this machine; run it in CI or another environment.
+- **Alpha lint fails on older files** (`ruff` 7 errors, 6 auto-fixable; `black` would reformat 18 files). The pre-commit hook does not cover alpha, but CI may. Run `uv run ruff check --fix . && uv run black .` in `alpha/` as its own commit, or exclude the files.
 - No backend test hits real Supabase.
 - Done when: key flows (login, add/close trade, screener) have frontend tests and mypy runs somewhere.
 
@@ -187,6 +189,7 @@ Delete an item when it is done and validated (see [README](README.md)). Last upd
 - Done when: configs match the free-tier defaults in `../BUSINESS/03-FINANCIAL-MODEL.md`.
 
 ### 16. Repository hygiene
+- **Unexplained revert (2026-11-14, 14:26):** `backend/app/api/v1/endpoints/portfolio.py` and `trades.py` were overwritten in the working tree with the pre-Phase-1 in-memory versions (the backend then failed to import). It was not a commit; something outside the session rewrote them. They were restored from `HEAD` and the copies kept in the session scratchpad. If it recurs, check editor extensions, other AI tools, sync clients and any `git checkout`/stash done on an old commit. A `git status` before each commit catches it.
 - `.mcp.json` GitHub server fails to connect ("Incompatible auth server: does not support dynamic client registration").
 - Confirm `alpha/service_account.json` is git-ignored (it exists locally; only `service_account.example.json` should be tracked).
 - Done when: the MCP server connects or is removed, and the credential file is confirmed ignored.
