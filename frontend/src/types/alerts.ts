@@ -82,6 +82,8 @@ export interface WeeklyPick {
   rationale: string;
   confidence: number;
   week_of: string;
+  /** Expected value per contract in dollars, from confidence and target/stop; null if missing. */
+  ev?: number | null;
 }
 
 export interface DashboardSummary {

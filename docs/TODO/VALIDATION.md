@@ -7,7 +7,7 @@ Delete a check once the thing it covers is permanently automated in CI.
 
 ```bash
 # Backend (cd backend)
-uv run pytest tests -q          # last known: 70 passed
+uv run pytest tests -q          # last known: 373 passed
 uv run ruff check .
 uv run black --check .
 uv run mypy app                 # blocked on this machine (Application Control); run elsewhere
@@ -59,8 +59,8 @@ uv run ruff check . && uv run black --check .
 - Disconnect the network or block Yahoo: the header and Dashboard show "Sample data — not live", and the Screener and Regime pages show the same badge.
 - With the network on, the badge is absent and screener rows have non-zero delta/gamma/theta/vega.
 
-### V9. Demo pages (Pending 9)
-- Every page that still shows the "Demo data" banner is listed in Pending 9; when a page is built on real data, its banner is removed.
+### V9. No demo pages
+- No page shows a "Demo data" banner or static sample content (all pages are built on real data).
 - The sidebar has no link to a deleted page and `/admin` redirects to the home page.
 
 ### V10. Frontend session (Pending 10)
@@ -108,3 +108,13 @@ uv run ruff check . && uv run black --check .
 - Disclaimer modal: shown on a new account until "I understand"; it does not return after a reload. Settings failing to load does not block the app.
 - Weekly Picks: empty until the "Generate Weekly Picks" workflow has run; then each pick's "Check gate" matches Home's gate.
 - Tune check: the alert thresholds are constants (see the Phase 3 assumptions); confirm they fit how you trade.
+
+### V17. Phase 4: risk, scenarios, matrix, chain and charts (new)
+- Apply migration 010. With a few open trades in different sectors, open the Heat Dashboard: margin %, net delta, sector bars and band usage agree with Portfolio and Sizing (check one sum by hand). A sector over 25% of equity shows a red bar and a breach line.
+- Push capital at risk above 50% of equity (one large `risk_amount`): the master gate turns BLOCKED with BR-081 and a new trade is refused (409); close it and the gate clears.
+- Scenarios: run "Market -10%" on a short put. The change is a loss, "Two weeks pass" is a gain, and a zero shock shows no change. Compare one position with your broker's risk tool. A position with no price is listed as "Not priced", not in the total. Save a scenario, reload, run it from the saved list, delete it.
+- Strategy Matrix: the current regime column is highlighted and matches the Regime page; with a blocked gate (for example a falling market) every cell in that column is Blocked; the layer and band filters grey out cells.
+- Option Chain: load AAPL and one other symbol; strikes, IV and delta look right against your broker; a delta of -0.25 shows about 75% PoP for the put. After hours, check bid/ask. A synthetic chain shows "Sample data — not live".
+- Weekly Picks are ordered by expected value; a pick without target or stop shows a dash.
+- Regime page: the history chart has one point per day with 40 and 70 lines (needs at least two stored days).
+- Charts have text alternatives (screen reader: "Regime score over N days, latest ...").

@@ -21,6 +21,7 @@ from datetime import date
 from typing import Any
 
 from app.domain.allocation import growth_locked
+from app.domain.portfolio_risk import entry_risk_reason
 from app.domain.regime_score import UNKNOWN, RegimeScore
 
 SPREAD_MAX_PCT = 10.0  # BR-017 (percent of mid price)
@@ -79,6 +80,7 @@ def evaluate_master(
     equity: float,
     min_equity: float,
     assignment_alarms: int | None = None,
+    capital_at_risk: float | None = None,
 ) -> GateResult:
     """Account/market-level rules."""
     reasons: list[GateReason] = []
@@ -124,6 +126,11 @@ def evaluate_master(
                     "BR-011", f"{assignment_alarms} open trade(s) have an active assignment alarm."
                 )
             )
+    if capital_at_risk is not None:
+        checked.append("BR-081")
+        reason = entry_risk_reason(equity, capital_at_risk, None)
+        if reason:
+            reasons.append(GateReason("BR-081", reason))
     return _result(reasons, checked, not_evaluated)
 
 
@@ -212,10 +219,15 @@ def evaluate_entry(
     news_flag: bool,
     today: date,
     assignment_alarms: int | None = None,
+    capital_at_risk: float | None = None,
 ) -> GateResult:
     """Master gate + symbol gate + layer lock, merged."""
     master = evaluate_master(
-        regime, equity=equity, min_equity=min_equity, assignment_alarms=assignment_alarms
+        regime,
+        equity=equity,
+        min_equity=min_equity,
+        assignment_alarms=assignment_alarms,
+        capital_at_risk=capital_at_risk,
     )
     symbol = evaluate_symbol(
         symbol_data, trade_type=trade_type, layer=layer, news_flag=news_flag, today=today

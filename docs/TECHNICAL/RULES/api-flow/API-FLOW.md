@@ -221,9 +221,15 @@ All under `/api/v1` unless noted. "Auth" = Bearer token required.
 | `GET /regime/score`, `GET /regime/history` | yes | 0–100 score with your weights (`source`: `live`, `stored`, `unavailable`); stored daily history (default weights) |
 | `GET /portfolio/bands` | yes | Capital at risk per band vs its cap, with `ok` / `near` / `over` |
 | `GET /symbols/flags`, `PUT /symbols/{symbol}/flag` | yes | Manual NewsFlag; while set, new trades in the symbol are blocked (BR-021) |
+| `GET /portfolio/risk` | yes | Net delta (shares and dollars), margin % (capital at risk / equity), sector exposure, `unpriced_positions` and limit `breaches` (BR-080/081) |
+| `POST /scenarios/run` | yes | Reprice open positions for `spot_pct`, `iv_shift`, `days_forward` (writes nothing); returns per-position change, totals, unpriced positions and a P&L `ladder` |
+| `GET /scenarios`, `POST /scenarios`, `DELETE /scenarios/{id}` | yes | Saved scenarios (409 on a duplicate name, 404 for another user's) |
+| `GET /strategy-matrix` | yes | Strategies x regimes with availability, layers, bands and the live gate status; `layer` / `band` filters flag unsuitable cells |
+| `GET /options/chain` | yes | `symbol`, optional `expiry`: calls and puts per strike with Greeks, open interest and `pop_short`; `source` is `live` or `synthetic` |
+| `GET /analytics/ev-calibration` | yes | Win rate and average P&L of closed trades by layer |
 | `GET /alerts/exits` | yes | Exit alerts for open positions (`min_severity` watch/warning/critical): severity, suggested action (hold/roll/close/hedge), reasons with rule ids, DTE, delta, theta, P&L, `unacknowledged_critical`. Prices come from the live data provider; a position without a price gets a Warning, never a silent pass |
 | `POST /alerts/ack`, `GET /alerts/acks` | yes | Acknowledge an **active** warning/critical alert (`trade_id`, `code`, optional `note`; 404 if it is not firing); history of acknowledgements |
-| `GET /picks`, `GET /picks/{id}` | yes | Weekly picks from the scheduler's `weekly_picks` table, best confidence first (`week_of` filter) |
+| `GET /picks`, `GET /picks/{id}` | yes | Weekly picks from the scheduler's `weekly_picks` table, best expected value (`ev`) first (`week_of` filter) |
 | `GET /dashboard/summary` | yes | Home hub: portfolio value, P&L, options buying power, utilisation, top alerts, holdings, top picks, regime and layer split |
 | `GET /logs/signals`, `GET /logs/audit` | yes | Read-only, filterable (`start`, `end`, `symbol`, `rule_id`, `decision`, `entity`, `action`), paginated. No write methods exist (405) |
 

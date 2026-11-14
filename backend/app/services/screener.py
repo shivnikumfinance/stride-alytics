@@ -11,6 +11,7 @@ from __future__ import annotations
 import math
 import random
 import zlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
@@ -274,6 +275,22 @@ def _load_chain(symbol: str, spot: float) -> tuple[list[dict[str, Any]], bool]:
         return chain, True
     log.warning("screener.using_synthetic_chain", symbol=symbol)
     return _load_chain_synthetic(symbol, spot), False
+
+
+ChainProvider = Callable[[str], tuple[float, list[dict[str, Any]], str]]
+
+
+def load_chain(symbol: str) -> tuple[float, list[dict[str, Any]], str]:
+    """(spot, chain rows, source). ``source`` is ``live`` only when both came from yfinance."""
+    sym = normalize_symbol(symbol)
+    spot, spot_live = _get_spot(sym)
+    chain, chain_live = _load_chain(sym, spot)
+    return spot, chain, "live" if (spot_live and chain_live) else "synthetic"
+
+
+def get_chain_provider() -> ChainProvider:
+    """FastAPI dependency; tests override it with a fake."""
+    return load_chain
 
 
 def run_screener(filters: ScreenerFilters) -> dict[str, Any]:

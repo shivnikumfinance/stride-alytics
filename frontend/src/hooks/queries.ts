@@ -19,9 +19,13 @@ import {
   symbolsApi,
   tradesApi,
   watchlistApi,
+  analyticsApi,
 } from "../api/endpoints";
 import { withApiErrorLogging } from "../api/errors";
 import type {
+  ScenarioParams,
+  SavedScenario,
+  ScenarioResult,
   AckRequest,
   BandUsage,
   DashboardSummary,
@@ -342,3 +346,59 @@ export const useAcceptDisclaimer = () => {
     onError: withApiErrorLogging("settings.disclaimer", "Could not save your acceptance"),
   });
 };
+
+// --- Phase 4: analytics ---
+
+export const usePortfolioRisk = () =>
+  useQuery({
+    queryKey: ["risk"],
+    queryFn: () => analyticsApi.risk(),
+    staleTime: 60_000,
+    refetchInterval: 2 * 60_000,
+  });
+
+export const useRunScenario = () =>
+  useMutation<ScenarioResult, Error, ScenarioParams>({
+    mutationFn: (body) => analyticsApi.runScenario(body),
+    onError: withApiErrorLogging("scenario.run", "Could not run the scenario"),
+  });
+
+export const useScenarios = () =>
+  useQuery<SavedScenario[]>({ queryKey: ["scenarios"], queryFn: () => analyticsApi.scenarios() });
+
+export const useSaveScenario = () => {
+  const qc = useQueryClient();
+  return useMutation<SavedScenario, Error, ScenarioParams & { name: string }>({
+    mutationFn: (body) => analyticsApi.saveScenario(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["scenarios"] }),
+    onError: withApiErrorLogging("scenario.save", "Could not save the scenario"),
+  });
+};
+
+export const useDeleteScenario = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (id) => analyticsApi.deleteScenario(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["scenarios"] }),
+    onError: withApiErrorLogging("scenario.delete", "Could not delete the scenario"),
+  });
+};
+
+export const useStrategyMatrix = (layer?: string, band?: string) =>
+  useQuery({
+    queryKey: ["matrix", layer ?? "", band ?? ""],
+    queryFn: () => analyticsApi.matrix({ layer: layer || undefined, band: band || undefined }),
+    staleTime: 60_000,
+  });
+
+export const useOptionChain = (symbol: string, expiry?: string) =>
+  useQuery({
+    queryKey: ["chain", symbol, expiry ?? ""],
+    queryFn: () => analyticsApi.chain(symbol, expiry),
+    enabled: symbol.trim().length > 0,
+    staleTime: 60_000,
+    retry: 0,
+  });
+
+export const useCalibration = () =>
+  useQuery({ queryKey: ["calibration"], queryFn: () => analyticsApi.calibration() });

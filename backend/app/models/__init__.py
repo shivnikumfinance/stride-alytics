@@ -5,6 +5,7 @@ from app.models.logs import AuditLog, ImmutableRecordError, SignalLog
 from app.models.market_regime import MarketRegime
 from app.models.option import Option
 from app.models.portfolio import Portfolio
+from app.models.scenarios import Scenario
 from app.models.trade import Trade
 from app.models.user import User
 from app.models.user_settings import UserSettings
@@ -24,5 +25,6 @@ __all__ = [
     "MarketRegime",
     "AlertAck",
     "WeeklyPick",
+    "Scenario",
     "ImmutableRecordError",
 ]

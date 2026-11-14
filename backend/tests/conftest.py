@@ -26,6 +26,7 @@ from app.domain.gate import SymbolData  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services import regime_service  # noqa: E402
 from app.services.position_data import get_position_data_provider  # noqa: E402
+from app.services.sector_data import get_sector_provider  # noqa: E402
 from app.services.symbol_data import get_symbol_data_provider  # noqa: E402
 
 
@@ -148,6 +149,28 @@ class FakePositionData:
             delta=-0.15 if trade_type == "put" else 0.15,
             theta=0.04,
         )
+
+
+class FakeSectors:
+    """Stands in for the sector lookup. Unknown symbols return None."""
+
+    def __init__(self) -> None:
+        self.by_symbol: dict[str, str | None] = {
+            "AAPL": "Technology",
+            "MSFT": "Technology",
+            "XOM": "Energy",
+        }
+
+    def __call__(self, symbol: str) -> str | None:
+        return self.by_symbol.get(symbol)
+
+
+@pytest.fixture(autouse=True)
+def sectors():
+    fake = FakeSectors()
+    app.dependency_overrides[get_sector_provider] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_sector_provider, None)
 
 
 @pytest.fixture(autouse=True)

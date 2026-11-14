@@ -10,6 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.api.deps import Ctx, get_ctx
 from app.api.v1.schemas.portfolio import PortfolioCreate, PortfolioSummary, PortfolioUpdate
 from app.domain.sizing import band_status
+from app.services.position_data import PositionDataProvider, get_position_data_provider
+from app.services.risk_service import build_portfolio_risk
+from app.services.sector_data import SectorProvider, get_sector_provider
+from app.services.trading import load_account
 from app.services.portfolio import summary as portfolio_summary_fn
 from app.utils.logger import get_logger
 
@@ -51,6 +55,21 @@ async def band_usage(ctx: Ctx = Depends(get_ctx)) -> dict[str, Any]:
         exposure_by_band=exposure,
     )
     return {"success": True, "data": rows}
+
+
+@router.get("/risk")
+async def portfolio_risk(
+    ctx: Ctx = Depends(get_ctx),
+    positions: PositionDataProvider = Depends(get_position_data_provider),
+    sectors: SectorProvider = Depends(get_sector_provider),
+) -> dict[str, Any]:
+    """Net delta, margin %, sector exposure and limit breaches across open trades (FR-540)."""
+    account = await load_account(ctx)
+    data = await build_portfolio_risk(
+        ctx, positions, sectors, equity=account.equity, regime_score=account.regime.score
+    )
+    data["regime_state"] = account.regime.state
+    return {"success": True, "data": data}
 
 
 @router.get("/{portfolio_id}", response_model=PortfolioSummary)

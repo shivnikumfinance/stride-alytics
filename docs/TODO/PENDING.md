@@ -12,10 +12,10 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Suggested commits: docs scope · plan removal · security + trade bugs · labelling · alpha + workflow · frontend demo banners.
 - Done when: committed on a branch and CI is green.
 
-### 2. Apply migrations 006 to 009 to Supabase
-- `006_drop_subscription_plan.sql`, `007_persistence_logs.sql`, `008_market_regime.sql` and `009_alert_acks.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
-- **None of them has been applied anywhere yet**, including 008 (`market_regime`) and 009 (`alert_acks`). Try all four on a throwaway Supabase project first (see item 3), including each `_down` file once.
-- Done when: all four are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
+### 2. Apply migrations 006 to 010 to Supabase
+- `006_drop_subscription_plan.sql`, `007_persistence_logs.sql`, `008_market_regime.sql` and `009_alert_acks.sql` and `010_scenarios.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
+- **None of them has been applied anywhere yet**, including 008 (`market_regime`) 009 (`alert_acks`) and 010 (`scenarios`). Try all five on a throwaway Supabase project first (see item 3), including each `_down` file once.
+- Done when: all five are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
 
 ### 3. Validate persistence on real PostgreSQL
 - Code is done (Phase 1): portfolios, trades, watchlists, settings and the append-only logs are stored through `backend/app/repositories/sql.py`; unit tests run on SQLite.
@@ -50,11 +50,6 @@ Delete an item when it is done and validated (see [README](README.md)).
 - It uses the service-role key and has no login, so anyone with the URL can see the data.
 - Options: make the Streamlit app private (viewer auth), or use the anon key with a read-only RLS policy.
 - Done when: an unauthenticated visitor cannot read the data.
-
-### 9. Decide the fate of the demo pages
-- Static pages with a "Demo data" banner: Exit Alerts, Active Holdings, Strategy Matrix, Watchlist, Active Trades, Weekly Picks, Heat Dashboard, Signal Log, Option Chain, Sizing (button does nothing), Scenarios.
-- For each: build it on real data, or delete the page, route and sidebar link.
-- Done when: no page shows static sample content.
 
 ### 10. Frontend auth gaps
 - After a page reload the token is restored but `user` is not (`auth.store.ts` `hydrate`), so the sidebar email and Settings are empty. Call `/auth/me` on load.
@@ -112,8 +107,20 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Roll and Hedge are suggestions only: nothing is placed, and no roll candidate is computed (smart rolling is Planned).
 - Alerts are computed when you open a page (60-second price cache), not pushed. Email or Slack alerts for exits would need the scheduler.
 - Weekly Picks need `weekly_picks` rows from `scheduler/scripts/generate_picks.py`; until it runs the page is empty.
-- Strategy Matrix, Option Chain, Heat Dashboard and Scenarios pages are still demo pages (Phase 4).
 - Done when: the thresholds are confirmed and the P&L figure is checked (Validation V16).
+
+### 24. Phase 4 behaviour to confirm
+- **Limits are my defaults** (see `../BUSINESS/05-IMPLEMENTATION-STATUS.md`, "Phase 4 assumptions"): total capital at risk 50% of equity (blocks new entries), sector 25% and net delta 100% of equity (reported only). Confirm or change each, then decide whether they belong in Settings (same question as items 21 and 23).
+  - [ ] Total risk limit 50% (blocks)  - [ ] Sector limit 25%  - [ ] Net delta limit 100%
+  - [ ] The strategy suitability table (`backend/app/domain/strategy_matrix.py`) matches how you want to trade each strategy per regime.
+  - [ ] EV uses a pick's confidence as the probability of profit; confirm that the weekly job's confidence means that.
+- **Margin % is not real margin.** It is capital at risk / equity. A broker feed would be needed for true margin.
+- **Correlation (BR-013) is still not evaluated** in the gate; it needs return histories per symbol and a threshold you choose. Planned.
+- **EV at entry is not stored on trades**, so the calibration report (`/analytics/ev-calibration`) shows realised results by layer only. To compare EV with outcomes, store the entry EV on each trade first.
+- **Strategy cells link to the Screener**, not to a strategy detail page (FR-1140 / BR-093). Build the page or accept the link.
+- **Sectors and chains come from yfinance** (unofficial, may be rate limited or return nothing after hours); both labels say when data is missing or synthetic. Check a few symbols.
+- **Bundle size:** the production build is one JS file over 500 kB (recharts). Code-split the chart pages with `React.lazy` if load time matters.
+- Done when: the thresholds are confirmed and the pages have been checked with real positions (Validation V17).
 
 ## P3
 
@@ -131,7 +138,7 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Done when: bad inputs are rejected or reported, not scored as zero.
 
 ### 14. Test coverage
-- Frontend has 67 unit tests (Phases 1-3); the Phase 4 pages and the remaining demo pages still need them. The Active Holdings and Active Trades pages have no tests yet.
+- Frontend has 100 unit tests (Phases 1-4). The Active Holdings and Active Trades pages have no tests yet; Greeks, Screener and Portfolio pages are still thin.
 - CI now fails on test failures (it used to swallow them with `|| echo`); confirm the first run on GitHub is green.
 - `mypy` is blocked by a Windows Application Control policy on this machine; run it in CI or another environment.
 - No backend test hits real Supabase.

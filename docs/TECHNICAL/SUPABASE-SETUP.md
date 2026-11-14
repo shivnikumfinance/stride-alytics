@@ -83,6 +83,7 @@ node scripts/load-secrets.mjs local
    - `007_persistence_logs.sql`
    - `008_market_regime.sql`
    - `009_alert_acks.sql`
+   - `010_scenarios.sql`
 3. Run each one in sequence
 
 ### Option B: Via psql CLI
@@ -97,6 +98,7 @@ psql "$DATABASE_URL" -f database/migrations/006_drop_subscription_plan.sql
 psql "$DATABASE_URL" -f database/migrations/007_persistence_logs.sql
 psql "$DATABASE_URL" -f database/migrations/008_market_regime.sql
 psql "$DATABASE_URL" -f database/migrations/009_alert_acks.sql
+psql "$DATABASE_URL" -f database/migrations/010_scenarios.sql
 ```
 
 ### Option C: Via migration scripts

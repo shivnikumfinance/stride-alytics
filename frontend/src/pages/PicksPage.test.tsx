@@ -40,6 +40,18 @@ describe("Weekly Picks page", () => {
     expect(screen.getByText(/week of 2026-06-01/)).toBeInTheDocument();
   });
 
+  it("shows the expected value of each pick, or a dash when it cannot be computed", async () => {
+    vi.mocked(picksApi.list).mockResolvedValue({
+      success: true,
+      data: [pick({ ev: 80 }), pick({ id: "p2", symbol: "AMD", ev: -25 }), pick({ id: "p3", symbol: "TSLA", ev: null })],
+      week_of: "2026-06-01",
+    } as never);
+    renderWithRouter(<PicksPage />);
+    expect(await screen.findByText("$80.00")).toHaveClass("text-green-700");
+    expect(screen.getByText("-$25.00")).toHaveClass("text-red-700");
+    expect(screen.getAllByText("Expected value")).toHaveLength(3);
+  });
+
   it("explains when there are no picks", async () => {
     vi.mocked(picksApi.list).mockResolvedValue({ success: true, data: [], week_of: null } as never);
     renderWithRouter(<PicksPage />);

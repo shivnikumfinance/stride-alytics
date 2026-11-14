@@ -5,6 +5,13 @@ import type { TickerPayload } from "../types/market";
 import type {
   AckRecord,
   AckRequest,
+  Calibration,
+  OptionChain,
+  PortfolioRisk,
+  SavedScenario,
+  ScenarioParams,
+  ScenarioResult,
+  StrategyMatrix,
   AuditLogEntry,
   DashboardSummary,
   ExitAlertsData,
@@ -177,6 +184,26 @@ export const picksApi = {
 
 export const dashboardApi = {
   summary: () => client.get<Envelope<DashboardSummary>>("/dashboard/summary").then((r) => r.data.data),
+};
+
+// --- Analytics (Phase 4) ---
+
+export const analyticsApi = {
+  risk: () => client.get<Envelope<PortfolioRisk>>("/portfolio/risk").then((r) => r.data.data),
+  runScenario: (body: ScenarioParams) =>
+    client.post<Envelope<ScenarioResult>>("/scenarios/run", body).then((r) => r.data.data),
+  scenarios: () => client.get<Envelope<SavedScenario[]>>("/scenarios").then((r) => r.data.data),
+  saveScenario: (body: ScenarioParams & { name: string }) =>
+    client.post<Envelope<SavedScenario>>("/scenarios", body).then((r) => r.data.data),
+  deleteScenario: (id: string) => client.delete(`/scenarios/${id}`).then(() => undefined),
+  matrix: (params: { layer?: string; band?: string } = {}) =>
+    client.get<Envelope<StrategyMatrix>>("/strategy-matrix", { params }).then((r) => r.data.data),
+  chain: (symbol: string, expiry?: string) =>
+    client
+      .get<Envelope<OptionChain>>("/options/chain", { params: { symbol, expiry } })
+      .then((r) => r.data.data),
+  calibration: () =>
+    client.get<Envelope<Calibration>>("/analytics/ev-calibration").then((r) => r.data.data),
 };
 
 // --- Logs (append-only, read-only from the UI) ---

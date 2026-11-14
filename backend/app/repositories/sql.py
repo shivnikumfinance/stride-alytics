@@ -862,6 +862,60 @@ class Repo:
             "generated_at": _iso(row.generated_at),
         }
 
+    # ---- saved scenarios (FR-530)
+
+    @staticmethod
+    def _scenario_dict(row: m.Scenario) -> dict[str, Any]:
+        return {
+            "id": str(row.id),
+            "name": row.name,
+            "params": dict(row.params or {}),
+            "created_at": _iso(row.created_at),
+        }
+
+    async def save_scenario(
+        self, user_id: UUID, name: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
+        exists = await self.s.scalar(
+            select(m.Scenario.id).where(m.Scenario.user_id == user_id, m.Scenario.name == name)
+        )
+        if exists is not None:
+            raise ValueError(f"a scenario named {name!r} already exists")
+        row = m.Scenario(user_id=user_id, name=name, params=params)
+        self.s.add(row)
+        await self.s.flush()
+        self._audit(user_id, "scenario.save", "scenario", row.id, None, {"name": name})
+        await self.s.commit()
+        return self._scenario_dict(row)
+
+    async def list_scenarios(self, user_id: UUID) -> list[dict[str, Any]]:
+        rows = (
+            await self.s.scalars(
+                select(m.Scenario)
+                .where(m.Scenario.user_id == user_id)
+                .order_by(m.Scenario.created_at)
+            )
+        ).all()
+        return [self._scenario_dict(r) for r in rows]
+
+    async def delete_scenario(self, user_id: UUID, scenario_id: UUID) -> None:
+        row = await self.s.scalar(
+            select(m.Scenario).where(m.Scenario.id == scenario_id, m.Scenario.user_id == user_id)
+        )
+        if row is None:
+            raise KeyError(str(scenario_id))
+        self._audit(user_id, "scenario.delete", "scenario", row.id, {"name": row.name}, None)
+        await self.s.delete(row)
+        await self.s.commit()
+
+    async def closed_trades(self, user_id: UUID) -> list[Trade]:
+        rows = (
+            await self.s.scalars(
+                select(m.Trade).where(m.Trade.user_id == user_id, m.Trade.exit_price.is_not(None))
+            )
+        ).all()
+        return [_to_trade(r) for r in rows]
+
     async def list_picks(
         self, *, week_of: date | None = None, limit: int = 20
     ) -> tuple[list[dict[str, Any]], str | None]:

@@ -3,6 +3,8 @@
 Compared on 2026-11-14 (docs in `docs/BUSINESS` and `docs/TECHNICAL` against `backend/`, `alpha/`, `frontend/`, `database/`, `scheduler/` and `.github/workflows/`).
 Mobile and PRO/billing are out of scope and not listed.
 
+Rows for features built in **Phase 4** (portfolio risk, scenarios, EV ranking, strategy matrix, option chain, heat dashboard, charts) were removed on 2026-11-14.
+
 Rows for features built in **Phase 3** (exit alerts, acknowledgements, picks endpoint, Home hub, grouped sidebar, real section pages, disclaimer modal) were removed on 2026-11-14.
 
 Rows for features built in **Phase 2** (DNT gate and Master Gate, regime score, layer split, band caps, sizing, gate/regime signal logging, `generate-regime` workflow) were removed on 2026-11-14.
@@ -17,12 +19,7 @@ What remains is documented-but-not-built functionality. For each row decide **bu
 
 | Requirement | Status in code |
 |---|---|
-| **EV scoring / ranking** (picks, FR-1220) | None. |
-| **Portfolio risk dashboard** Net Delta, Margin %, sector exposure (BR-080, FR-540) | None. Backend returns P&L and win rate only. |
-| **Strategy Design Matrix** logic (BR-090–094, FR-1100–1160) | None. Static grid. |
-| **Scenario / stress simulation** (FR-530) | None. |
 | **Alerts / notifications** (FR-800–830) | Regime-change and pipeline alerts go to Slack; exit alerts are in-app only (no push or email). |
-| **Charting** ("advanced charting" in the system overview) | No chart library is installed; no charts exist. |
 
 ## A2. API
 
@@ -37,8 +34,6 @@ What remains is documented-but-not-built functionality. For each row decide **bu
 
 | Documented | Actual |
 |---|---|
-| `market_regime` table | Not in any migration. |
-| Regime history | Built (migration 008 `market_regime`). Watchlist, signal-log and audit tables exist (migration 007). |
 | Alpha: `symbols` and `signals` tables | Removed from `ALPHA.md`; not in the schema. Decide whether `signals` is needed. |
 
 ## A4. Scheduler and folders

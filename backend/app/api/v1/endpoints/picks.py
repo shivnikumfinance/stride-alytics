@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import Ctx, get_ctx
+from app.domain.ev import rank_picks
 
 router = APIRouter()
 
@@ -19,9 +20,9 @@ async def list_picks(
     limit: int = Query(default=20, ge=1, le=50),
     ctx: Ctx = Depends(get_ctx),
 ) -> dict[str, Any]:
-    """The week's picks, best confidence first. Empty until the weekly job has run."""
+    """The week's picks, best expected value first. Empty until the weekly job has run."""
     picks, week = await ctx.repo.list_picks(week_of=week_of, limit=limit)
-    return {"success": True, "data": picks, "week_of": week}
+    return {"success": True, "data": rank_picks(picks), "week_of": week}
 
 
 @router.get("/{pick_id}")

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from app.api.deps import Ctx, get_ctx
 from app.domain.alerts import rank, summarize
 from app.domain.allocation import growth_locked, layer_split
+from app.domain.ev import rank_picks
 from app.services.position_data import PositionDataProvider, get_position_data_provider
 from app.services.positions import annotate_acks, evaluate_open_positions
 from app.services.trading import load_account
@@ -42,7 +43,8 @@ async def summary(
     buying_power = round(max(0.0, account.equity - committed), 2)
     state = account.regime.state
 
-    picks, picks_week = await ctx.repo.list_picks(limit=TOP_N)
+    all_picks, picks_week = await ctx.repo.list_picks(limit=20)
+    picks = rank_picks(all_picks)[:TOP_N]
     return {
         "success": True,
         "data": {

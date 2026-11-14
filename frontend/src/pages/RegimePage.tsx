@@ -1,4 +1,5 @@
 import { PageHeader } from "../components/ui";
+import { RegimeHistoryChart } from "../components/charts";
 import { RegimePanel, RegimeScoreCard } from "../components/regime";
 
 export function RegimePage() {
@@ -9,6 +10,7 @@ export function RegimePage() {
         subtitle="The 0–100 regime score that drives the Base/Growth split, sizing and the trade gate."
       />
       <RegimeScoreCard />
+      <RegimeHistoryChart />
       <RegimePanel />
     </div>
   );

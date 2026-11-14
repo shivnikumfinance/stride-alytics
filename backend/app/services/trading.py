@@ -24,6 +24,8 @@ class Account:
     equity: float
     # Open trades with an assignment alarm (BR-011); None = could not be verified.
     assignment_alarms: int | None = None
+    # Capital at risk in open trades (BR-081).
+    capital_at_risk: float = 0.0
 
 
 async def load_account(ctx: Ctx, position_provider: PositionDataProvider | None = None) -> Account:
@@ -40,7 +42,11 @@ async def load_account(ctx: Ctx, position_provider: PositionDataProvider | None 
         alerts = await evaluate_open_positions(ctx, position_provider, regime.score)
         alarms = assignment_alarm_count(alerts)
     return Account(
-        settings=settings, regime=regime, equity=round(equity, 2), assignment_alarms=alarms
+        settings=settings,
+        regime=regime,
+        equity=round(equity, 2),
+        assignment_alarms=alarms,
+        capital_at_risk=await ctx.repo.open_committed(ctx.user_id),
     )
 
 
@@ -50,6 +56,7 @@ def master_gate(account: Account) -> g.GateResult:
         equity=account.equity,
         min_equity=account.settings["min_equity"],
         assignment_alarms=account.assignment_alarms,
+        capital_at_risk=account.capital_at_risk,
     )
 
 
@@ -86,6 +93,7 @@ async def entry_gate(
         news_flag=news_flag,
         today=date.today(),
         assignment_alarms=account.assignment_alarms,
+        capital_at_risk=account.capital_at_risk,
     )
 
 

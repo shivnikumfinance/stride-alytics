@@ -534,3 +534,7 @@ It is shared by all users and always stored with the **default weights**, so the
 `009_alert_acks.sql` (down file included) adds `alert_acks`: one row per acknowledged alert, keyed by `user_id`, `trade_id` and the alert `code`, with `severity`, `note`, `acknowledged_at` and `resolved_at`. A partial unique index allows only one **active** (unresolved) acknowledgement per trade and code. When the alert stops firing or the trade closes, the row is marked resolved, so the same alert can be acknowledged again if it returns. Row-level security limits each row to its owner.
 
 The Weekly Picks page reads the existing `weekly_picks` table (written by the scheduler); the backend only reads it.
+
+## 18. Saved scenarios (migration 010)
+
+`010_scenarios.sql` (down file included) adds `scenarios`: a user's named stress tests with their shocks (`params`: `spot_pct`, `iv_shift`, `days_forward`) in JSONB, unique per user and name. Row-level security limits each row to its owner. Saving and deleting a scenario writes an `audit_events` row.

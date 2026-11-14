@@ -14,18 +14,22 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     alerts,
+    analytics,
     auth,
     dashboard,
     gate,
     greeks,
     logs,
     market,
+    options,
     picks,
     portfolio,
     regime,
+    scenarios,
     screener,
     settings,
     sizing,
+    strategy_matrix,
     symbols,
     trades,
     watchlists,
@@ -49,6 +53,10 @@ router.include_router(symbols.router, prefix="/symbols", tags=["symbols"])
 router.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
 router.include_router(picks.router, prefix="/picks", tags=["picks"])
 router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+router.include_router(scenarios.router, prefix="/scenarios", tags=["scenarios"])
+router.include_router(strategy_matrix.router, prefix="/strategy-matrix", tags=["strategy"])
+router.include_router(options.router, prefix="/options", tags=["options"])
+router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 
 
 @router.get("/health", tags=["health"])
