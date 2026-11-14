@@ -37,7 +37,7 @@ def test_sql_parses(sql_path: Path) -> None:
         assert sql.strip(), f"{sql_path.name} is empty"
         upper = sql.upper()
         assert (
-            ("CREATE" in upper) or ("INSERT" in upper) or ("DROP" in upper)
+            ("CREATE" in upper) or ("INSERT" in upper) or ("DROP" in upper) or ("ALTER" in upper)
         ), f"{sql_path.name} contains no DDL/DML"
     except Exception as exc:  # pragma: no cover - pglast raises on bad SQL
         pytest.fail(f"{sql_path.name} failed to parse: {exc}")

@@ -2,6 +2,8 @@
 
 **Visual representations of system architecture, data flow, and deployment topology**
 
+> **SCOPE NOTE (2026-11-14):** Personal use on free tiers. Mobile elements in these diagrams are **DEFERRED**. Instances, scaling and paid plans shown reflect the future paid vision.
+
 ---
 
 ## 1. High-Level System Architecture

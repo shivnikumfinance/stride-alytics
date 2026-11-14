@@ -2,6 +2,13 @@
 
 **GitHub Actions automated tasks and workflows**
 
+> **SCOPE NOTE (2026-11-14):** Personal use on free tiers. Practical adjustments to the examples below:
+> - **Cron is UTC.** `30 13 * * MON-FRI` is 9:30 ET only during daylight saving time (8:30 ET in winter). Scheduled runs can also start late.
+> - **Health check:** `*/30 * * * *` is roughly 1,440 minutes a month on a private repo, most of the 2,000-minute free budget. Run it every few hours, or use a free uptime monitor.
+> - **Keys:** scheduler scripts write through RLS, so they need the Supabase **service-role** key (as a GitHub secret), not the anon key.
+> - **Email:** `send_picks_email.py` and SendGrid are **DEFERRED**; use the Slack/Discord webhooks for notifications.
+> - **Data volume:** store only screened candidates and aggregates, and prune old rows, to stay under Supabase's ~500 MB.
+
 ---
 
 ## Overview

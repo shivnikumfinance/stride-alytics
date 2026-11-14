@@ -1,5 +1,7 @@
 # StrideAlytics — Application Requirements
 
+> **SCOPE (2026-11-14):** Personal use only. There is no PRO plan, billing, user or subscription management. Free tiers are the default; paid APIs or services may be added later. Mobile and push notifications are deferred until further confirmation.
+
 ## 1. Overview
 
 This document defines the application-level requirements for the StrideAlytics platform, including functional modules, data requirements, UI/UX expectations, non-functional constraints, and acceptance criteria.
@@ -12,7 +14,7 @@ This document defines the application-level requirements for the StrideAlytics p
 - **FR-110**: Support account-level settings, strategy defaults, and risk guardrail thresholds.
 - **FR-120**: Allow users to set and edit watchlists with symbol groups.
 - **FR-130**: Store and enforce per-user show/hide toggles for sectors, strategies, and dashboard widgets.
-- **FR-140**: Expose regime score calculation input parameters and allow admins to tune them.
+- **FR-140**: Expose regime score calculation input parameters and allow the user to tune them.
 
 ### 2.2 Watchlist and Data Sheets
 
@@ -33,7 +35,7 @@ This document defines the application-level requirements for the StrideAlytics p
 - **FR-400**: Display current regime score and mood in a dedicated dashboard panel.
 - **FR-410**: Provide a Heat Dashboard with regime state, momentum, and trend statistics.
 - **FR-420**: Visualize regime mode changes over time and key regime drivers.
-- **FR-430**: Alert users when regime score crosses Conservative/Balanced/Growth boundaries.
+- **FR-430**: Alert users when regime score crosses DEFENSIVE/NORMAL/GROWTH boundaries.
 
 ### 2.4.1 Regime Engine Inputs and Outputs
 
@@ -83,7 +85,7 @@ This document defines the application-level requirements for the StrideAlytics p
 ### 2.8 Alerts and Notifications
 
 - **FR-800**: Deliver real-time alerts for regime shifts, DNT activations, and exit recommendations.
-- **FR-810**: Support email and push notifications for critical risk events.
+- **FR-810**: Support Slack or Discord webhook notifications for critical risk events.
 - **FR-820**: Display in-app warnings for blocked trade attempts.
 - **FR-830**: Allow users to configure threshold-based notifications.
 
@@ -105,7 +107,7 @@ This document defines the application-level requirements for the StrideAlytics p
 - **FR-1040**: The sidebar navigation is organized into three groups:
   - **HOME**: A single "Home" link that returns to the 4-section dashboard.
   - **PRIMARY SECTIONS**: Direct links to the four dedicated section pages (Exit Alerts, Weekly Picks, Active Holdings, Strategy Matrix).
-  - **TOOLS & ANALYTICS**: A collapsible accordion section containing all other features (Watchlist, Option Chain, Active Trades, Position Sizing, Scenario Simulations, Heat Dashboard, Signal Log, Admin Panel).
+  - **TOOLS & ANALYTICS**: A collapsible accordion section containing all other features (Watchlist, Option Chain, Active Trades, Position Sizing, Scenario Simulations, Heat Dashboard, Signal Log, Settings).
 - **FR-1050**: The collapsible "Tools & Analytics" section defaults to collapsed state, keeping the sidebar focused on primary navigation.
 
 ## 2.10 Strategy Design Matrix
@@ -138,7 +140,7 @@ This document defines the application-level requirements for the StrideAlytics p
 ### 3.1 Core Data Models
 
 - **User Profiles**
-  - Profile settings, subscription status, RBAC role, watchlists, and preferences.
+  - Profile settings, watchlists, and preferences.
 - **Symbols and Market Data**
   - Underlying price, IV, delta, gamma, theta, vega, option chain values, and correlations.
 - **Regime Scores**
@@ -148,13 +150,13 @@ This document defines the application-level requirements for the StrideAlytics p
 - **Signal Logs**
   - Rule triggers, DNT state, and regime commentary.
 - **Audit Records**
-  - Admin changes, setting revisions, user role updates, and access logs.
+  - Setting revisions and access logs.
 
 ### 3.2 Data Integrity and Storage
 
 - Persist all active and closed trades with immutable history.
 - Require timestamps on every trade and log entry.
-- Maintain a complete audit trail for settings changes and admin operations.
+- Maintain a complete audit trail for settings changes.
 - Enforce referential integrity between trades, symbols, and user accounts.
 - Version regime score inputs and gate rules for reproducibility.
 
@@ -171,7 +173,7 @@ This document defines the application-level requirements for the StrideAlytics p
 
 - Actionable dashboards with minimal clutter.
 - Clear status indicators for trade readiness and blocked conditions.
-- Distinct color coding for Conservative, Balanced, and Growth modes.
+- Distinct color coding for DEFENSIVE, NORMAL, and GROWTH regime states.
 - High-contrast text and accessible charts.
 - Responsive layouts for mobile and desktop.
 
@@ -187,8 +189,8 @@ This document defines the application-level requirements for the StrideAlytics p
   - Active contract details, management actions, and exit recommendations.
 - **Settings Screen**
   - Strategy thresholds, watchlist config, and notification preferences.
-- **Admin Screen**
-  - User management, subscription oversight, logs, and operational health.
+- **System Status**
+  - Audit logs, scheduler status, free-tier usage, and operational health.
 
 ### 4.3 Usability Requirements
 
@@ -203,9 +205,9 @@ This document defines the application-level requirements for the StrideAlytics p
 ### 5.1 Security
 
 - Use HTTPS/TLS for all traffic.
-- Implement JWT authentication with role claims.
+- Implement JWT authentication.
 - Store refresh tokens and secrets securely.
-- Protect all admin APIs behind RBAC.
+- Protect all APIs with authentication.
 - Log failed login attempts and suspicious activity.
 
 ### 5.2 Performance
@@ -233,7 +235,6 @@ This document defines the application-level requirements for the StrideAlytics p
 - Users can view an audit log of all rule-based signal decisions.
 - Regime score updates are visible and explainable in the dashboard.
 - Active trade monitoring displays Greeks, P&L, and assignment risk.
-- Admin users can manage users, roles, and subscription statuses.
 - All closed trades are persisted with immutable timestamps and references.
 - Notifications are generated for critical risk events.
-- Free and PRO tiers are clearly separated in feature availability.
+- The system runs on free-tier services by default; any paid API or service is added deliberately and documented in the cost model.

@@ -2,6 +2,8 @@
 
 **Complete technology stack breakdown across all architecture layers**
 
+> **SCOPE NOTE (2026-11-14):** Personal use, free tiers by default. Mobile (React Native/Expo) libraries are **deferred**. Datadog, LogRocket and SendGrid/SMTP are **optional** and not needed now; prefer Sentry and UptimeRobot (free) and Slack/Discord webhooks.
+
 ---
 
 ## 1. Frontend (React + Vite + Tremor)

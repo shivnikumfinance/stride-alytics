@@ -27,7 +27,6 @@ from app.services.portfolio import (
     portfolio_trade_breakdown,
 )
 from app.services.screener import ScreenerFilters, run_screener
-from app.services.auth import plan_from_claims
 
 # ---------------------------------------------------------------------------
 # Greeks
@@ -246,20 +245,3 @@ class TestPortfolio:
             "pnl",
             "open",
         }
-
-
-# ---------------------------------------------------------------------------
-# Auth helpers
-# ---------------------------------------------------------------------------
-
-
-class TestAuthPlan:
-    def test_default_free(self):
-        assert plan_from_claims({}) == "free"
-
-    def test_pro_from_metadata(self):
-        assert plan_from_claims({"user_metadata": {"subscription_plan": "pro"}}) == "pro"
-
-    def test_lowercase_normalized(self):
-        assert plan_from_claims({"user_metadata": {"subscription_plan": "Pro"}}) == "pro"
-        assert plan_from_claims({"user_metadata": {"subscription_plan": "Free"}}) == "free"

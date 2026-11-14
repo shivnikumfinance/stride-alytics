@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Literal
+from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -27,7 +27,7 @@ def _supabase_env_present() -> bool:
     return bool(settings.SUPABASE_URL and settings.SUPABASE_ANON_KEY)
 
 
-def _dev_token(user_id: str, email: str, plan: Literal["free", "pro"] = "free") -> TokenResponse:
+def _dev_token(user_id: str, email: str) -> TokenResponse:
     """Return a deterministic dev token when Supabase isn't configured."""
     token = f"dev:{user_id}:{uuid.uuid4().hex[:8]}"
     log.warning("auth.dev_token_issued", user_id=user_id, email=email)
@@ -37,7 +37,6 @@ def _dev_token(user_id: str, email: str, plan: Literal["free", "pro"] = "free") 
         expires_in=3600,
         user_id=user_id,
         email=email,
-        subscription_plan=plan,
     )
 
 
@@ -70,9 +69,6 @@ def _build_token_response(supabase_data: dict[str, Any]) -> TokenResponse:
         expires_in=supabase_data.get("expires_in", 3600),
         user_id=supabase_data.get("user", {}).get("id", ""),
         email=supabase_data.get("user", {}).get("email", ""),
-        subscription_plan=(
-            supabase_data.get("user", {}).get("user_metadata", {}).get("subscription_plan", "free")
-        ),
     )
 
 
@@ -89,30 +85,12 @@ async def login(payload: LoginRequest) -> TokenResponse:
                 },
             )
             log.info("auth.login_success", email=payload.email)
-            # Look up subscription plan from the user record (best-effort).
-            user_id = supabase_data.get("user", {}).get("id", "")
-            subscription_plan: Literal["free", "pro"] = "free"
-            try:
-                user_record = await _supabase_auth_request(
-                    "user",
-                    {
-                        "apikey": settings.SUPABASE_ANON_KEY,
-                    },
-                )
-                raw_plan = user_record.get("user_metadata", {}).get("subscription_plan", "free")
-                if raw_plan == "pro":
-                    subscription_plan = "pro"
-            except Exception:
-                # If the user-record lookup fails we still return the token
-                # with the default free plan rather than failing the login.
-                pass
             return TokenResponse(
                 access_token=supabase_data.get("access_token", ""),
                 refresh_token=supabase_data.get("refresh_token"),
                 expires_in=supabase_data.get("expires_in", 3600),
-                user_id=user_id,
+                user_id=supabase_data.get("user", {}).get("id", ""),
                 email=supabase_data.get("user", {}).get("email", payload.email),
-                subscription_plan=subscription_plan,
             )
         except HTTPException:
             raise
@@ -140,7 +118,6 @@ async def signup(payload: SignupRequest) -> TokenResponse:
                     "password": payload.password,
                     "data": {
                         "full_name": payload.full_name or "",
-                        "subscription_plan": "free",
                     },
                 },
             )
@@ -196,7 +173,6 @@ async def me(current_user: CurrentUser = Depends(get_current_user)) -> dict[str,
         "data": {
             "user_id": current_user.user_id,
             "email": current_user.email,
-            "subscription_plan": current_user.plan,
             "issued_at": int(time.time()),
         },
     }

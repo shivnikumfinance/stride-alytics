@@ -4,15 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 
 from app.api.middleware.auth import CurrentUser, get_current_user
 from app.api.v1.schemas.screener import ScreenerQuery, ScreenerResponse
 from app.services.screener import ScreenerFilters, run_screener
-from app.utils.constants import (
-    FREE_TIER_SCREENER_LIMIT,
-    PRO_TIER_SCREENER_LIMIT,
-)
+from app.utils.constants import SCREENER_MAX_RESULTS
 from app.utils.logger import get_logger
 
 router = APIRouter()
@@ -26,20 +23,10 @@ async def run(
 ) -> ScreenerResponse:
     """Run the options screener with the supplied filters.
 
-    Free-tier users are capped at ``FREE_TIER_SCREENER_LIMIT`` results;
-    pro users at ``PRO_TIER_SCREENER_LIMIT``.
+    Results are capped at ``SCREENER_MAX_RESULTS``.
     """
-    max_limit = PRO_TIER_SCREENER_LIMIT if current_user.plan == "pro" else FREE_TIER_SCREENER_LIMIT
-    if payload.limit > max_limit:
-        if current_user.plan == "free":
-            raise HTTPException(
-                status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                detail=(
-                    f"Free tier limit is {FREE_TIER_SCREENER_LIMIT} results. "
-                    "Upgrade to Pro for unlimited screening."
-                ),
-            )
-        payload.limit = max_limit
+    if payload.limit > SCREENER_MAX_RESULTS:
+        payload.limit = SCREENER_MAX_RESULTS
 
     filters = ScreenerFilters(**payload.model_dump())
     result = run_screener(filters)
@@ -47,7 +34,6 @@ async def run(
     log.info(
         "screener.run",
         user_id=current_user.user_id,
-        plan=current_user.plan,
         symbol=payload.symbol,
         returned=result["count"],
     )
@@ -62,12 +48,10 @@ async def run(
 
 @router.get("/limits")
 async def limits(current_user: CurrentUser = Depends(get_current_user)) -> dict[str, Any]:
-    """Return the caller's current screener limits."""
-    max_limit = PRO_TIER_SCREENER_LIMIT if current_user.plan == "pro" else FREE_TIER_SCREENER_LIMIT
+    """Return the screener limits."""
     return {
         "success": True,
         "data": {
-            "plan": current_user.plan,
-            "max_results_per_call": max_limit,
+            "max_results_per_call": SCREENER_MAX_RESULTS,
         },
     }

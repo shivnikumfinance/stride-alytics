@@ -1,44 +1,28 @@
 # StrideAlytics — Business Rules
 
+> **SCOPE (2026-11-14):** Personal use only. There is a single user, with no PRO plan, billing or multi-role administration. Free tiers are the default; paid APIs or services may be added later.
+
 ## 1. Rule Framework
 
 StrideAlytics centers around executable business rules that enforce safe option-selling behavior, gate risk, and support decision transparency. Rules are grouped into:
 
-- Authorization and governance
+- Access and security
 - Strategy and trade decision rules
 - Market regime and risk gating
 - Portfolio allocation and position sizing
 - Exit and assignment rules
 - Audit, logging, and escalation
 
-## 2. Role-Based Authorization
+## 2. Access
 
-- **Admin**
-  - Full access to platform configuration, user management, billing, and logs.
-  - Required to use MFA and secure credentials.
-  - Must be assigned and approved before access.
-- **PRO User**
-  - Access to premium analytics, unlimited screener results, API access, and advanced alerts.
-  - Can manage personal portfolio settings and trade preferences.
-- **Standard User**
-  - Free-tier access with limited screener usage, portfolio tracking, and reports.
-  - Can upgrade to PRO through the billing flow.
-
-### 2.1 Access Enforcement
-
-- Use RBAC at both API and frontend layers.
-- Protect admin routes and settings UI with `admin` role validation.
-- Gate PRO features based on subscription status.
+- There is a single user, who has full access to every feature. There are no roles, tiers or feature gating by subscription.
 - Enforce JWT authentication and session expiration.
-- Apply database Row-Level Security (RLS) to separate user data.
+- Keep Row-Level Security (RLS) enabled on all tables, even with one user.
+- Use a strong password and MFA on the account.
 
-## 3. Admin Governance Rules
+## 3. Secrets
 
-- Admin accounts require strong passwords and MFA.
-- Conduct monthly admin access reviews.
-- Separate operational admin duties from financial/billing administration.
-- Restrict billing and pricing changes to a limited group of admins.
-- Document and timestamp all changes to subscription and pricing rules.
+- Service-role keys and API keys stay in environment variables or GitHub secrets, never in client code or the repo.
 
 ## 4. Core Decision Rules
 
@@ -71,17 +55,19 @@ StrideAlytics centers around executable business rules that enforce safe option-
 - **BR-016**: If DNT is active, the platform only permits review mode and closed/existing trade monitoring.
 - **BR-017**: Do not trade if spread > 10%.
 - **BR-018**: Do not trade if open interest < 500.
-- **BR-019**: Do not trade if market cap < $2B.
+- **BR-019**: Do not trade if market cap < $2B. This is the hard floor for all trades. The Conservative/Base layer is stricter and also requires market cap > $10B (§4.1), so a $2B–$10B name can only be a Growth-layer candidate.
 - **BR-020**: Do not trade if earnings event is within 14 days.
 - **BR-021**: Do not trade if a NewsFlag is present.
 
 ## 6. Market Regime Rules
 
-- **BR-020**: Market regime score is computed from multiple inputs, including volatility, trend, breadth, and macro sentiment.
-- **BR-021**: Regime score is categorized into Conservative, Balanced, or Growth modes.
-- **BR-022**: The platform displays the current regime mood and suggested layer exposure.
-- **BR-023**: A regime score below conservative thresholds locks the Growth layer and tightens sizing.
-- **BR-024**: A regime score above growth thresholds enables higher allocation and broader strategy choice.
+- **BR-100**: Market regime score (0–100) is computed from multiple inputs, including volatility (VIX), trend (SPY 50/200 MA), IV Rank, breadth, and macro sentiment.
+- **BR-101**: Regime score is categorized into DEFENSIVE (0–40), NORMAL (40–70), or GROWTH (70–100) states.
+- **BR-102**: The platform displays the current regime state and suggested layer exposure.
+- **BR-103**: A DEFENSIVE regime score locks the Growth layer and tightens sizing.
+- **BR-104**: A GROWTH regime score enables higher allocation and broader strategy choice.
+
+(The regime rules were previously numbered BR-020 to BR-024, which clashed with the DNT rules above.)
 
 ## 7. Allocation and Position Sizing Rules
 
@@ -154,7 +140,7 @@ StrideAlytics centers around executable business rules that enforce safe option-
 
 ## 10. Audit, Logging, and Change Control
 
-- **BR-060**: Log all admin actions, settings changes, role updates, and feature toggles.
+- **BR-060**: Log all settings changes and feature toggles.
 - **BR-061**: Log all trade decisions, including blocked signals and rule triggers.
 - **BR-062**: Record every active trade addition and exit action with timestamp, user, and rule context.
 - **BR-063**: Store a full immutable change log of regime score updates and gate rule modifications.
@@ -162,22 +148,16 @@ StrideAlytics centers around executable business rules that enforce safe option-
 
 ## 11. Operational Escalation Rules
 
-- **BR-070**: Notify admins if API latency exceeds 500ms for more than 5 minutes.
-- **BR-071**: Send product/ops alerts if usage reaches 90% of free-tier quotas for 3 consecutive days.
-- **BR-072**: If monthly cost passes 80% of projected revenue, trigger a formal cost review.
-- **BR-073**: If a security event is detected, lock admin sessions and initiate escalation immediately.
+- **BR-070**: Send a Slack or Discord alert if a scheduled pipeline run fails or data is stale.
+- **BR-071**: Send an alert if usage reaches 90% of a free-tier quota (database size, Actions minutes, data API calls).
+- **BR-073**: If a security event is detected, rotate keys and review access immediately.
 
-## 12. Admin Screen and Controls
+## 12. Settings Screen
 
-- Admin access requires the `admin` role and MFA.
-- Admin UI surfaces user management, subscriptions, audit logs, and scheduler status.
-- All admin operations must be auditable and reversible.
-- Admin screens provide warnings for high-risk configuration changes.
-- Billing and payment controls are strictly separated from product configuration controls.
+- The Settings screen surfaces strategy thresholds, watchlists, notification preferences, the audit log and scheduler status.
+- Settings changes are logged and show a warning for high-risk changes.
 
-## 13. Additional Compliance Notes
+## 13. Data Handling
 
-- Maintain a user-facing privacy policy and terms of service.
-- Require explicit consent for email communications and notification preferences.
 - Use standard encryption practices for all sensitive data at rest and in transit.
-- Implement retention policies for logs and audit data according to privacy and compliance goals.
+- Apply a retention policy to logs and old market data to stay within the free-tier database size.

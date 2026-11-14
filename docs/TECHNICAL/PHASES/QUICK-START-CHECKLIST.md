@@ -2,6 +2,8 @@
 
 **Step-by-step launch checklist organized by layer**
 
+> **SCOPE (2026-11-14):** Personal use only, free tiers by default. Skip mobile (deferred) and any PRO or billing items.
+
 ---
 
 ## Pre-Launch Checklist
@@ -28,13 +30,11 @@
 ### Accounts & Services
 
 ```
-☐ Supabase account (Pro plan trial)
-☐ Vercel account
-☐ Render account
+☐ Supabase account (free plan)
+☐ Vercel account (Hobby)
+☐ Render account (free)
 ☐ GitHub account (if not already)
-☐ Expo account (for mobile)
-☐ SendGrid account (for emails)
-☐ Slack workspace (for notifications)
+☐ Slack or Discord webhook (for notifications)
 ☐ Custom domain (optional)
 ☐ SSL certificate (auto from Vercel/Render)
 ```
@@ -48,7 +48,7 @@
 ```
 ☐ Create Supabase project
   ☐ Choose region: us-east-1 (AWS)
-  ☐ Choose plan: Pro (trial)
+  ☐ Choose plan: Free
   ☐ Confirm database URL
 ☐ Create .env file with Supabase credentials
   ☐ SUPABASE_URL
@@ -204,9 +204,8 @@
   ☐ Pagination: limit=50&offset=0 works
   ☐ Empty results handled gracefully
   ☐ Performance: <500ms response time
-☐ Add to free tier limits
-  ☐ Free users: 50 results/page max
-  ☐ PRO users: unlimited
+☐ Keep results bounded
+  ☐ 50 results/page max (pagination)
 ```
 
 ### Greeks Calculator

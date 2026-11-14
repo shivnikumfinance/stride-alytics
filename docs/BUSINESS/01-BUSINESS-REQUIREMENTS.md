@@ -1,5 +1,7 @@
 # StrideAlytics — Business Requirements
 
+> **SCOPE (2026-11-14):** Personal use only. There is no PRO plan, pricing, billing, multi-user or RIA support. Free tiers are the default, and paid APIs or services may be added later if needed. The **mobile** app is deferred until further confirmation.
+
 ## 1. Document Purpose
 
 This document translates the StrideAlytics Options Selling Platform (OSP) Build Guide into formal business requirements, product vision, user personas, platform phases, and high-level acceptance criteria. It is the authoritative reference for developers, product managers, and stakeholders building the web app, mobile app, backend API, and platform operations.
@@ -10,7 +12,7 @@ StrideAlytics is an analytics and decision-support tool. It does not constitute 
 
 ## 3. Product Vision
 
-StrideAlytics is a multi-platform options selling analytics platform for individual traders and small RIAs managing $50K–$150K+ in capital. It provides a systematic, rules-driven decision framework that replaces discretionary judgment with quantitative risk gates, regime-aware allocation, and automated trade scoring.
+StrideAlytics is an options selling analytics tool for personal use by an individual trader managing $50K–$150K+ in capital. It provides a systematic, rules-driven decision framework that replaces discretionary judgment with quantitative risk gates, regime-aware allocation, and automated trade scoring.
 
 The platform operationalizes the Adaptive Dual-Layer Engine — a Conservative/Base layer and a Growth layer — across all market regimes, enforcing hard capital gates that prevent emotional or impulsive trade decisions.
 
@@ -24,22 +26,16 @@ The user interface follows a **hub-and-spoke architecture**: the Home screen ser
 - Replace manual spreadsheet workflows with a scalable, API-driven web and mobile platform.
 - Target an annual return objective of 40–75% with controlled risk and regime-aware exposure.
 - Support complete audit trail: all trades, blocked signals, and settings changes are logged.
-- Achieve 100% free-tier deployability at MVP; designed to scale to paid tiers as AUM grows.
+- Run on free-tier services by default ($0 per month). Paid APIs or services may be added later, only when a free tier can't meet a real need.
 
 ## 5. Primary Users
 
 - **Individual Trader**
   - Self-directed options seller, $50K–$150K capital.
   - Key needs: regime dashboard, weekly picks, position sizing, exit alerts.
-- **Small RIA**
-  - Registered Investment Advisor managing client accounts.
-  - Key needs: multi-account view, audit trail, RBAC, compliance logs.
 - **Paper Trader**
-  - User learning the system before deploying real capital.
+  - The same user, learning the system before deploying real capital.
   - Key needs: full platform access, simulated P&L, explicitly no broker integration required.
-- **Admin**
-  - Platform operator/developer.
-  - Key needs: settings management, user administration, data pipeline monitoring.
 
 ## 6. Platform Phases
 
@@ -75,7 +71,6 @@ The user interface follows a **hub-and-spoke architecture**: the Home screen ser
 - Portfolio and trade tracking with P&L and exit alerts.
 - Regime scoring engine with manual override.
 - Weekly picks recommendations and EV ranking.
-- Admin dashboard with user, billing, and operational control.
 - Immutable signal and change logs for audit.
 - Position sizing calculator with configurable risk budgets.
 - Scenario simulation and stress-testing engine.
@@ -86,35 +81,20 @@ The user interface follows a **hub-and-spoke architecture**: the Home screen ser
 
 ## 8. Business Metrics
 
-- Daily active users (DAU)
-- Monthly active users (MAU)
-- Free-to-PRO conversion rate (target 5-10%)
-- Customer acquisition cost (CAC)
-- Monthly recurring revenue (MRR)
-- Churn rate and retention
-- Average revenue per user (ARPU)
-- System uptime and API latency
+- Free-tier usage against limits (database size, Actions minutes, data API calls)
+- Pipeline success rate and data freshness
+- Realized P&L against the rules-based picks (monthly EV calibration)
 
-## 9. Tiered Offering
+## 9. Offering
 
-### Free Tier
+A single free personal-use offering with all features available to the one user:
 
-- Basic screener access with results limits
-- Unlimited Greeks calculator
-- Basic portfolio tracking
+- Options screener with DNT gating
+- Greeks calculator
+- Portfolio and trade tracking
 - Market regime summary
-- Weekly picks and alerts
-- Web and mobile access
-
-### PRO Tier
-
-- Unlimited screener results
-- Advanced filters and saved templates
-- Portfolio analytics and historical reporting
-- API access and webhooks
-- Real-time alerts and push notifications
-- No ads and priority support
-- Pricing: $19/month
+- Weekly picks and alerts (delivered in-app and via Slack or Discord webhook)
+- Web access
 
 ## 10. User Experience Requirements
 
@@ -125,7 +105,6 @@ The user interface follows a **hub-and-spoke architecture**: the Home screen ser
 - No ambiguous states: every metric shows current value, limit, and status.
 - Consistent UI across web and mobile.
 - Fast and intuitive onboarding.
-- Transparent billing and subscription controls.
 - **Home screen displays exactly 4 core sections** — Exit Alerts & Recommendations, Top Weekly Picks, Active Holdings & Trade Alerts, and Strategy Design Matrix — arranged in a 2×2 grid below a row of three summary metric cards (Portfolio Value, Total P&L, Options Buying Power). Each core section card shows summary data with a "View Full Screen" link. All other features are accessed via a collapsible "Tools & Analytics" sidebar section.
 
 ## 11. Compliance and Security Requirements
@@ -134,8 +113,7 @@ The user interface follows a **hub-and-spoke architecture**: the Home screen ser
 - Row-Level Security (RLS) in database for user isolation.
 - Secure token storage in frontend and mobile.
 - HTTPS/TLS for all API communications.
-- Admin and settings access governed by RBAC.
-- Audit logging for admin actions, settings changes, and blocked trades.
+- Audit logging for settings changes and blocked trades.
 - Disclaimer display on first login and in settings.
 
 ## 12. Weekly and Monthly Workflows

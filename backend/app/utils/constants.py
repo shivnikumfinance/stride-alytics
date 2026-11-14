@@ -2,9 +2,7 @@
 
 # --- API ---
 API_V1_PREFIX: str = "/api/v1"
-FREE_TIER_SCREENER_LIMIT: int = 50
-PRO_TIER_SCREENER_LIMIT: int = 10_000
-FREE_TIER_REGIME_PER_DAY: int = 1
+SCREENER_MAX_RESULTS: int = 500  # matches ScreenerQuery.limit upper bound
 
 # --- Default Greeks inputs ---
 DEFAULT_RISK_FREE_RATE: float = 0.05

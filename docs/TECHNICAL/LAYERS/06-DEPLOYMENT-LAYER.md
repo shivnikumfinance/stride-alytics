@@ -2,6 +2,13 @@
 
 **Cloud infrastructure and hosting configuration**
 
+> **SCOPE NOTE (2026-11-14):** This describes an optional **paid** setup. Current scope is **personal use, free tiers by default** (no PRO plan), where these differ (verify against current vendor pricing):
+> - **Render free:** one instance, sleeps after ~15 min idle (30–60 s cold start), no autoscaling, no persistent disk. Use `plan: free`, not `standard`; drop `numInstances` and `disk`.
+> - **Supabase free:** ~500 MB database, projects pause after about a week of inactivity, no managed backups. Schedule your own `pg_dump`.
+> - **GitHub Actions:** 2,000 free minutes a month on private repos, unlimited on public. The "5,000 minutes" figure below is wrong.
+> - **Mobile (EAS) section:** **DEFERRED**.
+> - **Cost:** the default is $0; the ~$84/month table is an optional paid setup.
+
 ---
 
 ## Overview
@@ -374,7 +381,7 @@ sentry_sdk.init(
 | **Email** | SendGrid | $10 |
 | **Total** | | ~$84/month |
 
-*5,000 free minutes/month
+*2,000 free minutes/month on private repos (unlimited on public)
 
 ---
 

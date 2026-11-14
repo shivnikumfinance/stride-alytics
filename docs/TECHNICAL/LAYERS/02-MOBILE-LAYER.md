@@ -1,5 +1,7 @@
 # StrideAlytics — Mobile Layer
 
+> **DEFERRED (2026-11-14):** The mobile app is **out of scope** until further confirmation. This document is a future design reference only.
+
 **React Native + Expo mobile application architecture**
 
 ---

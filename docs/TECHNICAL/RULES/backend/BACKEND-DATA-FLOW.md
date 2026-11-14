@@ -48,7 +48,7 @@ endpoint itself.
 
 - All authenticated endpoints take `current_user: CurrentUser = Depends(get_current_user)`.
 - `CurrentUser` is defined in `app/api/middleware/auth.py`.
-- Plan limits (`FREE_TIER_*`, `PRO_TIER_*`) live in `app/utils/constants.py`.
+- There are no plan tiers. Limits (for example `SCREENER_MAX_RESULTS`) live in `app/utils/constants.py`.
 
 ## 4. Persistence
 
@@ -121,7 +121,6 @@ def get_user_response(user: User) -> dict:
         "id": user.id,
         "email": user.email,        # the user's own email only
         "full_name": user.full_name,
-        "subscription_plan": user.subscription_plan,
     }
 
 # âŒ BAD â€” leaks password_hash, refresh tokens, etc.

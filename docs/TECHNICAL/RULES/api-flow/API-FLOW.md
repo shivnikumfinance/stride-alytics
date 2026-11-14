@@ -219,8 +219,7 @@ Response (`200`):
     "token_type": "bearer",
     "expires_in": 3600,
     "user_id": "uuid",
-    "email": "user@example.com",
-    "subscription_plan": "free"
+    "email": "user@example.com"
   }
 }
 ```

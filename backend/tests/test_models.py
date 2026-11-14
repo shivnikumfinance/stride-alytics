@@ -125,7 +125,6 @@ async def test_user_insert_and_roundtrip(async_session: AsyncSession) -> None:
         email="alice@example.com",
         full_name="Alice",
         avatar_url="https://example.com/avatar.png",
-        subscription_plan="pro",
     )
     async_session.add(user)
     await async_session.commit()
@@ -135,7 +134,6 @@ async def test_user_insert_and_roundtrip(async_session: AsyncSession) -> None:
     assert loaded.email == "alice@example.com"
     assert loaded.full_name == "Alice"
     assert loaded.avatar_url == "https://example.com/avatar.png"
-    assert loaded.subscription_plan == "pro"
     assert loaded.id == user_id
 
 

@@ -1,6 +1,5 @@
 /** Shared enums + cross‑cutting API envelope. */
 
-export type SubscriptionPlan = "free" | "pro";
 export type OptionType = "call" | "put";
 export type TradeType = "call" | "put" | "stock";
 export type Direction = "long" | "short";

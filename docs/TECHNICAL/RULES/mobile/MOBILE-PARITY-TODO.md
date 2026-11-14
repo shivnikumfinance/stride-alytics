@@ -1,5 +1,7 @@
 # Mobile Layer — Parity TODO
 
+> **DEFERRED (2026-11-14):** The mobile app is **out of scope** until further confirmation. Do not work through this TODO yet.
+
 > **Scope:** `mobile/**` (React Native + Expo + NativeWind).
 > **Authoritative source (today):** [../README.md](../README.md) (mobile has no dedicated rule folder yet).
 > **Sibling (most rules apply):** [../frontend/](../frontend/) (React + Vite rules translate 1:1 — both are TS + axios + Zustand).

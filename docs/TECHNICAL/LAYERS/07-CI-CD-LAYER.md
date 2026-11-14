@@ -2,6 +2,8 @@
 
 **Continuous Integration and Continuous Deployment pipeline**
 
+> **SCOPE NOTE (2026-11-14):** Personal use on free tiers. Mobile build/EAS workflows are **DEFERRED**. Keep Actions minutes low: a private repo gets 2,000 free minutes a month (public repos are unlimited), so cache dependencies and skip unchanged modules.
+
 ---
 
 ## Overview

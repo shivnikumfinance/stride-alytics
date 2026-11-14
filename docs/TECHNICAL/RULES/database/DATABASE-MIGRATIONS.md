@@ -29,11 +29,11 @@ must be acknowledged in the migration header.
 ## 3. Header comment (required)
 
 ```sql
--- 007_add_user_subscription_tier.sql
--- Adds public.users.subscription_plan (default 'free').
--- Backfill: existing rows default to 'free'.
--- Down: 007_add_user_subscription_tier_down.sql
--- Risk:  none — additive, nullable column with default.
+-- 007_add_user_nickname.sql
+-- Adds public.users.nickname (nullable).
+-- Backfill: existing rows stay NULL.
+-- Down: 007_add_user_nickname_down.sql
+-- Risk:  none — additive, nullable column.
 ```
 
 ## 4. Idempotency

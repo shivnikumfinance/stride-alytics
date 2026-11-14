@@ -23,14 +23,12 @@ function persist(token: TokenResponse): User {
   return {
     id: token.user_id,
     email: token.email ?? "",
-    subscription_plan: token.subscription_plan,
   };
 }
 
 export const adminUser: User = {
   id: "00000000-0000-0000-0000-000000000000",
   email: "admin@stridealytics.com",
-  subscription_plan: "pro",
 };
 
 export const useAuthStore = create<AuthStoreState>((set) => ({

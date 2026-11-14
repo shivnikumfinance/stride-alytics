@@ -1,12 +1,9 @@
 /** Mirrors `backend/app/api/v1/schemas/auth.py`. */
 
-import type { SubscriptionPlan } from "./common";
-
 export interface User {
   id: string;
   email: string;
   full_name?: string;
-  subscription_plan: SubscriptionPlan;
 }
 
 export interface AuthState {
@@ -33,5 +30,4 @@ export interface TokenResponse {
   expires_in: number;
   user_id: string;
   email?: string;
-  subscription_plan: SubscriptionPlan;
 }

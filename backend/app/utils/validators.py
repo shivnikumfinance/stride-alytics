@@ -7,7 +7,6 @@ from typing import Literal
 OptionType = Literal["call", "put"]
 TradeType = Literal["call", "put", "stock"]
 Direction = Literal["long", "short"]
-SubscriptionPlan = Literal["free", "pro"]
 
 
 def is_positive(value: float) -> bool:

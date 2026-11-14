@@ -70,7 +70,6 @@ def test_screener_limits(client: TestClient, dev_headers) -> None:
     r = client.get("/api/v1/screener/limits", headers=dev_headers)
     assert r.status_code == 200
     body = r.json()
-    assert body["data"]["plan"] in ("free", "pro")
     assert body["data"]["max_results_per_call"] >= 1
 
 
@@ -93,8 +92,8 @@ def test_screener_run(client: TestClient, dev_headers) -> None:
     assert body["count"] <= 5
 
 
-def test_screener_free_tier_402(client: TestClient, dev_headers) -> None:
-    """A free user requesting >50 results should be rejected."""
+def test_screener_large_limit_allowed(client: TestClient, dev_headers) -> None:
+    """There are no plan tiers, so a limit above 50 is accepted."""
     r = client.post(
         "/api/v1/screener/run",
         headers=dev_headers,
@@ -107,8 +106,7 @@ def test_screener_free_tier_402(client: TestClient, dev_headers) -> None:
             "limit": 100,
         },
     )
-    assert r.status_code == 402
-    assert "Free tier" in r.json()["error"]["message"]
+    assert r.status_code == 200, r.text
 
 
 def test_regime_detect(client: TestClient, dev_headers) -> None:
@@ -124,7 +122,7 @@ def test_auth_me(client: TestClient, dev_headers) -> None:
     assert r.status_code == 200
     body = r.json()
     assert body["data"]["user_id"] == "test-user"
-    assert body["data"]["subscription_plan"] == "free"
+    assert "subscription_plan" not in body["data"]
 
 
 def test_portfolio_create_and_summary(client: TestClient, dev_headers) -> None:

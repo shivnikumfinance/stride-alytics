@@ -136,9 +136,8 @@ psql "$DATABASE_URL" -f database/seeds/dev_users.sql
 ```
 
 This creates:
-- `dev@stridealytics.com` (Pro user) / password: set via Supabase dashboard
-- `test@stridealytics.com` (Free user)
-
+- `dev@stridealytics.com` (dev user) / password: set via Supabase dashboard
+- `test@stridealytics.com` (test user)
 To set passwords, go to **Authentication → Users** in the Supabase dashboard and create users manually with these emails.
 
 ---
@@ -158,7 +157,7 @@ SUPABASE_ACCESS_TOKEN          # Supabase → Account → Access Tokens → Gene
 SUPABASE_PROJECT_REF_STAGING   # Project reference ID
 SUPABASE_PROJECT_REF_PROD      # Production project reference ID
 SLACK_WEBHOOK                  # For failure alerts (optional)
-SENDGRID_API_KEY               # For weekly picks email (optional)
+SENDGRID_API_KEY               # Only if you add email later (optional; Slack/Discord is the default)
 ```
 
 For Vercel deploy:

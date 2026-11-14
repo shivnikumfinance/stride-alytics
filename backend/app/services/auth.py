@@ -8,7 +8,7 @@ a Supabase JWT verifier. The actual Supabase REST call lives in
 from __future__ import annotations
 
 import os
-from typing import Any, Literal
+from typing import Any
 
 from jose import JWTError, jwt
 
@@ -36,10 +36,3 @@ def verify_supabase_jwt(token: str) -> dict[str, Any]:
     if "sub" not in claims:
         raise JWTError("missing 'sub' claim in JWT")
     return claims
-
-
-def plan_from_claims(claims: dict[str, Any]) -> Literal["free", "pro"]:
-    """Map a Supabase user_metadata blob to a subscription plan."""
-    meta = claims.get("user_metadata") or {}
-    plan = (meta.get("subscription_plan") or "free").lower()
-    return "pro" if plan == "pro" else "free"

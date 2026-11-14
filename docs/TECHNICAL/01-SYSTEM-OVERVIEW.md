@@ -1,5 +1,7 @@
 # StrideAlytics — System Overview
 
+> **SCOPE NOTE (2026-11-14):** Current scope is **personal use only on free tiers**. The **Mobile Application (§2.2)** and push notifications are **DEFERRED**. Paid services (Redis, Datadog, SendGrid, staging environments) are not required.
+
 **Comprehensive description of the multi-platform analytics system architecture**
 
 ---

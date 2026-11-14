@@ -2,6 +2,8 @@
 
 **4-week phased rollout plan with dependencies and success criteria**
 
+> **SCOPE (2026-11-14):** Personal use only, free tiers by default. Skip mobile (deferred) and any PRO or billing tasks.
+
 ---
 
 ## Overview
@@ -43,7 +45,7 @@ Set up database schema, authentication system, and API foundation.
 
 ```
 Task: Create Supabase project and initialize schema
-├─ Create Supabase project (Pro plan trial)
+├─ Create Supabase project (free plan)
 ├─ Run migration: 001_initial_schema.sql
 │  ├─ users table
 │  ├─ portfolios table
@@ -498,7 +500,7 @@ Success Criteria:
 ```
 Task: Go live
 ├─ Final security audit
-├─ Set up monitoring (Datadog/Sentry)
+├─ Set up monitoring (Sentry free tier / UptimeRobot)
 ├─ Configure production environment variables
 ├─ Scale backend for production
 │  ├─ Render: 2+ instances

@@ -1,77 +1,39 @@
-# StrideAlytics — Financial Model
+# StrideAlytics — Cost Model
 
-## 1. Revenue Model
+> **SCOPE (2026-11-14):** Personal use only. There is no revenue and no PRO or subscription tier. The default monthly spend is **$0** on free tiers. A paid API or service (for example a market-data feed) may be added later if needed; record it in the table below when it is. Free-tier limits change, so verify them against each vendor's pricing page.
 
-### Pricing Tiers
+## 1. Services and Free-Tier Limits
 
-- **Free Tier**
-  - Access to basic screener
-  - Unlimited Greeks calculator
-  - Limited portfolio tracking
-  - Market regime summary
-  - Weekly email insights
-- **PRO Tier**
-  - $19/month
-  - Unlimited screener results
-  - Advanced filters and saved templates
-  - Portfolio analytics and historical reporting
-  - API access and webhooks
-  - Real-time notifications and premium support
+| Service | Use | Free-tier limit to respect |
+|---------|-----|----------------------------|
+| Supabase | Postgres and auth | ~500 MB database. Projects pause after about a week of inactivity. No managed backups. |
+| Render | Backend API (FastAPI) | One instance, sleeps after ~15 min idle (30–60 s cold start), no autoscaling, no persistent disk. |
+| Vercel (Hobby) | Frontend hosting | Non-commercial use, bandwidth cap. Fine for one user. |
+| Streamlit Community Cloud | `alpha/` dashboard | Free for public repos, resource-limited. |
+| GitHub Actions | Scheduler and CI | 2,000 minutes a month on private repos, unlimited on public repos. |
+| Market data APIs | yfinance, Polygon, FMP | Rate-limited. Batch daily; yfinance is unofficial and can break without notice. |
+| Notifications | Slack or Discord webhook | Free. |
 
-### Revenue Targets
+Current total: **$0 per month.**
 
-- Early target: 150 PRO users → $2,850/mo
-- Growth target: 500 PRO users → $9,500/mo
-- Long-term target: 2,000 PRO users → $38,000/mo
+**Optional paid additions (none today):** record any paid API or service here, with its monthly cost and the free-tier limit that made it necessary.
 
-## 2. Cost Assumptions
+| Service | Reason | Monthly cost |
+|---------|--------|--------------|
+| (none) | | |
 
-| Service | Free Tier Limits | Estimated Monthly Cost |
-|---------|------------------|------------------------|
-| Vercel | 100 GB bandwidth | $0-5 |
-| Render | 750 compute hours | $10 |
-| Supabase | 1 GB storage, 500K rows | $0 |
-| GitHub Actions | 2,000 minutes | $0 |
-| SendGrid | 100 emails/day | $0 |
-| Monitoring | Free tier tools | $0-10 |
-| Total | | ~$10-25 |
+## 2. Budget Rules
 
-## 3. Break-even Analysis
+- Prefer free tiers. When a free limit is reached, first reduce usage: store less data, cache results, run fewer scheduled jobs.
+- Add a paid API or service only when a free tier can't meet a real need (for example data quality or rate limits), and record it in the table above.
+- Store only screened candidates and daily aggregates, not full option chains, and prune old rows on a schedule.
+- Keep scheduled workflows within the Actions minute budget (see §3).
+- Take your own database backup on a schedule (`pg_dump` in a GitHub Actions workflow), because free Supabase has no managed backups.
 
-- Break-even threshold: ~150 PRO users at $19/month.
-- Net revenue after cost: $2,850 - $25 = $2,825.
-- Key levers:
-  - Improve conversion rate from free to PRO.
-  - Increase ARPU via add-on products and API usage.
-  - Control infrastructure cost growth through caching and tiered services.
+## 3. Usage Tracking
 
-## 4. Upgrade Economics
+Check these monthly, or from a small scheduled script:
 
-### Upgrade Triggers
-
-- If frontend traffic exceeds 100 GB/month, upgrade Vercel plan.
-- If API requests exceed 400/min or 750 compute hours/month, upgrade Render.
-- If database size exceeds 1 GB or query volume grows, upgrade Supabase.
-- If usage reaches 80% of free-tier limits for two consecutive weeks, evaluate upgrades.
-
-### ROI Rules
-
-- Only upgrade when incremental revenue exceeds incremental cost.
-- Prioritize feature monetization before scaling expensive infrastructure.
-- Maintain a buffer of 1.5x monthly revenue over projected monthly spend.
-
-## 5. Financial KPIs
-
-- **Free-to-PRO conversion rate**: 5-10%
-- **LTV:CAC ratio**: target ≥ 3:1
-- **Gross margin**: target ≥ 80%
-- **CAC payback period**: < 6 months
-- **Churn rate**: target < 5% monthly
-
-## 6. Financial Controls
-
-- Track revenue daily with a dashboard.
-- Measure active usage and feature engagement per cohort.
-- Reconcile billing and subscription data weekly.
-- Conduct monthly cost reviews tied to growth metrics.
-- Freeze new spending if revenue growth slows below 10% month over month.
+- Supabase database size (stay under ~400 MB).
+- GitHub Actions minutes used (stay under ~1,500 on a private repo).
+- Data API call counts against each provider's rate limit.

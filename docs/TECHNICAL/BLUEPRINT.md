@@ -2,6 +2,8 @@
 
 **Complete technical specification, architecture diagrams, and 4-week launch plan**
 
+> **SCOPE (2026-11-14):** Personal use only. There is no PRO plan or billing. Free tiers are the default; paid APIs or services may be added later. The **mobile app** is deferred. Where this blueprint mentions mobile, SendGrid or public users, skip it.
+
 ---
 
 ## Executive Summary
@@ -24,32 +26,19 @@ StrideAlytics is a **free-tier options trading analytics platform** with multi-p
 - Portfolio managers
 - Trading educators
 
-### Business Model — Free Tier with Paid Upgrades
+### Usage Model — Personal, Free Tier
 
 ```
 ┌─────────────────────────────────────────────────┐
-│ FREE TIER (All users start here)                │
+│ PERSONAL USE (single user, all features)        │
 ├─────────────────────────────────────────────────┤
-│ • Screener (50 results/day)                     │
-│ • Greeks calculator (unlimited)                 │
-│ • Market regime (1 update/day)                  │
-│ • Basic portfolio tracking                      │
-│ • Mobile app (iOS/Android)                      │
-│ • Web access (no login required)                │
+│ • Screener, scoring and DNT gates               │
+│ • Greeks calculator                             │
+│ • Market regime (daily update)                  │
+│ • Portfolio and trade tracking                  │
+│ • Weekly picks, alerts via Slack/Discord        │
+│ • Web access (authenticated)                    │
 │ Cost: $0/month                                  │
-└─────────────────────────────────────────────────┘
-                        ↓
-┌─────────────────────────────────────────────────┐
-│ PRO TIER (Upgrade triggers at 100 results/day)  │
-├─────────────────────────────────────────────────┤
-│ • Unlimited screener results                    │
-│ • Real-time Greeks updates                      │
-│ • Regime updates (hourly)                       │
-│ • Advanced portfolio analytics                  │
-│ • Trade PnL tracking                            │
-│ • API access for bots                           │
-│ • No ads                                        │
-│ Cost: $19/month                                 │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -57,14 +46,12 @@ StrideAlytics is a **free-tier options trading analytics platform** with multi-p
 
 | Service | Free Tier | Cost/Month |
 |---------|-----------|-----------|
-| Vercel (Frontend CDN) | 100 GB bandwidth | ~$0-5 |
-| Render (Backend) | 750 compute hours | ~$10 |
-| Supabase (Database) | 1 GB storage, 500K rows | ~$0 |
-| GitHub Actions | 2,000 minutes | ~$0 |
-| SendGrid (Email) | 100/day | ~$0 |
-| **Total** | | ~**$10/month** |
-
-**Revenue Goal:** $3,000/month (158 PRO users @ $19)
+| Vercel Hobby (Frontend) | Non-commercial, bandwidth cap | $0 |
+| Render free (Backend) | One instance, sleeps when idle | $0 |
+| Supabase free (Database) | ~500 MB, pauses after inactivity | $0 |
+| GitHub Actions | 2,000 min (private), unlimited (public) | $0 |
+| Slack/Discord webhook | Free | $0 |
+| **Total** | | **$0/month** |
 
 ---
 
@@ -864,11 +851,8 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     avatar_url TEXT,
-    subscription_plan TEXT DEFAULT 'free',  -- 'free', 'pro'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    CONSTRAINT subscription_plan_check 
-        CHECK (subscription_plan IN ('free', 'pro'))
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 ```
 
@@ -1267,7 +1251,6 @@ export interface User {
   id: string
   email: string
   full_name?: string
-  subscription_plan: 'free' | 'pro'
 }
 
 // Portfolio
@@ -1331,7 +1314,6 @@ export const userSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   full_name: z.string().optional(),
-  subscription_plan: z.enum(['free', 'pro']),
 })
 
 export const greeksRequestSchema = z.object({
@@ -1355,14 +1337,14 @@ export const portfolioSchema = z.object({
 
 ### Free-Tier Limits Table
 
-| Service | Free Tier | Monthly Cost | Upgrade Trigger |
-|---------|-----------|--------------|-----------------|
-| **Vercel** | 100 GB bandwidth | $0-5 | >500 GB/month |
-| **Render** | 750 compute hours | ~$10 | >400 req/min |
-| **Supabase** | 500K rows, 1 GB | $0 | >1 GB or high RPS |
-| **GitHub Actions** | 2,000 minutes | $0 | >40 hrs workflows/month |
-| **SendGrid** | 100 emails/day | $0 | >100/day |
-| **Total** | | **~$10** | |
+| Service | Free Tier | Monthly Cost | If limit is near |
+|---------|-----------|--------------|------------------|
+| **Vercel** | Hobby, bandwidth cap | $0 | Reduce bundle size |
+| **Render** | One instance, sleeps when idle | $0 | Cache and precompute |
+| **Supabase** | ~500 MB database | $0 | Prune old rows |
+| **GitHub Actions** | 2,000 min (private), unlimited (public) | $0 | Run jobs less often |
+| **Slack/Discord** | Webhook | $0 | n/a |
+| **Total** | | **$0** | |
 
 ### Environment Variables
 
@@ -1377,7 +1359,6 @@ SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_KEY=xxx
 SUPABASE_JWT_SECRET=xxx
 DATABASE_URL=postgresql://xxx
-SENDGRID_API_KEY=xxx
 SLACK_WEBHOOK=https://hooks.slack.com/xxx
 ENVIRONMENT=production
 

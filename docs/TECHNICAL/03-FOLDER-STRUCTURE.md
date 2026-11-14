@@ -2,6 +2,8 @@
 
 **Comprehensive monorepo directory tree with all files, folders, and descriptions**
 
+> **SCOPE NOTE (2026-11-14):** Personal use on free tiers. The `mobile/` folder exists but is **DEFERRED**; don't build on it. `alpha/` (pipeline + Streamlit) is the active module.
+
 ---
 
 ## Overview

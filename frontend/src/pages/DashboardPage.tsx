@@ -10,13 +10,9 @@ export function DashboardPage() {
       <PageHeader title="Dashboard" subtitle="Market snapshot and quick access to all tools." />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card title="Account" subtitle="Current plan & limits">
+        <Card title="Account" subtitle="Limits">
           {limits.data?.data ? (
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Plan</span>
-                <Badge tone="indigo" className="capitalize">{limits.data.data.plan}</Badge>
-              </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Max screener results</span>
                 <span className="font-medium">{limits.data.data.max_results_per_call.toLocaleString()}</span>

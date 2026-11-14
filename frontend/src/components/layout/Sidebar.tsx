@@ -111,9 +111,6 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           {user && (
             <div className="px-2 py-1.5 mb-1.5">
               <p className="text-sm font-medium text-slate-900 truncate">{user.email || user.id}</p>
-              <span className="inline-block mt-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                {user.subscription_plan?.toUpperCase() || "FREE"} Plan
-              </span>
             </div>
           )}
           <Button

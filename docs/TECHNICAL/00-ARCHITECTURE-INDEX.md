@@ -2,6 +2,8 @@
 
 **Navigation Hub for Complete System Architecture**
 
+> **SCOPE NOTE (2026-11-14):** Current scope is **personal use only on free tiers**. The **mobile app** and **PRO/billing** are **DEFERRED**. Documents marked DEFERRED are future reference only. See [docs/README.md](../README.md).
+
 ---
 
 ## 📋 Quick Links

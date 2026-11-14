@@ -25,4 +25,3 @@ class TokenResponse(BaseModel):
     expires_in: int = 3600
     user_id: str
     email: EmailStr | None = None
-    subscription_plan: Literal["free", "pro"] = "free"

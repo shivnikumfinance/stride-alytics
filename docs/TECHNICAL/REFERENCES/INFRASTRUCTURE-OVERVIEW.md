@@ -1,5 +1,7 @@
 # StrideAlytics — Infrastructure Overview
 
+> **SCOPE NOTE (2026-11-14):** This document describes a **paid, production-scale** setup (Render Standard x2, Supabase Pro, Vercel Pro, Datadog, ~$84/month), plus mobile builds. Current scope is **personal use, free tiers by default**, with no PRO plan. Treat these paid plans, costs and SLAs as an optional future setup, and the mobile sections as **deferred**. Free tiers sleep or pause when idle and have no managed backups.
+
 **Deployment targets, services, and connectivity information**
 
 ---
@@ -63,7 +65,7 @@ Version Strategy:   Semantic versioning
 ```
 Platform:           GitHub Actions
 Workflows:          Scheduled + Event-triggered
-Minutes/month:      5,000 free tier
+Minutes/month:      2,000 free (private repos); unlimited (public repos)
 Storage:            500 MB artifacts
 Runners:            Ubuntu latest
 ```

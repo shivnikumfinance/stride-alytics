@@ -7,7 +7,6 @@ from app.utils.validators import (
     OptionType,
     TradeType,
     Direction,
-    SubscriptionPlan,
 )
 
 __all__ = [
@@ -18,5 +17,4 @@ __all__ = [
     "OptionType",
     "TradeType",
     "Direction",
-    "SubscriptionPlan",
 ]
