@@ -15,7 +15,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.middleware.auth import CurrentUser, get_current_user
-from app.api.v1.schemas.auth import LoginRequest, SignupRequest, TokenResponse
+from app.api.v1.schemas.auth import LoginRequest, RefreshRequest, SignupRequest, TokenResponse
 from app.config import settings
 from app.services.auth import dev_auth_enabled
 from app.utils.logger import get_logger
@@ -148,14 +148,14 @@ async def signup(payload: SignupRequest) -> TokenResponse:
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(refresh_token: str) -> TokenResponse:
-    """Exchange a Supabase refresh_token for a new access_token."""
+async def refresh_token(body: RefreshRequest) -> TokenResponse:
+    """Exchange a Supabase refresh_token (sent in the body, never in the URL) for a new access_token."""
     if _supabase_env_present():
         try:
             supabase_data = await _supabase_auth_request(
                 "token?grant_type=refresh_token",
                 {
-                    "refresh_token": refresh_token,
+                    "refresh_token": body.refresh_token,
                 },
             )
             log.info("auth.refresh_success")

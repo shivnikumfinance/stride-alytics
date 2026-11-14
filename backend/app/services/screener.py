@@ -84,7 +84,47 @@ def _chain_row_greeks(
     return {"delta": g.delta, "gamma": g.gamma, "theta": g.theta, "vega": g.vega}
 
 
-def _load_chain_from_yfinance(symbol: str, spot: float) -> list[dict[str, Any]] | None:
+def _num(value: Any, default: float = 0.0) -> float:
+    """A finite float, or ``default`` for None / NaN / inf / non-numbers.
+
+    yfinance returns NaN for missing quote fields (volume and open interest are often NaN after
+    hours). ``int(nan)`` raises, and a NaN in a response is not valid JSON.
+    """
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return number if math.isfinite(number) else default
+
+
+MAX_EXPIRIES = 8  # network calls per symbol: one per expiry
+DEFAULT_CHAIN_DAYS = 90
+
+
+def select_expirations(
+    expirations: list[str], today: date, max_dte: int, limit: int = MAX_EXPIRIES
+) -> list[str]:
+    """Up to ``limit`` expirations from today to ``max_dte`` days out, spread across the window.
+
+    Taking only the nearest few is not enough: a heavily traded name lists Monday/Wednesday/Friday
+    weeklies, so its nearest eight can all fall within five weeks and never reach the monthlies.
+    When there are more than ``limit`` in the window, they are picked evenly, always keeping the
+    nearest and the furthest. If none fall inside the window, the nearest three are used so the
+    chain is never empty.
+    """
+    dated = sorted((date.fromisoformat(e), e) for e in expirations)
+    inside = [e for d, e in dated if 0 <= (d - today).days <= max_dte]
+    if not inside:
+        return [e for d, e in dated if d >= today][:3]
+    if len(inside) <= limit:
+        return inside
+    last = len(inside) - 1
+    return [inside[round(i * last / (limit - 1))] for i in range(limit)]
+
+
+def _load_chain_from_yfinance(
+    symbol: str, spot: float, max_dte: int = DEFAULT_CHAIN_DAYS
+) -> list[dict[str, Any]] | None:
     """Fetch the option chain from yfinance.
 
     Returns ``None`` if nothing usable could be fetched (callers decide
@@ -103,18 +143,19 @@ def _load_chain_from_yfinance(symbol: str, spot: float) -> list[dict[str, Any]] 
             return None
 
         today = date.today()
-        # Limit to the next 3 expiration cycles for performance
-        for expiry_str in expirations[:3]:
+        for expiry_str in select_expirations(list(expirations), today, max_dte):
             try:
                 opt_chain = ticker.option_chain(expiry_str)
                 dte = (date.fromisoformat(expiry_str) - today).days
 
                 for opt_type, chain_data in [("call", opt_chain.calls), ("put", opt_chain.puts)]:
                     for _, row in chain_data.iterrows():
-                        iv = float(row.get("impliedVolatility", 0.3))
-                        if math.isnan(iv) or iv <= 0:
-                            iv = 0.3
-                        strike = float(row.get("strike", 0))
+                        strike = _num(row.get("strike"))
+                        iv = _num(row.get("impliedVolatility"))
+                        if strike <= 0 or iv <= 0:
+                            # No usable implied volatility (common after hours): skip the
+                            # contract rather than invent one, so Greeks are never fabricated.
+                            continue
                         greeks = _chain_row_greeks(spot, strike, dte, iv, opt_type)
                         options.append(
                             {
@@ -122,13 +163,13 @@ def _load_chain_from_yfinance(symbol: str, spot: float) -> list[dict[str, Any]] 
                                 "strike": strike,
                                 "expiry": expiry_str,
                                 "option_type": opt_type,
-                                "bid": float(row.get("bid", 0) or 0),
-                                "ask": float(row.get("ask", 0) or 0),
-                                "last_price": float(row.get("lastPrice", 0) or 0),
+                                "bid": _num(row.get("bid")),
+                                "ask": _num(row.get("ask")),
+                                "last_price": _num(row.get("lastPrice")),
                                 "implied_vol": round(iv, 4),
                                 **greeks,
-                                "open_interest": int(row.get("openInterest", 0) or 0),
-                                "volume": int(row.get("volume", 0) or 0),
+                                "open_interest": int(_num(row.get("openInterest"))),
+                                "volume": int(_num(row.get("volume"))),
                             }
                         )
             except Exception as exc:
@@ -266,7 +307,9 @@ def _get_spot(symbol: str) -> tuple[float, bool]:
     return _get_fallback_spot(symbol), False
 
 
-def _load_chain(symbol: str, spot: float) -> tuple[list[dict[str, Any]], bool]:
+def _load_chain(
+    symbol: str, spot: float, max_dte: int = DEFAULT_CHAIN_DAYS
+) -> tuple[list[dict[str, Any]], bool]:
     """Return ``(chain, is_live)``; falls back to a synthetic chain."""
     symbol = normalize_symbol(symbol)
     chain = _load_chain_from_yfinance(symbol, spot)
@@ -301,7 +344,7 @@ def run_screener(filters: ScreenerFilters) -> dict[str, Any]:
     """
     symbol = normalize_symbol(filters.symbol)
     spot, spot_live = _get_spot(symbol)
-    chain, chain_live = _load_chain(symbol, spot)
+    chain, chain_live = _load_chain(symbol, spot, max(filters.expiry_days_max, 1))
     source = "live" if (spot_live and chain_live) else "synthetic"
 
     today = date.today()

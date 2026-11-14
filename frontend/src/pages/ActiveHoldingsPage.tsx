@@ -37,12 +37,14 @@ export function ActiveHoldingsPage() {
         </p>
       )}
 
+      {q.data && (
+        <p className="text-sm text-gray-600">
+          {rows.length} open · total P&L {fmtUsd(totalPnl)}
+          {priced.length < rows.length ? " (some positions could not be priced)" : ""}
+        </p>
+      )}
+
       <Card
-        subtitle={
-          q.data
-            ? `${rows.length} open · total P&L ${fmtUsd(totalPnl)}${priced.length < rows.length ? " (some positions could not be priced)" : ""}`
-            : undefined
-        }
         bodyClassName="p-0"
       >
         <Table<PositionAlert>

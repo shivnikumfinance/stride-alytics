@@ -277,3 +277,33 @@ def test_trades_get_unique_ids_and_close_targets_the_right_one(
     }
     assert trades["MSFT"]["open"] is False
     assert trades["AAPL"]["open"] is True
+
+
+# ----------------------------------------------------------------- auth hardening
+
+
+def test_refresh_token_is_read_from_the_body_not_the_url(client: TestClient) -> None:
+    # Without Supabase configured the endpoint is not implemented, but the request shape is checked.
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": "abc"}).status_code in (
+        501,
+        502,
+    )
+    assert client.post("/api/v1/auth/refresh", params={"refresh_token": "abc"}).status_code == 422
+    assert client.post("/api/v1/auth/refresh", json={}).status_code == 422
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": ""}).status_code == 422
+
+
+def test_cors_never_combines_a_wildcard_with_credentials(client: TestClient) -> None:
+    from app.config import settings
+
+    origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()] or ["*"]
+    origin = "https://example.com" if "*" in origins else origins[0]
+    r = client.get("/health", headers={"Origin": origin})
+    allowed = r.headers.get("access-control-allow-origin")
+    credentials = r.headers.get("access-control-allow-credentials")
+    if "*" in origins:
+        assert allowed == "*" and credentials is None  # a browser would reject "*" + credentials
+    else:
+        assert allowed == origin and credentials == "true"
+        other = client.get("/health", headers={"Origin": "https://evil.example"})
+        assert other.headers.get("access-control-allow-origin") is None  # unlisted origins refused

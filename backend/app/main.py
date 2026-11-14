@@ -38,10 +38,15 @@ app = FastAPI(
 
 # --- Middleware (order matters: outermost first) ---
 app.add_middleware(AccessLogMiddleware)
+# Auth uses a bearer header, not cookies, so credentials are only allowed for explicit origins
+# (browsers reject "*" together with credentials). Set CORS_ORIGINS to the frontend URL in production.
+_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()] or ["*"]
+if "*" in _origins and settings.ENVIRONMENT != "development":
+    log.warning("cors.wildcard_origin", hint="set CORS_ORIGINS to your frontend URL")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS.split(",") if settings.CORS_ORIGINS != "*" else ["*"],
-    allow_credentials=True,
+    allow_origins=_origins,
+    allow_credentials="*" not in _origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

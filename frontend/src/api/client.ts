@@ -8,7 +8,16 @@ import axios from "axios";
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
 // Use `new URL()` to safely normalise the base — strips trailing slashes,
 // prevents double slashes, and tolerates malformed env vars.
-const API_BASE = new URL(apiUrl).toString().replace(/\/$/, "");
+function safeBase(url: string): string {
+  try {
+    return new URL(url).toString().replace(/\/$/, "");
+  } catch {
+    // A bad VITE_API_URL must not crash the whole app at import time.
+    console.error(`VITE_API_URL is not a valid URL: "${url}". Falling back to http://localhost:8000.`);
+    return "http://localhost:8000";
+  }
+}
+const API_BASE = safeBase(apiUrl);
 const TOKEN_KEY = "stride_token";
 
 // Build the axios baseURL via `new URL()` so the path join is always safe.

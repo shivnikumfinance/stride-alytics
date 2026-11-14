@@ -7,10 +7,10 @@ Delete a check once the thing it covers is permanently automated in CI.
 
 ```bash
 # Backend (cd backend)
-uv run pytest tests -q          # last known: 373 passed
+uv run pytest tests -q          # last known: 382 passed
 # Same suite on real PostgreSQL built from database/migrations (throwaway database only; it empties every table):
 #   TEST_PG_URL=postgresql://postgres:<pw>@localhost:55432/<db> uv run pytest tests -q
-# It refuses a URL equal to DATABASE_URL. last known: 373 passed on PostgreSQL 16
+# It refuses a URL equal to DATABASE_URL. last known: 373 passed on PostgreSQL 16 (before the 2026-11-14 live-data fixes)
 uv run ruff check .
 uv run black --check .
 uv run mypy app                 # blocked on this machine (Application Control); run elsewhere
@@ -21,7 +21,7 @@ npm run lint
 npm run build
 
 # Alpha (cd alpha)
-uv run pytest tests -q          # last known: 11 passed
+uv run pytest tests -q          # last known: 21 passed
 uv run ruff check . && uv run black --check .
 ```
 
@@ -122,3 +122,11 @@ uv run ruff check . && uv run black --check .
 - Weekly Picks are ordered by expected value; a pick without target or stop shows a dash.
 - Regime page: the history chart has one point per day with 40 and 70 lines (needs at least two stored days).
 - Charts have text alternatives (screen reader: "Regime score over N days, latest ...").
+
+### Live-data results so far (2026-11-14, Saturday, real yfinance, no database)
+- Regime: score 72.6 GROWTH (VIX 19.3, IV rank 74.8) in 0.4 s. Gate on 14 symbols: AAPL, MSFT, SPY, QQQ, TSLA, AMD, JPM, XOM, PLTR, SOFI and GME clear; NVDA blocked for earnings on 2026-11-17 (correct); Ford blocked because only a past earnings date was available; an unknown ticker blocked with "could not verify". ETFs skip the market-cap and earnings rules as intended.
+- Option liquidity (30-day weekly ATM puts): bid/ask were present (not 0), spreads 1-12%; the OI rule blocked AAPL, SPY and MSFT (see Pending 25).
+- Scenarios on real quotes: a short SOFI put and a long AAPL call; signs are right (long call gains with price and vol and loses to time; short put the reverse) and a zero shock changes nothing.
+- Sectors: Technology, Financial Services, Energy, "ETF / Index"; an unknown symbol gives None (shown as Unknown).
+- Chain: 4 symbols load live with 8 expiries and valid JSON after the fixes in Pending 25.
+- Still to do: repeat on a weekday during market hours and pre-market.

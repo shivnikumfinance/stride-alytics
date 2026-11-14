@@ -11,7 +11,7 @@ interface AuthStoreState {
   token: string | null;
   loading: boolean;
   error: string | null;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
   login: (body: LoginRequest) => Promise<void>;
   signup: (body: SignupRequest) => Promise<void>;
   logout: () => void;
@@ -37,9 +37,18 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   loading: false,
   error: null,
 
-  hydrate: () => {
+  hydrate: async () => {
     const t = tokenStore.get();
-    if (t) set({ token: t });
+    if (!t) return;
+    set({ token: t });
+    // Restore who is signed in (the token alone does not say). A 401 clears the token through the
+    // client's response interceptor; any other failure just leaves the user empty until next load.
+    try {
+      const me = await authApi.me();
+      set({ user: { id: me.data.user_id, email: me.data.email ?? "" } });
+    } catch {
+      /* ignored: see above */
+    }
   },
 
   login: async (body) => {

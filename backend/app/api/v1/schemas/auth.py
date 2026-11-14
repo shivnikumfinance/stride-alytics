@@ -18,6 +18,10 @@ class SignupRequest(BaseModel):
     full_name: str | None = Field(default=None, max_length=120)
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(min_length=1, max_length=4096)
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str | None = None

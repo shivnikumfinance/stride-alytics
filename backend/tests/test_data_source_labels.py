@@ -51,7 +51,7 @@ def test_screener_is_labelled_synthetic_when_yfinance_unavailable(
     client: TestClient, dev_headers, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(screener, "_get_spot_from_yfinance", lambda s: None)
-    monkeypatch.setattr(screener, "_load_chain_from_yfinance", lambda s, spot: None)
+    monkeypatch.setattr(screener, "_load_chain_from_yfinance", lambda s, spot, max_dte=90: None)
     r = client.post("/api/v1/screener/run", headers=dev_headers, json=SCREENER_BODY)
     assert r.status_code == 200, r.text
     assert r.json()["source"] == "synthetic"
@@ -61,7 +61,9 @@ def test_screener_is_labelled_live_only_when_spot_and_chain_are_live(
     client: TestClient, dev_headers, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(screener, "_get_spot_from_yfinance", lambda s: 201.0)
-    monkeypatch.setattr(screener, "_load_chain_from_yfinance", lambda s, spot: _live_chain())
+    monkeypatch.setattr(
+        screener, "_load_chain_from_yfinance", lambda s, spot, max_dte=90: _live_chain()
+    )
     r = client.post("/api/v1/screener/run", headers=dev_headers, json=SCREENER_BODY)
     assert r.json()["source"] == "live"
 
@@ -90,7 +92,7 @@ def test_synthetic_data_is_never_cached_to_supabase(monkeypatch: pytest.MonkeyPa
     assert asyncio.run(screener.fetch_and_cache_supabase("AAPL", "http://x", "k")) is False
 
     monkeypatch.setattr(screener, "_get_spot_from_yfinance", lambda s: 200.0)
-    monkeypatch.setattr(screener, "_load_chain_from_yfinance", lambda s, spot: None)
+    monkeypatch.setattr(screener, "_load_chain_from_yfinance", lambda s, spot, max_dte=90: None)
     assert asyncio.run(screener.fetch_and_cache_supabase("AAPL", "http://x", "k")) is False
 
 

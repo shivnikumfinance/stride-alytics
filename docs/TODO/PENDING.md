@@ -52,21 +52,20 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Options: make the Streamlit app private (viewer auth), or use the anon key with a read-only RLS policy.
 - Done when: an unauthenticated visitor cannot read the data.
 
-### 10. Frontend auth gaps
-- After a page reload the token is restored but `user` is not (`auth.store.ts` `hydrate`), so the sidebar email and Settings are empty. Call `/auth/me` on load.
-- The refresh token is never used, so the session ends after about an hour.
-- Token is kept in `localStorage`.
-- `new URL(apiUrl)` in `api/client.ts` throws at import time on a bad `VITE_API_URL`.
-- Done when: reload keeps the user and the session renews.
+### 10. Frontend session renewal
+- **Fixed:** after a reload the user is restored from `/auth/me`; a bad `VITE_API_URL` no longer crashes the app at import time.
+- **Open:** the refresh token is never used, so the session ends after about an hour (Supabase's default) and you are sent to the login page. Renewing needs the refresh token stored and a retry-on-401, which should be written and tested against a real Supabase login (item 5).
+- The access token is kept in `localStorage`; that is acceptable for personal use, but any XSS would expose it.
+- Done when: the session renews without a new login, or you accept the hourly login.
 
 ### 11. Backend hardening
-- CORS defaults to `*` together with `allow_credentials=True` (`app/main.py`); set explicit origins.
-- `/auth/refresh` takes the refresh token as a query parameter; move it to the request body.
-- `market.py` uses Yahoo's v7 quote endpoint, which likely needs a crumb and so always returns the fallback values; switch the source or accept the label.
-- Done when: each is fixed or consciously accepted and noted here.
+- **Fixed:** `/auth/refresh` now takes the refresh token in the request body (a URL can end up in logs); CORS no longer combines `*` with credentials (credentials only for explicit origins) and logs a warning when `*` is used outside development.
+- **Open, set on Render:** `CORS_ORIGINS` to your frontend URL (the default is still `*`).
+- **Open:** `market.py` uses Yahoo's v7 quote endpoint, which likely needs a crumb and so always returns the fallback values; the responses are labelled `source`, but switch the source or accept the label. Check the Dashboard ticker with the network on.
+- Done when: `CORS_ORIGINS` is set in production and the market-ticker source is fixed or accepted.
 
 ### 17. Close the doc-vs-code gaps
-- See [DOC-CODE-GAPS.md](DOC-CODE-GAPS.md). The stale facts were fixed; what remains is documented-but-unbuilt functionality (DNT gate, regime score, sizing, exit alerts, audit logs, watchlists, home hub).
+- See [DOC-CODE-GAPS.md](DOC-CODE-GAPS.md). The stale facts were fixed; what remains is documented-but-unbuilt functionality (push or email alerts, `/auth/profile`, screener search endpoints, rate limiting, caching, scheduler scripts, the `shared/` folder).
 - For each row decide: build it, or change the doc to match; then delete the row.
 - Done when: `DOC-CODE-GAPS.md` is empty.
 
@@ -76,10 +75,9 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Done when: both schemas can coexist (or are kept apart) and this is documented in `ALPHA.md`.
 
 ### 19. Check the gate against real market data
-- The gate's data comes from yfinance (market cap, earnings date, bid/ask, open interest) and is tested with fakes only. Real fields can be missing or stale, and because missing data **blocks** the trade, a poor feed would block legitimate entries.
-- Try 10–15 real symbols (large caps, ETFs like SPY, a small cap) through "Check gate". If too many say "could not verify", consider a better data source (a paid data API is allowed; record it in `../BUSINESS/03-FINANCIAL-MODEL.md`).
-- Also check: yfinance's `calendar` earnings date, `marketCap` for ETFs, and bid/ask/open interest after hours (they are often 0 or missing when the market is closed, which would block every option trade).
-- Done when: typical symbols pass or fail for the right reasons (Validation V15).
+- **Done on a Saturday (2026-11-14):** 14 symbols, regime, option liquidity, sectors, chains and scenarios were run through the real yfinance providers; results are in `VALIDATION.md` ("Live-data results") and the findings are item 25. The gate blocked and cleared for the right reasons, and bid/ask were present rather than 0.
+- **Still to do:** repeat the option checks on a weekday during market hours and in pre-market, when bid/ask can be 0 and would block every option trade ("could not verify"). If that is common, consider a better data source (a paid API is allowed; record it in `../BUSINESS/03-FINANCIAL-MODEL.md`).
+- Done when: the weekday check shows typical symbols pass or fail for the right reasons (Validation V15).
 
 ### 20. Confirm the rule assumptions
 - The docs gave no numbers for several rules, so defaults were chosen. They are listed in `../BUSINESS/05-IMPLEMENTATION-STATUS.md` ("Phase 2 assumptions"). Confirm or change each:
@@ -123,6 +121,15 @@ Delete an item when it is done and validated (see [README](README.md)).
 - **Bundle size:** the production build is one JS file over 500 kB (recharts). Code-split the chart pages with `React.lazy` if load time matters.
 - Done when: the thresholds are confirmed and the pages have been checked with real positions (Validation V17).
 
+### 25. Live-data findings (checked 2026-11-14, a Saturday, so quotes were Friday's close)
+- **Fixed:** the chain loader fetched only the first 3 expirations, so for AAPL (Mon/Wed/Fri weeklies) every contract expired within 6 days and the Option Chain page and the screener's 30-day window found nothing. It now picks up to 8 expirations spread across the window (default 90 days; the screener uses its own `expiry_days_max`).
+- **Fixed:** one contract with a missing volume or open interest (NaN) made `int(NaN)` raise and dropped its whole expiry; NaN also leaked into JSON. Parsing is now NaN-safe, and contracts with no implied volatility are skipped instead of being given an invented 0.3.
+- **Open, decide:** the open-interest minimum of 500 (BR-018) blocks weekly options. The ATM puts of the 30-day weekly (11 Dec) had OI 314 (AAPL), 255 (SPY) and 191 (MSFT), while the monthly (18 Dec) has tens of thousands. Either keep the rule (trade monthlies) or lower it; this is part of item 21.
+- **Open, accept or change:** when yfinance gives only a past earnings date (Ford: 2026-10-28), BR-020 blocks with "could not verify the next earnings date". That is the intended fail-safe, but it blocks every trade in such symbols until the date updates.
+- **Not yet checked:** a weekday, during market hours and in pre-market, when bid/ask can be 0. Repeat the V15 option checks then.
+- Cosmetic: yfinance logs HTTP 404 for SPY/QQQ fundamentals (ETFs have none); the gate handles ETFs correctly.
+- Done when: the OI rule is decided and the weekday check is done (Validation V15).
+
 ## P3
 
 ### 12. Spec and implementation mismatches
@@ -132,14 +139,14 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Done when: docs and code agree, or the docs are updated to match.
 
 ### 13. Alpha data robustness
-- Missing values count silently as zero in `compute_option_score` (NaN compares false; `None` raises).
+- **Fixed:** `compute_option_score` no longer raises on `None`/NaN/bad values; a missing input earns no point and is named in a new `Data Gaps` column (it shows in Sheets; it is not stored in Supabase). Decide whether rows with gaps should be excluded from the watchlist or flagged in the dashboard.
 - Google Sheets push: ranges are capped at A–Z and 500 rows; `USER_ENTERED` can turn text from external data into formulas.
 - `app/secrets_loader.py` is never called.
 - `alpha/.env.example` exists locally but is not tracked in git, while the README tells people to copy it. Commit it (without secrets) or fix the README.
 - Done when: bad inputs are rejected or reported, not scored as zero.
 
 ### 14. Test coverage
-- Frontend has 100 unit tests (Phases 1-4). The Active Holdings and Active Trades pages have no tests yet; Greeks, Screener and Portfolio pages are still thin.
+- Frontend has 113 unit tests, backend 382, alpha 21 (Active Holdings, Active Trades and the auth store are now covered). The Greeks, Screener and Portfolio pages are still thin.
 - CI now fails on test failures (it used to swallow them with `|| echo`); confirm the first run on GitHub is green.
 - `mypy` is blocked by a Windows Application Control policy on this machine; run it in CI or another environment.
 - No backend test hits real Supabase.
