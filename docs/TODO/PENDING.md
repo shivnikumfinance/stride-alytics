@@ -13,6 +13,7 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Done when: committed on a branch and CI is green.
 
 ### 2. Apply migrations 006 to 010 to Supabase
+- **Verified on a local throwaway PostgreSQL 16 (2026-11-14):** migrations 001 to 010 apply in order with no errors, the `_down` files for 010 to 006 roll back cleanly and 006 to 010 re-apply, and the whole backend suite (373 tests) passes against the migration-built schema. A minimal stand-in for Supabase's `auth.uid()` and roles was used, so this is **not** yet a test on Supabase itself.
 - `006_drop_subscription_plan.sql`, `007_persistence_logs.sql`, `008_market_regime.sql` and `009_alert_acks.sql` and `010_scenarios.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
 - **None of them has been applied anywhere yet**, including 008 (`market_regime`) 009 (`alert_acks`) and 010 (`scenarios`). Try all five on a throwaway Supabase project first (see item 3), including each `_down` file once.
 - Done when: all five are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
@@ -20,7 +21,7 @@ Delete an item when it is done and validated (see [README](README.md)).
 ### 3. Validate persistence on real PostgreSQL
 - Code is done (Phase 1): portfolios, trades, watchlists, settings and the append-only logs are stored through `backend/app/repositories/sql.py`; unit tests run on SQLite.
 - **Render must have `DATABASE_URL` set.** Without it the backend silently uses in-memory SQLite and loses everything on restart (a warning is logged).
-- Run `backend/scripts/smoke_db.py --disposable` against a throwaway Supabase project with migrations 007 applied; it proves the Postgres triggers make `signal_log` / `audit_events` append-only (SQLite cannot).
+- **Passed 11/11 on the local throwaway Postgres (2026-11-14)**, including UPDATE/DELETE/TRUNCATE being rejected on `signal_log` and `audit_events`. Repeat it once on a throwaway Supabase project: `backend/scripts/smoke_db.py --disposable` proves the Postgres triggers make `signal_log` / `audit_events` append-only (SQLite cannot).
 - Done when: the smoke test passes, and a trade survives a backend restart on the deployed API (Validation V2, V13).
 
 ### 4. Verify the daily workflow on GitHub

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from datetime import date, timedelta  # noqa: E402
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy import create_engine, text  # noqa: E402
 
 import app.models  # noqa: E402,F401  (registers every model on Base.metadata)
 from app import database  # noqa: E402
@@ -50,17 +51,53 @@ def _dev_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "ENVIRONMENT", "development")
 
 
-@pytest.fixture(autouse=True)
-def _fresh_database(tmp_path: Path):
-    """Every test gets its own empty SQLite database (a temp file: no cross-test leakage,
-    and no event-loop sharing between the fixture and the TestClient)."""
-    db_file = tmp_path / "test.db"
-    database.sanitize_for_sqlite(database.Base.metadata)
-    sync_engine = create_engine(f"sqlite:///{db_file}")
-    database.Base.metadata.create_all(sync_engine)
+def _postgres_test_url() -> str | None:
+    """Opt-in: run the suite against a THROWAWAY PostgreSQL built from ``database/migrations``.
+
+    ``TEST_PG_URL=postgresql://... uv run pytest tests -q``. Every table is emptied before each
+    test, so never point this at a database you care about; it refuses your ``DATABASE_URL``.
+    """
+    url = os.environ.get("TEST_PG_URL")
+    if not url:
+        return None
+    from app.config import settings
+
+    if settings.DATABASE_URL and database.normalize_url(url) == database.normalize_url(
+        settings.DATABASE_URL
+    ):
+        pytest.exit("TEST_PG_URL equals DATABASE_URL (your real database): refusing to run.")
+    return url
+
+
+def _empty_postgres(url: str) -> None:
+    # session_replication_role=replica switches off the append-only triggers for this cleanup only.
+    sync_engine = create_engine(database.normalize_url(url).replace("+asyncpg", "+psycopg"))
+    with sync_engine.begin() as conn:
+        tables = conn.execute(
+            text("select tablename from pg_tables where schemaname = 'public'")
+        ).scalars()
+        names = ", ".join(f'"{t}"' for t in tables if t != "health_check")
+        conn.execute(text("set session_replication_role = replica"))
+        conn.execute(text(f"truncate table {names} restart identity cascade"))
     sync_engine.dispose()
 
-    database.configure_engine(f"sqlite+aiosqlite:///{db_file}")
+
+@pytest.fixture(autouse=True)
+def _fresh_database(tmp_path: Path):
+    """Every test gets its own empty database: a temp SQLite file (no cross-test leakage, and no
+    event-loop sharing between the fixture and the TestClient), or an emptied PostgreSQL when
+    ``TEST_PG_URL`` is set."""
+    pg_url = _postgres_test_url()
+    if pg_url:
+        _empty_postgres(pg_url)
+        database.configure_engine(pg_url)
+    else:
+        db_file = tmp_path / "test.db"
+        database.sanitize_for_sqlite(database.Base.metadata)
+        sync_engine = create_engine(f"sqlite:///{db_file}")
+        database.Base.metadata.create_all(sync_engine)
+        sync_engine.dispose()
+        database.configure_engine(f"sqlite+aiosqlite:///{db_file}")
     yield
     if database.engine is not None:
         asyncio.run(database.engine.dispose())

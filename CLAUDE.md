@@ -39,7 +39,7 @@ Python modules need Python 3.12 (backend, scheduler) or 3.11+ (alpha) and use uv
 - `uv run lint|format|typecheck|test|verify`
 - All tests: `uv run pytest tests -q`
 - One test: `uv run pytest tests/test_services.py::test_name -q`
-- Tests run on a per-test SQLite file (no Postgres needed). `scripts/smoke_db.py --disposable` (with `SMOKE_DB_URL`) checks the real Postgres triggers against a throwaway database only.
+- Tests run on a per-test SQLite file (no Postgres needed). To run the same suite on a throwaway PostgreSQL built from `database/migrations` (apply `database/scripts/local_supabase_shim.sql` first; the commands are in its header), set `TEST_PG_URL`; it empties every table before each test and refuses `DATABASE_URL`. `scripts/smoke_db.py --disposable` (with `SMOKE_DB_URL`) checks the real Postgres triggers against a throwaway database only.
 
 **frontend** (`cd frontend`)
 - `npm ci`, `npm run dev`

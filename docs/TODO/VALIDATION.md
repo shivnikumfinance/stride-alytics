@@ -8,6 +8,9 @@ Delete a check once the thing it covers is permanently automated in CI.
 ```bash
 # Backend (cd backend)
 uv run pytest tests -q          # last known: 373 passed
+# Same suite on real PostgreSQL built from database/migrations (throwaway database only; it empties every table):
+#   TEST_PG_URL=postgresql://postgres:<pw>@localhost:55432/<db> uv run pytest tests -q
+# It refuses a URL equal to DATABASE_URL. last known: 373 passed on PostgreSQL 16
 uv run ruff check .
 uv run black --check .
 uv run mypy app                 # blocked on this machine (Application Control); run elsewhere
@@ -78,6 +81,7 @@ uv run ruff check . && uv run black --check .
 - `health-check.yml` is scheduled every 6 hours (Actions → Health Checks → Run workflow works).
 
 ### V13. Phase 1 on real PostgreSQL (new)
+- **Done on local PostgreSQL 16 (2026-11-14):** migrations 001-010 apply, down files 010-006 roll back and re-apply, smoke test 11/11, full backend suite passes. **Still to do on Supabase itself** (below), where `auth.uid()`, roles and RLS are real.
 - Throwaway Supabase project: apply migrations 001–007 (and the 007 down file once, then 007 again).
 - `cd backend && SMOKE_DB_URL=<throwaway url> uv run python scripts/smoke_db.py --disposable` prints all checks as PASS, including "UPDATE/DELETE/TRUNCATE on audit_events and signal_log is rejected". (Not yet run: SQLite cannot test the triggers.)
 - Deployed API: `DATABASE_URL` is set on Render; add a portfolio and a trade, restart the service, and confirm they are still there.

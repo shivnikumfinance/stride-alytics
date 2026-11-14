@@ -6,7 +6,9 @@ tests need no Postgres; that data is lost on restart, and a warning is logged.
 There is one code path (SQLAlchemy) for both.
 """
 
+import asyncio
 import logging
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -23,6 +25,11 @@ from sqlalchemy.pool import StaticPool
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# psycopg's async mode cannot run on Windows' default ProactorEventLoop. Linux (Render) is fine;
+# this only matters for local runs against PostgreSQL on Windows.
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 SQLITE_MEMORY_URL = "sqlite+aiosqlite:///:memory:"
 
