@@ -134,7 +134,9 @@ def test_close_rules_over_http(client: TestClient) -> None:
         == 422
     )
     ok = client.post(url, headers=ALICE, json={"exit_price": 3, "exit_date": "2026-01-09"})
-    assert ok.status_code == 200 and ok.json()["open"] is False and ok.json()["pnl"] == -1.0
+    assert (
+        ok.status_code == 200 and ok.json()["open"] is False and ok.json()["pnl"] == -100.0
+    )  # (3 - 2) x 1 contract x 100 shares, short
     again = client.post(url, headers=ALICE, json={"exit_price": 9, "exit_date": "2026-01-10"})
     assert again.status_code == 409  # cannot be re-closed at a different price
     assert client.get(f"/api/v1/trades/{pid}", headers=ALICE).json()[0]["exit_price"] == 3

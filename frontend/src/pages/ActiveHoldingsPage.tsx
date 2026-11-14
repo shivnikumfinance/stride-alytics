@@ -1,160 +1,99 @@
 import { AlertTriangle } from "lucide-react";
-import { PageHeader, Card, Badge, DemoBanner } from "../components/ui";
+
+import { Badge, Card, PageHeader, SeverityBadge, Table } from "../components/ui";
+import { useExitAlerts } from "../hooks/queries";
+import { fmtUsd } from "../utils";
+import type { PositionAlert, SuggestedAction } from "../types";
+
+const ACTION_TONE: Record<SuggestedAction, "gray" | "green" | "yellow" | "blue"> = {
+  hold: "gray",
+  close: "green",
+  roll: "yellow",
+  hedge: "blue",
+};
+
+function contract(a: PositionAlert): string {
+  if (a.trade_type === "stock") return "stock";
+  const d = a.strategy_detail;
+  return `${a.trade_type} ${d.strike ?? ""}${d.expiry ? ` · ${d.expiry}` : ""}`;
+}
 
 export function ActiveHoldingsPage() {
-  // Mock data - replace with real API call
-  const holdings = [
-    {
-      symbol: "SPY",
-      strategy: "Covered Call",
-      alert: "Near max profit",
-      pnl: 245.50,
-      pnlPercent: 12.4,
-      dte: 18,
-      delta: 0.65,
-      theta: -12.3,
-      action: "Consider closing"
-    },
-    {
-      symbol: "QQQ",
-      strategy: "Iron Condor",
-      alert: "Price approaching upper leg",
-      pnl: -89.20,
-      pnlPercent: -4.2,
-      dte: 24,
-      delta: 0.12,
-      theta: 8.7,
-      action: "Monitor closely"
-    },
-    {
-      symbol: "IWM",
-      strategy: "Cash-Secured Put",
-      alert: "Stable",
-      pnl: 156.80,
-      pnlPercent: 6.8,
-      dte: 32,
-      delta: -0.45,
-      theta: -5.2,
-      action: "Hold"
-    },
-    {
-      symbol: "AAPL",
-      strategy: "Long Call",
-      alert: "Earnings soon",
-      pnl: 320.00,
-      pnlPercent: 24.5,
-      dte: 12,
-      delta: 0.82,
-      theta: -18.9,
-      action: "Take profits"
-    },
-    {
-      symbol: "TSLA",
-      strategy: "Put Credit Spread",
-      alert: "High IV",
-      pnl: 178.90,
-      pnlPercent: 15.2,
-      dte: 21,
-      delta: -0.38,
-      theta: -9.4,
-      action: "Hold"
-    },
-    {
-      symbol: "NVDA",
-      strategy: "Covered Call",
-      alert: "Over extended",
-      pnl: -45.30,
-      pnlPercent: -2.1,
-      dte: 15,
-      delta: 0.71,
-      theta: -15.6,
-      action: "Review position"
-    },
-  ];
+  const q = useExitAlerts("normal");
+  const rows = q.data?.alerts ?? [];
+  const priced = rows.filter((r) => r.pnl !== null);
+  const totalPnl = priced.reduce((sum, r) => sum + (r.pnl ?? 0), 0);
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Active Trade & Alerts" subtitle="Enriched positions view with per-position alerts, suggested actions & Greeks monitoring" />
-      <DemoBanner />
+      <PageHeader
+        title="Active Holdings & Trade Alerts"
+        subtitle="Every open position with its alert status, suggested action and Greeks."
+      />
 
-      <Card bodyClassName="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3">Symbol</th>
-                <th className="px-4 py-3">Strategy</th>
-                <th className="px-4 py-3">Alert</th>
-                <th className="px-4 py-3 text-right">P&L</th>
-                <th className="px-4 py-3 text-right">P&L %</th>
-                <th className="px-4 py-3 text-right">DTE</th>
-                <th className="px-4 py-3 text-right">Delta</th>
-                <th className="px-4 py-3 text-right">Theta</th>
-                <th className="px-4 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {holdings.map((holding, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="font-semibold text-blue-600">{holding.symbol}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">{holding.strategy}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      {holding.alert !== "Stable" && (
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                      )}
-                      <span className={`text-xs ${
-                        holding.alert === "Stable" ? "text-slate-500" :
-                        holding.alert.includes("earnings") ? "text-amber-600" :
-                        holding.alert.includes("approaching") ? "text-amber-600" :
-                        "text-red-600"
-                      }`}>
-                        {holding.alert}
-                      </span>
-                    </div>
-                  </td>
-                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-medium font-mono ${
-                    holding.pnl >= 0 ? "text-green-700" : "text-red-700"
-                  }`}>
-                    {holding.pnl >= 0 ? "+" : ""}{holding.pnl.toFixed(2)}
-                  </td>
-                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-medium font-mono ${
-                    holding.pnlPercent >= 0 ? "text-green-700" : "text-red-700"
-                  }`}>
-                    {holding.pnlPercent >= 0 ? "+" : ""}{holding.pnlPercent.toFixed(1)}%
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-slate-700">{holding.dte}</td>
-                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-mono ${
-                    Math.abs(holding.delta) > 0.7 ? "text-red-600 font-semibold" :
-                    Math.abs(holding.delta) > 0.5 ? "text-amber-600" :
-                    "text-slate-700"
-                  }`}>
-                    {holding.delta.toFixed(2)}
-                  </td>
-                  <td className={`px-4 py-3 whitespace-nowrap text-right text-sm font-mono ${
-                    holding.theta < -15 ? "text-red-600 font-semibold" :
-                    holding.theta < -10 ? "text-amber-600" :
-                    "text-slate-700"
-                  }`}>
-                    {holding.theta.toFixed(1)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge tone={
-                      holding.action === "Take profits" ? "green" :
-                      holding.action === "Review position" ? "yellow" :
-                      holding.action === "Monitor closely" ? "yellow" :
-                      "blue"
-                    }>
-                      {holding.action}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {q.isError && (
+        <p role="alert" className="text-sm text-red-600">
+          Could not load your positions. Try refreshing.
+        </p>
+      )}
+
+      <Card
+        subtitle={
+          q.data
+            ? `${rows.length} open · total P&L ${fmtUsd(totalPnl)}${priced.length < rows.length ? " (some positions could not be priced)" : ""}`
+            : undefined
+        }
+        bodyClassName="p-0"
+      >
+        <Table<PositionAlert>
+          loading={q.isLoading}
+          rows={rows}
+          rowKey={(r) => r.trade_id}
+          empty="No open positions. Add a trade on the Portfolio page."
+          columns={[
+            { key: "symbol", header: "Symbol", render: (r) => <span className="font-semibold text-blue-600">{r.symbol}</span> },
+            { key: "contract", header: "Position", render: (r) => `${r.direction} ${r.quantity} × ${contract(r)}` },
+            {
+              key: "alert",
+              header: "Alert",
+              render: (r) => (
+                <div className="flex items-center gap-1.5">
+                  {r.severity !== "normal" && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
+                  <SeverityBadge severity={r.severity} />
+                  <span className="text-xs text-gray-600">{r.reasons[0]?.message ?? "Within limits"}</span>
+                </div>
+              ),
+            },
+            {
+              key: "pnl",
+              header: "P&L",
+              align: "right",
+              render: (r) =>
+                r.pnl === null ? (
+                  "—"
+                ) : (
+                  <span className={r.pnl >= 0 ? "text-green-700" : "text-red-700"}>
+                    {r.pnl >= 0 ? "+" : ""}
+                    {fmtUsd(r.pnl)}
+                  </span>
+                ),
+            },
+            {
+              key: "pct",
+              header: "P&L %",
+              align: "right",
+              render: (r) => (r.pnl_pct === null ? "—" : `${(r.pnl_pct * 100).toFixed(1)}%`),
+            },
+            { key: "dte", header: "DTE", align: "right", render: (r) => r.dte ?? "—" },
+            { key: "delta", header: "Delta", align: "right", render: (r) => (r.delta === null ? "—" : r.delta.toFixed(2)) },
+            { key: "theta", header: "Theta", align: "right", render: (r) => (r.theta === null ? "—" : r.theta.toFixed(2)) },
+            {
+              key: "action",
+              header: "Action",
+              render: (r) => <Badge tone={ACTION_TONE[r.action]}>{r.action}</Badge>,
+            },
+          ]}
+        />
       </Card>
     </div>
   );

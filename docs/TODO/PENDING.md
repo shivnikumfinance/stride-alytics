@@ -12,10 +12,10 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Suggested commits: docs scope · plan removal · security + trade bugs · labelling · alpha + workflow · frontend demo banners.
 - Done when: committed on a branch and CI is green.
 
-### 2. Apply migrations 006, 007 and 008 to Supabase
-- `006_drop_subscription_plan.sql`, `007_persistence_logs.sql` and `008_market_regime.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
-- **None of them has been applied anywhere yet**, including 008 (`market_regime`). Try all three on a throwaway Supabase project first (see item 3), including each `_down` file once.
-- Done when: all three are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
+### 2. Apply migrations 006 to 009 to Supabase
+- `006_drop_subscription_plan.sql`, `007_persistence_logs.sql`, `008_market_regime.sql` and `009_alert_acks.sql` (each with a `_down` file) are written but **not applied**. Apply them in order with `database/scripts/apply_migrations.{sh,ps1}`.
+- **None of them has been applied anywhere yet**, including 008 (`market_regime`) and 009 (`alert_acks`). Try all four on a throwaway Supabase project first (see item 3), including each `_down` file once.
+- Done when: all four are applied, login/portfolio/trades still work, and the smoke test passes (Validation V3, V13).
 
 ### 3. Validate persistence on real PostgreSQL
 - Code is done (Phase 1): portfolios, trades, watchlists, settings and the append-only logs are stored through `backend/app/repositories/sql.py`; unit tests run on SQLite.
@@ -106,6 +106,15 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Decide: keep it account-wide (then nothing to do), or also offer a per-portfolio view.
 - Done when: the choice is confirmed, or a per-portfolio endpoint exists.
 
+### 23. Phase 3 behaviour to confirm
+- **Option P&L is now x100** (contract multiplier). Earlier it was understated 100x. Check one real trade against your broker. Trades already stored are not changed, only how P&L is computed.
+- Alert thresholds (7/3 days, delta 0.30/0.50/0.70, profit 50%/80%, stop-loss multiples, regime floor 25) are listed in `../BUSINESS/05-IMPLEMENTATION-STATUS.md` ("Phase 3 assumptions"). Confirm or change each, then decide whether they should move into Settings (same question as item 21).
+- Roll and Hedge are suggestions only: nothing is placed, and no roll candidate is computed (smart rolling is Planned).
+- Alerts are computed when you open a page (60-second price cache), not pushed. Email or Slack alerts for exits would need the scheduler.
+- Weekly Picks need `weekly_picks` rows from `scheduler/scripts/generate_picks.py`; until it runs the page is empty.
+- Strategy Matrix, Option Chain, Heat Dashboard and Scenarios pages are still demo pages (Phase 4).
+- Done when: the thresholds are confirmed and the P&L figure is checked (Validation V16).
+
 ## P3
 
 ### 12. Spec and implementation mismatches
@@ -122,7 +131,7 @@ Delete an item when it is done and validated (see [README](README.md)).
 - Done when: bad inputs are rejected or reported, not scored as zero.
 
 ### 14. Test coverage
-- Frontend has 17 unit tests (Phase 1: close-trade flow, watchlist, settings validation); pages added later still need them.
+- Frontend has 67 unit tests (Phases 1-3); the Phase 4 pages and the remaining demo pages still need them. The Active Holdings and Active Trades pages have no tests yet.
 - CI now fails on test failures (it used to swallow them with `|| echo`); confirm the first run on GitHub is green.
 - `mypy` is blocked by a Windows Application Control policy on this machine; run it in CI or another environment.
 - No backend test hits real Supabase.

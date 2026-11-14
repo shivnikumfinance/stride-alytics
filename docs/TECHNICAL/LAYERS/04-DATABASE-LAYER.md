@@ -528,3 +528,9 @@ Migration `007_persistence_logs.sql` (down file included) added what the backend
 `008_market_regime.sql` (down file included) adds `market_regime`: one row per day (`as_of` primary key) with the 0–100 `score`, `state` (DEFENSIVE / NORMAL / GROWTH / UNKNOWN), the sub-score `components`, the `weights` used, `vix`, `iv_rank`, `market_down` and `source`.
 
 It is shared by all users and always stored with the **default weights**, so the history is comparable day to day; your own weights only change the score shown to you live. Everyone can read it (RLS read policy); there are no client write policies, so only the backend (database role) and the scheduler (service role) write it. An unavailable score is never stored.
+
+## 17. Alert acknowledgements (migration 009)
+
+`009_alert_acks.sql` (down file included) adds `alert_acks`: one row per acknowledged alert, keyed by `user_id`, `trade_id` and the alert `code`, with `severity`, `note`, `acknowledged_at` and `resolved_at`. A partial unique index allows only one **active** (unresolved) acknowledgement per trade and code. When the alert stops firing or the trade closes, the row is marked resolved, so the same alert can be acknowledged again if it returns. Row-level security limits each row to its owner.
+
+The Weekly Picks page reads the existing `weekly_picks` table (written by the scheduler); the backend only reads it.

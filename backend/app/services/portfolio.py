@@ -51,10 +51,23 @@ class Portfolio:
 # ---------- Analytics ----------
 
 
+CONTRACT_MULTIPLIER = 100  # one option contract covers 100 shares
+
+
+def contract_multiplier(trade_type: str) -> int:
+    """Options are quoted per share but traded in contracts of 100; stock is 1 per share."""
+    return CONTRACT_MULTIPLIER if trade_type in ("call", "put") else 1
+
+
 def calculate_pnl(trade: Trade) -> float:
+    """Realised P&L in dollars (prices are per share; options are multiplied by 100)."""
     if trade.exit_price is None:
         return 0.0
-    raw = (trade.exit_price - trade.entry_price) * trade.quantity
+    raw = (
+        (trade.exit_price - trade.entry_price)
+        * trade.quantity
+        * contract_multiplier(trade.trade_type)
+    )
     return -raw if trade.direction == "short" else raw
 
 

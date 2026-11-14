@@ -3,11 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  alertsApi,
   authApi,
+  dashboardApi,
   gateApi,
   greeksApi,
   logsApi,
   marketApi,
+  picksApi,
   portfolioApi,
   regimeApi,
   screenerApi,
@@ -19,7 +22,11 @@ import {
 } from "../api/endpoints";
 import { withApiErrorLogging } from "../api/errors";
 import type {
+  AckRequest,
   BandUsage,
+  DashboardSummary,
+  ExitAlertsData,
+  Severity,
   GateCheckRequest,
   GateData,
   GreeksInputs,
@@ -127,8 +134,7 @@ export const useAddTrade = (portfolioId?: string) => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trades", portfolioId] });
       qc.invalidateQueries({ queryKey: ["portfolio"] });
-      qc.invalidateQueries({ queryKey: ["gate"] });
-      qc.invalidateQueries({ queryKey: ["logs"] });
+      for (const key of ["gate", "logs", "dashboard", "alerts"]) qc.invalidateQueries({ queryKey: [key] });
     },
     onError: (err: unknown) => {
       withApiErrorLogging("trades.create", "Could not add trade")(err);
@@ -280,5 +286,59 @@ export const useSetSymbolFlag = () => {
       qc.invalidateQueries({ queryKey: ["logs"] });
     },
     onError: withApiErrorLogging("symbols.flag", "Could not update the flag"),
+  });
+};
+
+// --- Alerts, picks, dashboard ---
+
+/** Open positions rated by severity. Re-fetched every 2 minutes. */
+export const useExitAlerts = (minSeverity: Severity = "watch") =>
+  useQuery<ExitAlertsData>({
+    queryKey: ["alerts", "exits", minSeverity],
+    queryFn: () => alertsApi.exits(minSeverity),
+    staleTime: 60_000,
+    refetchInterval: 2 * 60_000,
+  });
+
+/** Acknowledge several alert reasons for one position in order (BR-096). */
+export const useAckAlerts = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, AckRequest[]>({
+    mutationFn: async (items) => {
+      for (const item of items) await alertsApi.ack(item);
+    },
+    onSuccess: () => {
+      for (const key of ["alerts", "dashboard", "gate", "logs"]) qc.invalidateQueries({ queryKey: [key] });
+    },
+    onError: withApiErrorLogging("alerts.ack", "Could not acknowledge the alert"),
+  });
+};
+
+export const useAlertHistory = (limit = 10) =>
+  useQuery({ queryKey: ["alerts", "acks", limit], queryFn: () => alertsApi.acks({ limit }) });
+
+export const usePicks = (weekOf?: string) =>
+  useQuery({ queryKey: ["picks", weekOf ?? "latest"], queryFn: () => picksApi.list(weekOf) });
+
+export const useDashboardSummary = () =>
+  useQuery<DashboardSummary>({
+    queryKey: ["dashboard", "summary"],
+    queryFn: () => dashboardApi.summary(),
+    staleTime: 60_000,
+    refetchInterval: 2 * 60_000,
+  });
+
+export const useOpenTrades = () =>
+  useQuery({
+    queryKey: ["trades", "open"],
+    queryFn: () => tradesApi.listAll({ status: "open", sort: "entry_date", limit: 200 }),
+  });
+
+export const useAcceptDisclaimer = () => {
+  const qc = useQueryClient();
+  return useMutation<UserSettings, Error, void>({
+    mutationFn: () => settingsApi.acceptDisclaimer(),
+    onSuccess: (data) => qc.setQueryData(["settings"], data),
+    onError: withApiErrorLogging("settings.disclaimer", "Could not save your acceptance"),
   });
 };

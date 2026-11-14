@@ -221,6 +221,10 @@ All under `/api/v1` unless noted. "Auth" = Bearer token required.
 | `GET /regime/score`, `GET /regime/history` | yes | 0–100 score with your weights (`source`: `live`, `stored`, `unavailable`); stored daily history (default weights) |
 | `GET /portfolio/bands` | yes | Capital at risk per band vs its cap, with `ok` / `near` / `over` |
 | `GET /symbols/flags`, `PUT /symbols/{symbol}/flag` | yes | Manual NewsFlag; while set, new trades in the symbol are blocked (BR-021) |
+| `GET /alerts/exits` | yes | Exit alerts for open positions (`min_severity` watch/warning/critical): severity, suggested action (hold/roll/close/hedge), reasons with rule ids, DTE, delta, theta, P&L, `unacknowledged_critical`. Prices come from the live data provider; a position without a price gets a Warning, never a silent pass |
+| `POST /alerts/ack`, `GET /alerts/acks` | yes | Acknowledge an **active** warning/critical alert (`trade_id`, `code`, optional `note`; 404 if it is not firing); history of acknowledgements |
+| `GET /picks`, `GET /picks/{id}` | yes | Weekly picks from the scheduler's `weekly_picks` table, best confidence first (`week_of` filter) |
+| `GET /dashboard/summary` | yes | Home hub: portfolio value, P&L, options buying power, utilisation, top alerts, holdings, top picks, regime and layer split |
 | `GET /logs/signals`, `GET /logs/audit` | yes | Read-only, filterable (`start`, `end`, `symbol`, `rule_id`, `decision`, `entity`, `action`), paginated. No write methods exist (405) |
 
 All data endpoints are scoped to the calling user; another user's records behave as "not found" (404). Every trade, portfolio, watchlist and settings change writes an `audit_events` row in the same transaction.

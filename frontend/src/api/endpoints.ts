@@ -3,7 +3,13 @@
 import client from "./client";
 import type { TickerPayload } from "../types/market";
 import type {
+  AckRecord,
+  AckRequest,
   AuditLogEntry,
+  DashboardSummary,
+  ExitAlertsData,
+  Severity,
+  WeeklyPick,
   BandUsage,
   GateCheckRequest,
   GateData,
@@ -145,6 +151,32 @@ export const symbolsApi = {
         note: note ?? null,
       })
       .then((r) => r.data.data),
+};
+
+// --- Alerts, picks, dashboard ---
+
+export const alertsApi = {
+  exits: (minSeverity: Severity = "watch") =>
+    client
+      .get<Envelope<ExitAlertsData>>("/alerts/exits", { params: { min_severity: minSeverity } })
+      .then((r) => r.data.data),
+  ack: (body: AckRequest) =>
+    client.post<Envelope<AckRecord>>("/alerts/ack", body).then((r) => r.data.data),
+  acks: (params: { limit?: number; offset?: number } = {}) =>
+    client.get<LogPage<AckRecord>>("/alerts/acks", { params }).then((r) => r.data),
+};
+
+export const picksApi = {
+  list: (weekOf?: string) =>
+    client
+      .get<{ success: boolean; data: WeeklyPick[]; week_of: string | null }>("/picks", {
+        params: weekOf ? { week_of: weekOf } : undefined,
+      })
+      .then((r) => r.data),
+};
+
+export const dashboardApi = {
+  summary: () => client.get<Envelope<DashboardSummary>>("/dashboard/summary").then((r) => r.data.data),
 };
 
 // --- Logs (append-only, read-only from the UI) ---

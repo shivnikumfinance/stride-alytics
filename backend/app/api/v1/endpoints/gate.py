@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends
 from app.api.deps import Ctx, get_ctx
 from app.api.v1.schemas.trading import GateCheckRequest
 from app.domain.allocation import growth_locked, layer_split
+from app.services.position_data import PositionDataProvider, get_position_data_provider
 from app.services.symbol_data import SymbolDataProvider, get_symbol_data_provider
 from app.services.trading import entry_gate, load_account, master_gate
 from app.utils.validators import normalize_symbol
@@ -26,9 +27,12 @@ def is_backdated(entry_date: date) -> bool:
 
 
 @router.get("")
-async def get_master_gate(ctx: Ctx = Depends(get_ctx)) -> dict[str, Any]:
+async def get_master_gate(
+    ctx: Ctx = Depends(get_ctx),
+    positions: PositionDataProvider = Depends(get_position_data_provider),
+) -> dict[str, Any]:
     """Account/market-level gate: CLEAR TO TRADE or BLOCKED, with every reason."""
-    account = await load_account(ctx)
+    account = await load_account(ctx, positions)
     result = master_gate(account)
     state = account.regime.state
     return {
@@ -51,6 +55,7 @@ async def check_entry(
     payload: GateCheckRequest,
     ctx: Ctx = Depends(get_ctx),
     provider: SymbolDataProvider = Depends(get_symbol_data_provider),
+    positions: PositionDataProvider = Depends(get_position_data_provider),
 ) -> dict[str, Any]:
     """Dry run of the full entry gate for one candidate trade. Does not write to the logs."""
     entry_date = payload.entry_date or date.today()
@@ -67,7 +72,7 @@ async def check_entry(
                 "not_evaluated": [],
             },
         }
-    account = await load_account(ctx)
+    account = await load_account(ctx, positions)
     result = await entry_gate(
         ctx,
         account,

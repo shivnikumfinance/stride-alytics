@@ -1,92 +1,94 @@
 import { useState } from "react";
-import { AlertTriangle, Info, AlertCircle } from "lucide-react";
-import { PageHeader, Card, Badge, DemoBanner } from "../components/ui";
+
+import { AlertCard } from "../components/alerts";
+import { Badge, Card, PageHeader, Select, SeverityBadge, Table } from "../components/ui";
+import { useAlertHistory, useExitAlerts } from "../hooks/queries";
+import type { AckRecord, Severity } from "../types";
+
+const FILTERS: { value: Severity; label: string }[] = [
+  { value: "watch", label: "Watch and above" },
+  { value: "warning", label: "Warning and above" },
+  { value: "critical", label: "Critical only" },
+];
 
 export function ExitAlertsPage() {
-  const [filter, setFilter] = useState<"all" | "critical" | "warning" | "info">("all");
-
-  // Mock data - replace with real API call
-  const alerts = [
-    { id: 1, severity: "warning" as const, symbol: "SPY", strategy: "Covered Call", message: "Approaching max profit zone - consider closing", time: "2 min ago" },
-    { id: 2, severity: "critical" as const, symbol: "QQQ", strategy: "Iron Condor", message: "Price breaching upper resistance - exit recommended", time: "5 min ago" },
-    { id: 3, severity: "info" as const, symbol: "IWM", strategy: "Cash-Secured Put", message: " earnings in 3 days - monitor volatility", time: "12 min ago" },
-    { id: 4, severity: "warning" as const, symbol: "AAPL", strategy: "Long Call", message: "Approaching earnings - consider taking profits", time: "18 min ago" },
-  ];
-
-  const filteredAlerts = filter === "all" ? alerts : alerts.filter(a => a.severity === filter);
+  const [minSeverity, setMinSeverity] = useState<Severity>("watch");
+  const alerts = useExitAlerts(minSeverity);
+  const history = useAlertHistory(10);
+  const data = alerts.data;
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Exit Alerts & Recommendations" subtitle="Exit signals, severity-filtered with suggested actions" />
-      <DemoBanner />
+      <PageHeader
+        title="Exit Alerts & Recommendations"
+        subtitle="Open positions that need attention, with a suggested action. Critical alerts must be acknowledged."
+      />
 
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-slate-900">Active Alerts</h3>
-          <div className="flex gap-2">
-            {(["all", "critical", "warning", "info"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`
-                  px-3 py-1.5 text-xs font-medium rounded-md transition-colors
-                  ${filter === f 
-                    ? "bg-slate-900 text-white" 
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"}
-                `}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
+      {data && data.unacknowledged_critical > 0 && (
+        <p role="alert" className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-900">
+          {data.unacknowledged_critical} critical alert(s) need your acknowledgement.
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <Select label="Show" value={minSeverity} onChange={(e) => setMinSeverity(e.target.value as Severity)}>
+          {FILTERS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </Select>
+        {data && (
+          <p className="text-sm text-gray-600">
+            {data.open_positions} open position{data.open_positions === 1 ? "" : "s"} ·{" "}
+            {(["critical", "warning", "watch"] as const).map((s) => (
+              <span key={s} className="mr-2 inline-flex items-center gap-1">
+                <SeverityBadge severity={s} /> {data.summary[s]}
+              </span>
             ))}
-          </div>
-        </div>
+          </p>
+        )}
+      </div>
 
+      {alerts.isLoading ? (
+        <p className="text-sm text-gray-500">Loading alerts…</p>
+      ) : alerts.isError || !data ? (
+        <p role="alert" className="text-sm text-red-600">
+          Could not load alerts. Try refreshing.
+        </p>
+      ) : data.alerts.length === 0 ? (
+        <Card>
+          <p className="text-sm text-gray-600">
+            {data.open_positions === 0
+              ? "You have no open positions, so there is nothing to alert on."
+              : "No alerts at this level. Your open positions are within their limits."}
+          </p>
+        </Card>
+      ) : (
         <div className="space-y-3">
-          {filteredAlerts.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-4">No alerts matching current filter</p>
-          ) : (
-            filteredAlerts.map((alert) => (
-              <div
-                key={alert.id}
-                className={`
-                  p-4 rounded-lg border flex items-start gap-3
-                  ${alert.severity === "critical" 
-                    ? "bg-red-50 border-red-200" 
-                    : alert.severity === "warning"
-                    ? "bg-amber-50 border-amber-200"
-                    : "bg-blue-50 border-blue-200"}
-                `}
-              >
-                {alert.severity === "critical" ? (
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                ) : alert.severity === "warning" ? (
-                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                ) : (
-                  <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold text-slate-900">{alert.symbol}</span>
-                    <Badge tone={
-                      alert.severity === "critical" ? "red" :
-                      alert.severity === "warning" ? "yellow" : "blue"
-                    }>
-                      {alert.severity}
-                    </Badge>
-                    <span className="text-xs text-slate-500 ml-auto">{alert.time}</span>
-                  </div>
-                  <p className="text-sm text-slate-700 mb-1">{alert.message}</p>
-                  <p className="text-xs text-slate-500">Strategy: {alert.strategy}</p>
-                </div>
-              </div>
-            ))
-          )}
+          {data.alerts.map((a) => (
+            <AlertCard key={a.trade_id} alert={a} />
+          ))}
         </div>
-      </Card>
+      )}
 
-      <Card>
-        <h3 className="text-sm font-semibold text-slate-900 mb-3">Alert History</h3>
-        <p className="text-xs text-slate-500">No recent alert history.</p>
+      <Card title="Acknowledgement history" subtitle="An acknowledgement is resolved when the alert clears or the position closes.">
+        <Table<AckRecord>
+          loading={history.isLoading}
+          rows={history.data?.data ?? []}
+          rowKey={(r) => r.id}
+          empty="Nothing acknowledged yet."
+          columns={[
+            { key: "when", header: "When", render: (r) => new Date(r.acknowledged_at).toLocaleString() },
+            { key: "code", header: "Alert", render: (r) => <span className="font-mono text-xs">{r.code}</span> },
+            { key: "sev", header: "Severity", render: (r) => <SeverityBadge severity={r.severity} /> },
+            {
+              key: "status",
+              header: "Status",
+              render: (r) => (r.resolved_at ? <Badge tone="gray">Resolved</Badge> : <Badge tone="green">Active</Badge>),
+            },
+          ]}
+        />
       </Card>
     </div>
   );

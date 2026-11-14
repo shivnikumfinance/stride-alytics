@@ -6,11 +6,14 @@ in ``app.api.v1.router``.
 """
 
 from app.api.v1.endpoints import (
+    alerts,
     auth,
+    dashboard,
     gate,
     greeks,
     logs,
     market,
+    picks,
     portfolio,
     regime,
     screener,
@@ -22,11 +25,14 @@ from app.api.v1.endpoints import (
 )
 
 __all__ = [
+    "alerts",
     "auth",
+    "dashboard",
     "gate",
     "greeks",
     "logs",
     "market",
+    "picks",
     "portfolio",
     "regime",
     "screener",

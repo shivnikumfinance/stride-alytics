@@ -98,3 +98,13 @@ uv run ruff check . && uv run black --check .
 - GitHub: run "Generate Market Regime" manually with `SUPABASE_URL`, `SUPABASE_KEY` and `SLACK_WEBHOOK` set: it writes today's row, and a state change posts to Slack.
 - Run "Check gate" once **during** market hours and once **after hours**: after hours, bid/ask and open interest are often 0 or missing, which blocks option trades with "could not verify". Note which behaviour you get.
 - `GET /portfolio/bands` (the account-wide band usage on the Sizing page) shows exposure rising after you add an open trade with a band and capital at risk.
+
+### V16. Phase 3: alerts, Home hub and pages (new)
+- Apply migration 009. Open Exit Alerts with at least one open option trade: P&L, delta, theta and DTE are shown and match your broker (options P&L is now x100; compare one trade by hand).
+- Add a short put near the money or deep in the money: a Critical "assignment alarm" appears, the sidebar badge shows the count, and **Acknowledge** clears the badge and the banner. Reload: it stays acknowledged. Close the trade: the history row shows Resolved.
+- Open a trade for a symbol with no quote (or run with the data provider down): the position shows a "no market data" warning, and the master gate blocks new trades (BR-011 fail-safe).
+- Home shows three cards that agree with Portfolio and Sizing (Portfolio Value = account + realised + unrealised; Options Buying Power = equity - capital at risk) and a 2x2 grid whose "View full screen" links go to the four pages.
+- Sidebar: Tools & Analytics starts collapsed, opens on a tool page, and is keyboard operable.
+- Disclaimer modal: shown on a new account until "I understand"; it does not return after a reload. Settings failing to load does not block the app.
+- Weekly Picks: empty until the "Generate Weekly Picks" workflow has run; then each pick's "Check gate" matches Home's gate.
+- Tune check: the alert thresholds are constants (see the Phase 3 assumptions); confirm they fit how you trade.

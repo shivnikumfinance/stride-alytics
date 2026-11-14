@@ -190,15 +190,21 @@ class TestPortfolio:
 
     def test_long_winner_pnl(self):
         t = self._make_trade(direction="long", entry_price=2, exit_price=3, quantity=10)
-        assert calculate_pnl(t) == 10.0
+        assert calculate_pnl(t) == 1000.0  # (3 - 2) x 10 contracts x 100 shares
 
     def test_short_winner_pnl(self):
         t = self._make_trade(direction="short", entry_price=3, exit_price=2, quantity=10)
-        assert calculate_pnl(t) == 10.0
+        assert calculate_pnl(t) == 1000.0
 
     def test_long_loser_pnl(self):
         t = self._make_trade(direction="long", entry_price=3, exit_price=2, quantity=10)
-        assert calculate_pnl(t) == -10.0
+        assert calculate_pnl(t) == -1000.0
+
+    def test_stock_pnl_has_no_contract_multiplier(self):
+        t = self._make_trade(
+            trade_type="stock", direction="long", entry_price=100, exit_price=110, quantity=10
+        )
+        assert calculate_pnl(t) == 100.0
 
     def test_open_trade_zero_pnl(self):
         t = self._make_trade(exit_price=None)

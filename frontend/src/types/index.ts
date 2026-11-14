@@ -26,3 +26,4 @@ export * from "./watchlist";
 export * from "./settings";
 export * from "./logs";
 export * from "./trading";
+export * from "./alerts";

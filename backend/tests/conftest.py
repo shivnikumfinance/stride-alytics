@@ -21,9 +21,11 @@ from sqlalchemy import create_engine  # noqa: E402
 import app.models  # noqa: E402,F401  (registers every model on Base.metadata)
 from app import database  # noqa: E402
 from app.domain import regime_score as rs  # noqa: E402
+from app.domain.alerts import MarketInput  # noqa: E402
 from app.domain.gate import SymbolData  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services import regime_service  # noqa: E402
+from app.services.position_data import get_position_data_provider  # noqa: E402
 from app.services.symbol_data import get_symbol_data_provider  # noqa: E402
 
 
@@ -116,3 +118,41 @@ def symbol_data():
     app.dependency_overrides[get_symbol_data_provider] = lambda: fake
     yield fake
     app.dependency_overrides.pop(get_symbol_data_provider, None)
+
+
+class FakePositionData:
+    """Stands in for live position prices. Default: calm, out of the money, plenty of time.
+
+    Set ``by_symbol[symbol]`` to a ``MarketInput`` to give one symbol different data, or set
+    ``unavailable = True`` to simulate a failed price feed.
+    """
+
+    def __init__(self) -> None:
+        self.by_symbol: dict[str, MarketInput] = {}
+        self.unavailable = False
+        self.calls: list[str] = []
+
+    def __call__(self, symbol: str, *, trade_type: str, strike=None, expiry=None) -> MarketInput:
+        self.calls.append(symbol)
+        if self.unavailable:
+            return MarketInput(available=False)
+        if symbol in self.by_symbol:
+            return self.by_symbol[symbol]
+        if trade_type == "stock":
+            return MarketInput(available=True, spot=100.0, mark=100.0)
+        # A put/call far from the money: spot 100 vs the strike, mark close to the entry price.
+        return MarketInput(
+            available=True,
+            spot=200.0 if trade_type == "put" else 50.0,
+            mark=1.9,
+            delta=-0.15 if trade_type == "put" else 0.15,
+            theta=0.04,
+        )
+
+
+@pytest.fixture(autouse=True)
+def position_data():
+    fake = FakePositionData()
+    app.dependency_overrides[get_position_data_provider] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_position_data_provider, None)

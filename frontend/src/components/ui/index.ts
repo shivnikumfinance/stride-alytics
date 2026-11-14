@@ -6,3 +6,4 @@ export { Table } from "./Table";
 export { PageHeader } from "./PageHeader";
 export { DemoBanner } from "./DemoBanner";
 export { SampleDataBadge } from "./SampleDataBadge";
+export { SeverityBadge } from "./SeverityBadge";

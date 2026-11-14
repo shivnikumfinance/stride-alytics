@@ -733,3 +733,155 @@ class Repo:
             )
         ).all()
         return [self._regime_dict(r) for r in rows]
+
+    # ------------------------------------------------------ open positions / capital
+
+    async def open_trades(self, user_id: UUID) -> list[Trade]:
+        trades, _ = await self.list_trades(
+            user_id, status="open", sort="entry_date", limit=500, offset=0
+        )
+        return trades
+
+    async def open_committed(self, user_id: UUID) -> float:
+        """Capital at risk across all open trades (``risk_amount``; unset counts as 0)."""
+        total = await self.s.scalar(
+            select(func.sum(m.Trade.risk_amount)).where(
+                m.Trade.user_id == user_id, m.Trade.exit_price.is_(None)
+            )
+        )
+        return float(total or 0)
+
+    # --------------------------------------------------------- alert acknowledgements
+
+    @staticmethod
+    def _ack_dict(row: m.AlertAck) -> dict[str, Any]:
+        return {
+            "id": str(row.id),
+            "trade_id": str(row.trade_id),
+            "code": row.code,
+            "severity": row.severity,
+            "note": row.note,
+            "acknowledged_at": _iso(row.acknowledged_at),
+            "resolved_at": _iso(row.resolved_at),
+        }
+
+    async def ack_alert(
+        self, user_id: UUID, trade_id: UUID, code: str, severity: str, note: str | None = None
+    ) -> dict[str, Any]:
+        """Acknowledge an alert on one of your OPEN trades. Idempotent while unresolved."""
+        trade = await self._trade_row(user_id, trade_id)  # KeyError if not yours
+        if trade.exit_price is not None:
+            raise ValueError("the trade is already closed, so it has no active alerts")
+        existing = await self.s.scalar(
+            select(m.AlertAck).where(
+                m.AlertAck.user_id == user_id,
+                m.AlertAck.trade_id == trade_id,
+                m.AlertAck.code == code,
+                m.AlertAck.resolved_at.is_(None),
+            )
+        )
+        if existing is not None:
+            return self._ack_dict(existing)
+        row = m.AlertAck(
+            user_id=user_id, trade_id=trade_id, code=code, severity=severity, note=note
+        )
+        self.s.add(row)
+        await self.s.flush()
+        self._audit(
+            user_id,
+            "alert.ack",
+            "trade",
+            trade_id,
+            None,
+            {"code": code, "severity": severity, "note": note},
+        )
+        await self.s.commit()
+        return self._ack_dict(row)
+
+    async def active_acks(self, user_id: UUID) -> set[tuple[str, str]]:
+        rows = (
+            await self.s.execute(
+                select(m.AlertAck.trade_id, m.AlertAck.code).where(
+                    m.AlertAck.user_id == user_id, m.AlertAck.resolved_at.is_(None)
+                )
+            )
+        ).all()
+        return {(str(t), c) for t, c in rows}
+
+    async def resolve_stale_acks(self, user_id: UUID, active: set[tuple[str, str]]) -> int:
+        """Mark acknowledgements whose alert is no longer firing as resolved.
+
+        A later recurrence then needs a fresh acknowledgement (BR-098).
+        """
+        rows = (
+            await self.s.scalars(
+                select(m.AlertAck).where(
+                    m.AlertAck.user_id == user_id, m.AlertAck.resolved_at.is_(None)
+                )
+            )
+        ).all()
+        stale = [r for r in rows if (str(r.trade_id), r.code) not in active]
+        for row in stale:
+            row.resolved_at = datetime.now(timezone.utc)
+        if stale:
+            await self.s.commit()
+        return len(stale)
+
+    async def list_acks(
+        self, user_id: UUID, *, limit: int = 50, offset: int = 0
+    ) -> tuple[list[dict[str, Any]], int]:
+        cond = [m.AlertAck.user_id == user_id]
+        total = await self.s.scalar(select(func.count()).select_from(m.AlertAck).where(*cond))
+        rows = (
+            await self.s.scalars(
+                select(m.AlertAck)
+                .where(*cond)
+                .order_by(m.AlertAck.acknowledged_at.desc(), m.AlertAck.id)
+                .limit(limit)
+                .offset(offset)
+            )
+        ).all()
+        return [self._ack_dict(r) for r in rows], int(total or 0)
+
+    # ------------------------------------------------------------------ weekly picks
+
+    @staticmethod
+    def _pick_dict(row: m.WeeklyPick) -> dict[str, Any]:
+        return {
+            "id": str(row.id),
+            "symbol": row.symbol,
+            "side": row.side,
+            "strike": _num(row.strike),
+            "expiry": row.expiry.isoformat() if row.expiry else None,
+            "entry_price": _num(row.entry_price),
+            "target_price": _num(row.target_price),
+            "stop_loss": _num(row.stop_loss),
+            "rationale": row.rationale,
+            "confidence": _num(row.confidence),
+            "week_of": row.week_of.isoformat(),
+            "generated_at": _iso(row.generated_at),
+        }
+
+    async def list_picks(
+        self, *, week_of: date | None = None, limit: int = 20
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Picks for ``week_of`` (default: the latest week), best confidence first."""
+        if week_of is None:
+            week_of = await self.s.scalar(select(func.max(m.WeeklyPick.week_of)))
+        if week_of is None:
+            return [], None
+        rows = (
+            await self.s.scalars(
+                select(m.WeeklyPick)
+                .where(m.WeeklyPick.week_of == week_of)
+                .order_by(m.WeeklyPick.confidence.desc(), m.WeeklyPick.symbol)
+                .limit(limit)
+            )
+        ).all()
+        return [self._pick_dict(r) for r in rows], week_of.isoformat()
+
+    async def get_pick(self, pick_id: UUID) -> dict[str, Any]:
+        row = await self.s.get(m.WeeklyPick, pick_id)
+        if row is None:
+            raise KeyError("pick not found")
+        return self._pick_dict(row)

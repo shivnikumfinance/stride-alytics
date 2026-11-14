@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { DisclaimerModal } from "./DisclaimerModal";
 import { Toaster } from "../ui/Toaster";
 
 export function AppLayout() {
@@ -16,6 +17,7 @@ export function AppLayout() {
         </main>
       </div>
       <Toaster />
+      <DisclaimerModal />
     </div>
   );
 }

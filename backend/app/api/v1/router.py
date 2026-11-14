@@ -13,11 +13,14 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    alerts,
     auth,
+    dashboard,
     gate,
     greeks,
     logs,
     market,
+    picks,
     portfolio,
     regime,
     screener,
@@ -43,6 +46,9 @@ router.include_router(logs.router, prefix="/logs", tags=["logs"])
 router.include_router(gate.router, prefix="/gate", tags=["gate"])
 router.include_router(sizing.router, prefix="/sizing", tags=["sizing"])
 router.include_router(symbols.router, prefix="/symbols", tags=["symbols"])
+router.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
+router.include_router(picks.router, prefix="/picks", tags=["picks"])
+router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("/health", tags=["health"])

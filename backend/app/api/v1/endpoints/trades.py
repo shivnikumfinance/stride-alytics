@@ -13,6 +13,7 @@ from app.api.v1.endpoints.gate import is_backdated
 from app.api.v1.schemas.portfolio import TradeClose, TradeCreate, TradeNotes, TradeOut, TradePage
 from app.repositories.sql import InvalidInput
 from app.services.portfolio import Trade, trade_breakdown
+from app.services.position_data import PositionDataProvider, get_position_data_provider
 from app.services.symbol_data import SymbolDataProvider, get_symbol_data_provider
 from app.services.trading import entry_gate, load_account, log_gate_decision
 from app.utils.logger import get_logger
@@ -110,6 +111,7 @@ async def add_trade(
     payload: TradeCreate,
     ctx: Ctx = Depends(get_ctx),
     provider: SymbolDataProvider = Depends(get_symbol_data_provider),
+    positions: PositionDataProvider = Depends(get_position_data_provider),
 ) -> TradeOut:
     """Append a new trade to one of the user's portfolios.
 
@@ -130,7 +132,7 @@ async def add_trade(
                 details={"entry_date": payload.entry_date.isoformat()},
             )
         else:
-            account = await load_account(ctx)
+            account = await load_account(ctx, positions)
             result = await entry_gate(
                 ctx,
                 account,

@@ -1,5 +1,6 @@
 """SQLAlchemy ORM models — import everything from here."""
 
+from app.models.alerts import AlertAck, WeeklyPick
 from app.models.logs import AuditLog, ImmutableRecordError, SignalLog
 from app.models.market_regime import MarketRegime
 from app.models.option import Option
@@ -21,5 +22,7 @@ __all__ = [
     "SignalLog",
     "AuditLog",
     "MarketRegime",
+    "AlertAck",
+    "WeeklyPick",
     "ImmutableRecordError",
 ]

@@ -89,12 +89,12 @@ def test_equity_guardrail_uses_realised_losses(client: TestClient) -> None:
     assert _gate(client)["clear"] is True and _gate(client)["equity"] == 10000
 
     pid = _portfolio(client)
-    # Back-dated so it is not gated; short 10 contracts opened at 2.0, closed at 12.0 = -$100.
-    t = _post_trade(client, pid, entry_date="2026-01-05", quantity=10).json()
+    # Back-dated so it is not gated; short 1 contract opened at 2.00, closed at 3.00 = -$100.
+    t = _post_trade(client, pid, entry_date="2026-01-05", quantity=1).json()
     client.post(
         f"/api/v1/trades/{t['trade_id']}/close",
         headers=ALICE,
-        json={"exit_price": 12.0, "exit_date": "2026-01-09"},
+        json={"exit_price": 3.0, "exit_date": "2026-01-09"},
     )
     data = _gate(client)
     assert data["equity"] == 9900 and data["clear"] is True  # still above the 9,500 guardrail

@@ -12,6 +12,8 @@ from app.api.deps import Ctx
 from app.domain import gate as g
 from app.domain.regime_score import RegimeScore
 from app.services import regime_service
+from app.services.position_data import PositionDataProvider
+from app.services.positions import assignment_alarm_count, evaluate_open_positions
 from app.services.symbol_data import SymbolDataProvider
 
 
@@ -20,14 +22,26 @@ class Account:
     settings: dict[str, Any]
     regime: RegimeScore
     equity: float
+    # Open trades with an assignment alarm (BR-011); None = could not be verified.
+    assignment_alarms: int | None = None
 
 
-async def load_account(ctx: Ctx) -> Account:
-    """The user's settings, their (weighted) regime score, and current equity."""
+async def load_account(ctx: Ctx, position_provider: PositionDataProvider | None = None) -> Account:
+    """The user's settings, their (weighted) regime score, and current equity.
+
+    With a ``position_provider`` it also counts open positions with an assignment alarm so the
+    gate can apply BR-011.
+    """
     settings = await ctx.repo.get_settings(ctx.user_id)
     regime = await run_in_threadpool(regime_service.current_regime, settings["regime_weights"])
     equity = settings["account_size"] + await ctx.repo.realized_pnl(ctx.user_id)
-    return Account(settings=settings, regime=regime, equity=round(equity, 2))
+    alarms: int | None = None
+    if position_provider is not None:
+        alerts = await evaluate_open_positions(ctx, position_provider, regime.score)
+        alarms = assignment_alarm_count(alerts)
+    return Account(
+        settings=settings, regime=regime, equity=round(equity, 2), assignment_alarms=alarms
+    )
 
 
 def master_gate(account: Account) -> g.GateResult:
@@ -35,6 +49,7 @@ def master_gate(account: Account) -> g.GateResult:
         account.regime,
         equity=account.equity,
         min_equity=account.settings["min_equity"],
+        assignment_alarms=account.assignment_alarms,
     )
 
 
@@ -70,6 +85,7 @@ async def entry_gate(
         layer=layer,
         news_flag=news_flag,
         today=date.today(),
+        assignment_alarms=account.assignment_alarms,
     )
 
 
